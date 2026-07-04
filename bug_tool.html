@@ -1,0 +1,2612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bug Report Tool</title>
+  <style>
+    /* ---------- Base ---------- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "SF Pro Text", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      color: #1d2129;
+      background: #f5f6f7;
+      overflow: hidden;
+    }
+    button {
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      border: 1px solid #c7ccd1;
+      background: #fff;
+      padding: 4px 10px;
+      border-radius: 3px;
+      color: #1d2129;
+    }
+    button:hover { background: #f0f2f5; }
+    button:active { background: #e4e6eb; }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    button.primary {
+      background: #2563eb;
+      color: #fff;
+      border-color: #1d4ed8;
+    }
+    button.primary:hover { background: #1d4ed8; }
+    button.danger {
+      background: #fff;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+    button.danger:hover { background: #fee2e2; }
+    input[type="text"], input[type="number"], textarea, select {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 6px;
+      border: 1px solid #c7ccd1;
+      border-radius: 3px;
+      background: #fff;
+      color: #1d2129;
+      width: 100%;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    textarea {
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      resize: vertical;
+      min-height: 60px;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    label .req {
+      color: #dc2626;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    label .opt {
+      color: #9ca3af;
+      font-size: 10px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .field { margin-bottom: 8px; position: relative; }
+    .field.invalid input,
+    .field.invalid textarea,
+    .field.invalid select {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);
+    }
+    .field-error {
+      display: none;
+      position: absolute;
+      left: 100%;
+      top: 0;
+      margin-left: 6px;
+      background: #1d2129;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .field.invalid:hover .field-error,
+    .field.invalid:focus-within .field-error { display: block; }
+
+    /* ---------- Top tabs ---------- */
+    .top-tabs {
+      display: flex;
+      background: #1f2937;
+      padding: 0 8px;
+      height: 32px;
+      align-items: stretch;
+      user-select: none;
+    }
+    .top-tab {
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      color: #d1d5db;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-weight: 500;
+    }
+    .top-tab:hover { color: #fff; }
+    .top-tab.active {
+      color: #fff;
+      background: #111827;
+      border-bottom-color: #2563eb;
+    }
+    .top-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #9ca3af;
+      font-size: 11px;
+    }
+    .save-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+    .save-indicator .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .save-indicator.saved { background: #064e3b; color: #a7f3d0; }
+    .save-indicator.saved .dot { background: #10b981; }
+    .save-indicator.saving { background: #78350f; color: #fde68a; }
+    .save-indicator.saving .dot { background: #f59e0b; }
+    .save-indicator.unsaved { background: #7f1d1d; color: #fecaca; }
+    .save-indicator.unsaved .dot { background: #ef4444; }
+
+    /* ---------- Sub-tabs (instances) ---------- */
+    .sub-tabs {
+      display: flex;
+      background: #e5e7eb;
+      border-bottom: 1px solid #c7ccd1;
+      padding: 0 4px;
+      align-items: stretch;
+      min-height: 28px;
+      user-select: none;
+    }
+    .sub-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px 4px 12px;
+      background: #f3f4f6;
+      border: 1px solid #c7ccd1;
+      border-bottom: none;
+      border-radius: 3px 3px 0 0;
+      margin-right: 2px;
+      margin-top: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #4b5563;
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .sub-tab.active {
+      background: #fff;
+      color: #1d2129;
+      font-weight: 600;
+    }
+    .sub-tab .label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sub-tab .close {
+      width: 16px; height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      font-size: 14px;
+      line-height: 1;
+      color: #6b7280;
+    }
+    .sub-tab .close:hover { background: #fee2e2; color: #b91c1c; }
+    .sub-tab .dirty-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #f59e0b;
+      display: none;
+    }
+    .sub-tab.dirty .dirty-dot { display: inline-block; }
+    .sub-tab-new {
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 16px;
+      color: #4b5563;
+      cursor: pointer;
+      align-self: center;
+      margin-top: 3px;
+      height: 22px;
+    }
+    .sub-tab-new:hover { color: #1d2129; }
+
+    /* ---------- Main split ---------- */
+    .main {
+      display: flex;
+      height: calc(100vh - 32px - 28px);
+    }
+    .form-panel {
+      width: 50%;
+      min-width: 380px;
+      background: #fff;
+      border-right: 1px solid #d1d5db;
+      overflow-y: auto;
+      padding: 12px 16px;
+    }
+    .output-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #fafbfc;
+      overflow: hidden;
+    }
+    .output-header {
+      padding: 8px 16px;
+      background: #f3f4f6;
+      border-bottom: 1px solid #d1d5db;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .output-header h3 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .output-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .output-textarea-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 16px 12px 16px;
+    }
+    .output-textarea-wrap textarea {
+      flex: 1;
+      min-height: 100%;
+    }
+    /* ---------- Media naming panel ---------- */
+    .media-panel {
+      border-top: 1px solid #d1d5db;
+      background: #f9fafb;
+      padding: 8px 16px 10px 16px;
+      flex: 0 0 auto;
+    }
+    .media-panel-header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .media-panel-header h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #4b5563;
+      letter-spacing: 0.4px;
+    }
+    .media-panel-header .hint {
+      font-size: 10px;
+      color: #9ca3af;
+      font-style: italic;
+    }
+    .media-row {
+      display: grid;
+      grid-template-columns: 90px 1fr auto;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .media-row:last-child { margin-bottom: 0; }
+    .media-row .media-type {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1d4ed8;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .media-row input[type="text"] {
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11px;
+      padding: 3px 6px;
+      border: 1px solid #c7ccd1;
+      border-radius: 3px;
+      background: #fff;
+      color: #1d2129;
+    }
+    .media-row button {
+      font-size: 11px;
+      padding: 2px 8px;
+    }
+    .media-preview {
+      margin-top: 6px;
+      padding: 4px 6px;
+      background: #fff;
+      border: 1px dashed #d1d5db;
+      border-radius: 3px;
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 10px;
+      color: #4b5563;
+      min-height: 14px;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+    .media-preview:empty { display: none; }
+
+    /* ---------- Form groups ---------- */
+    .form-section {
+      margin-bottom: 16px;
+    }
+    .form-section h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #6b7280;
+      letter-spacing: 0.5px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 8px;
+    }
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* ---------- Autocomplete (input + dropdown arrow + suggestion list) ---------- */
+    .autocomplete {
+      position: relative;
+    }
+    .autocomplete-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .autocomplete-input-wrap input {
+      padding-right: 22px;  /* room for the arrow */
+    }
+    .autocomplete-arrow {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 2px;
+      font-size: 9px;
+      line-height: 1;
+    }
+    .autocomplete-arrow:hover { background: #f0f2f5; color: #1d2129; }
+    .autocomplete.open .autocomplete-arrow { color: #2563eb; }
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0; right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #c7ccd1;
+      border-top: none;
+      border-radius: 0 0 3px 3px;
+      z-index: 50;
+      display: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    }
+    .autocomplete.open .autocomplete-list { display: block; }
+    .autocomplete-empty {
+      padding: 4px 8px;
+      color: #9ca3af;
+      font-size: 11px;
+      font-style: italic;
+    }
+    .autocomplete-item {
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .autocomplete-item:hover,
+    .autocomplete-item.active { background: #eff6ff; color: #1d4ed8; }
+    .autocomplete-item mark {
+      background: #fef08a;
+      color: inherit;
+      font-weight: 600;
+    }
+
+    /* ---------- Keywords chips ---------- */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid #c7ccd1;
+      border-radius: 3px;
+      background: #fff;
+      min-height: 30px;
+      cursor: text;
+    }
+    .chips.invalid { border-color: #dc2626; box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18); }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 2px 4px 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+    .chip button {
+      border: none;
+      background: transparent;
+      color: #1e40af;
+      cursor: pointer;
+      padding: 0 4px;
+      font-size: 13px;
+      line-height: 1;
+    }
+    .chip button:hover { color: #b91c1c; }
+    .chips input {
+      border: none;
+      outline: none;
+      flex: 1;
+      min-width: 80px;
+      font-size: 12px;
+      padding: 2px;
+      background: transparent;
+    }
+
+    /* ---------- Data tab ---------- */
+    .data-layout {
+      display: flex;
+      height: calc(100vh - 32px - 28px);
+    }
+    .data-sidebar {
+      width: 200px;
+      background: #fff;
+      border-right: 1px solid #d1d5db;
+      overflow-y: auto;
+    }
+    .data-sidebar .item {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #4b5563;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .data-sidebar .item:hover { background: #f9fafb; }
+    .data-sidebar .item.active {
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 600;
+      border-left: 3px solid #2563eb;
+    }
+    .data-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .data-toolbar {
+      padding: 8px 12px;
+      background: #f3f4f6;
+      border-bottom: 1px solid #d1d5db;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .data-table-wrap {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    table.data-table th,
+    table.data-table td {
+      border: 1px solid #e5e7eb;
+      padding: 4px 8px;
+      text-align: left;
+    }
+    table.data-table th {
+      background: #f3f4f6;
+      font-weight: 600;
+      color: #4b5563;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.3px;
+    }
+    table.data-table input {
+      border: none;
+      padding: 2px;
+      width: 100%;
+      background: transparent;
+    }
+    table.data-table input:focus {
+      background: #fff;
+      outline: 1px solid #2563eb;
+    }
+    table.data-table tr:hover { background: #f9fafb; }
+    table.data-table tr.dirty { background: #fef3c7; }
+    table.data-table tr.dirty:hover { background: #fde68a; }
+    table.data-table tr.deleted { display: none; }
+    .orphan { color: #dc2626; font-weight: 600; }
+
+    /* ---------- Modal ---------- */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 6px;
+      padding: 20px;
+      min-width: 360px;
+      max-width: 600px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .modal h3 { margin-bottom: 12px; font-size: 14px; }
+    .modal-body { margin-bottom: 16px; font-size: 12px; color: #4b5563; }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .modal label.checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+
+    /* ---------- Banner ---------- */
+    .banner {
+      padding: 8px 16px;
+      background: #fef3c7;
+      border-bottom: 1px solid #f59e0b;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .banner.error { background: #fee2e2; border-bottom-color: #dc2626; }
+    .banner.hidden { display: none; }
+    .banner button { font-size: 11px; padding: 2px 8px; }
+
+    /* ---------- Tooltip (chip errors) ---------- */
+    .field-error { max-width: 240px; white-space: normal; }
+  </style>
+</head>
+<body>
+
+  <!-- ============ TOP TABS ============ -->
+  <div class="top-tabs" id="topTabs">
+    <div class="top-tab active" data-kind="bug">Bug</div>
+    <div class="top-tab" data-kind="regression">Regression</div>
+    <div class="top-tab" data-kind="data">Data</div>
+    <div class="top-right">
+      <span class="save-indicator saved" id="saveIndicator">
+        <span class="dot"></span><span id="saveIndicatorText">Saved</span>
+      </span>
+      <button id="loadCsvBtn" title="Load bug_data.csv">Load data</button>
+      <button id="saveSessionBtn" title="Export full session to JSON file">Save session</button>
+      <button id="loadSessionBtn" title="Load a previously-saved session">Load session</button>
+      <button id="clearLocalBtn" class="danger" title="Wipe localStorage and start fresh">Clear local</button>
+    </div>
+  </div>
+
+  <!-- ============ BANNER ============ -->
+  <div class="banner hidden" id="banner">
+    <span id="bannerText"></span>
+    <button id="bannerAction" class="primary">Load</button>
+    <button id="bannerDismiss">Dismiss</button>
+  </div>
+
+  <!-- ============ SUB-TABS + MAIN ============ -->
+  <div id="subTabsAndMain">
+    <div class="sub-tabs" id="subTabs"></div>
+    <div class="main" id="main">
+      <div class="form-panel" id="formPanel"></div>
+      <div class="output-panel">
+        <div class="output-header">
+          <h3>Output</h3>
+          <div class="output-actions" id="outputActions"></div>
+        </div>
+        <div class="output-textarea-wrap">
+          <label>Output (edit freely before copying)</label>
+          <textarea id="outputTextarea" spellcheck="false"></textarea>
+        </div>
+        <div class="media-panel" id="mediaPanel">
+          <div class="media-panel-header">
+            <h4>Media filenames</h4>
+            <span class="hint">Format: Mediatype_key_platform_buildnumber_(1)</span>
+          </div>
+          <div class="media-row" data-media="Vid">
+            <span class="media-type">Vid</span>
+            <input type="text" data-media-key="Vid" placeholder="key" />
+            <button data-media-copy="Vid">Copy</button>
+          </div>
+          <div class="media-row" data-media="Pic">
+            <span class="media-type">Pic</span>
+            <input type="text" data-media-key="Pic" placeholder="key" />
+            <button data-media-copy="Pic">Copy</button>
+          </div>
+          <div class="media-row" data-media="ConsoleLog">
+            <span class="media-type">ConsoleLog</span>
+            <input type="text" data-media-key="ConsoleLog" placeholder="key" />
+            <button data-media-copy="ConsoleLog">Copy</button>
+          </div>
+          <div class="media-row" data-media="DxDiag">
+            <span class="media-type">DxDiag</span>
+            <input type="text" data-media-key="DxDiag" placeholder="key" />
+            <button data-media-copy="DxDiag">Copy</button>
+          </div>
+          <div class="media-preview" id="mediaPreview"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DATA TAB ============ -->
+  <div id="dataContainer" style="display:none;">
+    <div class="data-layout">
+      <div class="data-sidebar" id="dataSidebar"></div>
+      <div class="data-main">
+        <div class="data-toolbar">
+          <button id="addRowBtn">+ Add row</button>
+          <button id="deleteRowBtn" class="danger">Delete selected</button>
+          <button id="revertBtn">Revert</button>
+          <span style="flex:1"></span>
+          <span id="dataDirtyHint" style="font-size:11px;color:#92400e;"></span>
+          <button id="saveDataBtn" class="primary">Save &amp; export bug_data.csv</button>
+        </div>
+        <div class="data-table-wrap" id="dataTableWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL ============ -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <h3 id="modalTitle">Confirm</h3>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <!-- ============ HIDDEN FILE INPUTS ============ -->
+  <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none" />
+  <input type="file" id="sessionFileInput" accept=".json,application/json" style="display:none" />
+
+<script>
+"use strict";
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const STATE_KEY      = "bug_tool_state_v1";
+const PENDING_KEY    = "bug_tool_pending_data_v1";
+const PREFS_KEY      = "bug_tool_prefs";
+const SETTINGS_KEY   = "bug_tool_settings_v1";
+
+const DEFAULT_INSTANCE_COUNT = 3;
+
+const state = {
+  topKind: "bug",         // "bug" | "regression" | "data"
+  data: {
+    // populated from CSV; structure:
+    //   { regions:[], platforms:[], modes:[], bugTypes:[],
+    //     regressionStatuses:[], onlineOrLan:[], severities:[],
+    //     priorities:[], maps:[], pois:{ mapName: [poi,...] },
+    //     tiers:{}, rules:{} }
+    regions: [],
+    platforms: [],
+    modes: [],
+    bugTypes: [],
+    regressionStatuses: [],
+    onlineOrLan: [],
+    severities: [],
+    priorities: [],
+    maps: [],
+    pois: {},
+    tiers: {},
+    rules: {
+      kw_count: "5",
+      coord_fmt: "(X, Y, Z) (X, Y, Z)",
+      coord_re: "^\\(\\d+,\\s*\\d+,\\s*\\d+\\)\\s*\\(\\d+,\\s*\\d+,\\s*\\d+\\)$",
+      repro_re: "^\\d+/\\d+$",
+      buildUrl_prefix: "getbuild://",
+      default_tz: "CST",
+      default_executable: "Test.exe"
+    }
+  },
+  dataLoaded: false,
+  dataLoadedFrom: null,   // last path/name
+  instances: [],          // [{ id, kind, title, fields, errors, dirty }]
+  activeInstanceId: null,
+  dataTab: {
+    selectedCategory: "list:regions",
+    workingRows: [],      // in-memory copy of CSV rows being edited
+    originalRows: [],     // for revert
+    selectedRowIndex: -1
+  },
+  prefs: {
+    dontAskOnClose: false
+  },
+  settings: {
+    lastCsvPath: ""
+  }
+};
+
+function newId() {
+  return "i_" + Math.random().toString(36).slice(2, 10);
+}
+
+function makeEmptyBugInstance() {
+  return {
+    id: newId(),
+    kind: "bug",
+    title: "Bug 1",
+    fields: {
+      team: "",
+      region: "",
+      version: "",
+      platform: "",
+      client: "",
+      mode: "",
+      map: "",
+      poi: "",
+      bugType: "",
+      shortDescription: "",
+      narrativeCondition: "",
+      coords: "",
+      description: "",
+      variables: "",
+      reproSteps: "",
+      results: "",
+      keywords: [],
+      // build
+      cod: "",
+      cl: "",
+      bspCl: "N/A",
+      package: "",
+      ccs: "",
+      bsp: "N/A",
+      buildUrl: "",
+      // notes
+      reproduction: "",
+      profile: "",
+      timestamp: "",
+      tz: state.data.rules.default_tz || "CST",
+      onlineOrLan: "",
+      executable: state.data.rules.default_executable || "Test.exe",
+      notesViewpos: "",
+      material: "",
+      model: ""
+    },
+    mediaKeys: { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" },
+    output: "",
+    outputEdited: false,
+    errors: {},
+    dirty: false
+  };
+}
+
+function makeEmptyRegressionInstance() {
+  return {
+    id: newId(),
+    kind: "regression",
+    title: "Regression 1",
+    fields: {
+      platform: "",
+      client: "",
+      regressionStatus: "",
+      cl: "",
+      verifiedBy: "",
+      location: "",
+      description: "",
+      reproductionRate: "",
+      regressedIn: "",
+      profile: "",
+      timestamp: "",
+      tz: state.data.rules.default_tz || "CST",
+      cod: "",
+      ccsFfotd: "",
+      bsp: "N/A",
+      buildUrl: ""
+    },
+    mediaKeys: { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" },
+    output: "",
+    outputEdited: false,
+    errors: {},
+    dirty: false
+  };
+}
+
+function defaultInstances() {
+  const bugs = [];
+  for (let i = 1; i <= DEFAULT_INSTANCE_COUNT; i++) {
+    const inst = makeEmptyBugInstance();
+    inst.title = "Bug " + i;
+    bugs.push(inst);
+  }
+  return bugs;
+}
+
+/* ============================================================
+   PERSISTENCE
+   ============================================================ */
+let saveTimer = null;
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  setSaveIndicator("saving");
+  saveTimer = setTimeout(() => {
+    saveState();
+    setSaveIndicator("saved");
+  }, 300);
+}
+
+function setSaveIndicator(kind) {
+  const el = document.getElementById("saveIndicator");
+  const txt = document.getElementById("saveIndicatorText");
+  el.classList.remove("saved", "saving", "unsaved");
+  el.classList.add(kind);
+  txt.textContent = kind === "saved" ? "Saved"
+                  : kind === "saving" ? "Saving..."
+                  : "Unsaved";
+}
+
+function saveState() {
+  try {
+    const snap = {
+      topKind: state.topKind,
+      instances: state.instances,
+      activeInstanceId: state.activeInstanceId,
+      dataLoadedFrom: state.dataLoadedFrom,
+      settings: state.settings
+    };
+    localStorage.setItem(STATE_KEY, JSON.stringify(snap));
+    localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+  } catch (e) {
+    console.error("saveState failed", e);
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if (!raw) return false;
+    const snap = JSON.parse(raw);
+    if (snap.topKind) state.topKind = snap.topKind;
+    if (Array.isArray(snap.instances) && snap.instances.length) {
+      state.instances = snap.instances;
+    }
+    if (snap.activeInstanceId) state.activeInstanceId = snap.activeInstanceId;
+    if (snap.dataLoadedFrom) state.dataLoadedFrom = snap.dataLoadedFrom;
+    if (snap.settings) state.settings = Object.assign(state.settings, snap.settings);
+    const prefsRaw = localStorage.getItem(PREFS_KEY);
+    if (prefsRaw) {
+      const p = JSON.parse(prefsRaw);
+      state.prefs = Object.assign(state.prefs, p);
+    }
+    return true;
+  } catch (e) {
+    console.error("loadState failed", e);
+    return false;
+  }
+}
+
+function markInstanceDirty(inst) {
+  inst.dirty = true;
+  refreshSubTabs();
+}
+
+function markInstanceClean(inst) {
+  inst.dirty = false;
+  refreshSubTabs();
+}
+
+/* ============================================================
+   RENDER — top tabs
+   ============================================================ */
+function renderTopTabs() {
+  document.querySelectorAll(".top-tab").forEach(el => {
+    el.classList.toggle("active", el.dataset.kind === state.topKind);
+  });
+  const showInstance = state.topKind !== "data";
+  document.getElementById("subTabsAndMain").style.display = showInstance ? "block" : "none";
+  document.getElementById("dataContainer").style.display = showInstance ? "none" : "block";
+}
+
+/* ============================================================
+   RENDER — sub tabs (instances)
+   ============================================================ */
+function refreshSubTabs() {
+  const bar = document.getElementById("subTabs");
+  bar.innerHTML = "";
+  const visible = state.instances.filter(i => i.kind === state.topKind);
+  visible.forEach(inst => {
+    const el = document.createElement("div");
+    el.className = "sub-tab" + (inst.id === state.activeInstanceId ? " active" : "")
+                 + (inst.dirty ? " dirty" : "");
+    el.dataset.id = inst.id;
+    el.innerHTML = `<span class="dirty-dot"></span>
+                    <span class="label">${escapeHtml(inst.title)}</span>
+                    <span class="close" title="Close">×</span>`;
+    el.addEventListener("click", e => {
+      if (e.target.classList.contains("close")) {
+        e.stopPropagation();
+        closeInstance(inst.id);
+      } else {
+        state.activeInstanceId = inst.id;
+        refreshAll();
+        scheduleSave();
+      }
+    });
+    bar.appendChild(el);
+  });
+  const plus = document.createElement("div");
+  plus.className = "sub-tab-new";
+  plus.textContent = "+";
+  plus.title = "New instance";
+  plus.addEventListener("click", addInstance);
+  bar.appendChild(plus);
+}
+
+function getActiveInstance() {
+  return state.instances.find(i => i.id === state.activeInstanceId) || null;
+}
+
+function addInstance() {
+  let count = 1;
+  const baseName = state.topKind === "regression" ? "Regression" : "Bug";
+  const existing = state.instances.filter(i => i.kind === state.topKind);
+  while (existing.some(i => i.title === baseName + " " + count)) count++;
+  const inst = state.topKind === "regression"
+    ? makeEmptyRegressionInstance()
+    : makeEmptyBugInstance();
+  inst.title = baseName + " " + count;
+  inst.dirty = true;
+  state.instances.push(inst);
+  state.activeInstanceId = inst.id;
+  refreshAll();
+  scheduleSave();
+}
+
+function closeInstance(id) {
+  const inst = state.instances.find(i => i.id === id);
+  if (!inst) return;
+  const doClose = () => {
+    state.instances = state.instances.filter(i => i.id !== id);
+    if (state.activeInstanceId === id) {
+      const remaining = state.instances.filter(i => i.kind === state.topKind);
+      state.activeInstanceId = remaining.length ? remaining[0].id : null;
+      if (!state.activeInstanceId) addInstance();
+    }
+    refreshAll();
+    scheduleSave();
+  };
+  if (inst.dirty && !state.prefs.dontAskOnClose) {
+    showConfirmModal({
+      title: "Discard changes?",
+      body: `Discard unsaved changes to "${inst.title}"?`,
+      confirmText: "Discard",
+      confirmClass: "danger",
+      showDontAsk: true,
+      onConfirm: (dontAsk) => {
+        if (dontAsk) {
+          state.prefs.dontAskOnClose = true;
+          localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
+        }
+        doClose();
+      }
+    });
+  } else {
+    doClose();
+  }
+}
+
+/* ============================================================
+   RENDER — form panel
+   ============================================================ */
+function renderForm() {
+  const inst = getActiveInstance();
+  const panel = document.getElementById("formPanel");
+  if (!inst) { panel.innerHTML = "<p>No instance selected.</p>"; return; }
+  if (inst.kind === "bug") {
+    panel.innerHTML = buildBugFormHtml(inst);
+  } else {
+    panel.innerHTML = buildRegressionFormHtml(inst);
+  }
+  wireFormEvents(inst);
+  revalidate(inst);
+  renderOutput();
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function buildOptions(list, current, placeholder) {
+  const ph = placeholder ? `<option value="">${escapeHtml(placeholder)}</option>` : "";
+  const opts = list.map(v => {
+    const sel = v === current ? " selected" : "";
+    return `<option value="${escapeHtml(v)}"${sel}>${escapeHtml(v)}</option>`;
+  }).join("");
+  return ph + opts;
+}
+
+function fieldHtml(name, label, value, opts = {}) {
+  const err = opts._error || "";
+  const invalid = err ? " invalid" : "";
+  return `<div class="field${invalid}" data-field="${name}">
+    <label>${escapeHtml(label)}</label>
+    ${opts.html || `<input type="text" data-bind="${name}" value="${escapeHtml(value)}" />`}
+    <div class="field-error">${escapeHtml(err)}</div>
+  </div>`;
+}
+
+// Helper: render an autocomplete input field. `acKey` identifies which
+// list to use (e.g. "regions", "platforms", "maps", "pois"). The user
+// can type freely; matching items appear in the dropdown. Free-text
+// values that don't match the list are allowed.
+function buildAcField(name, label, value, acKey, isInvalidClass, errorText) {
+  return `<div class="field autocomplete${isInvalidClass}" data-field="${name}">
+    <label>${escapeHtml(label)}</label>
+    <div class="autocomplete-input-wrap">
+      <input type="text" data-bind="${name}" data-autocomplete="${acKey}" value="${escapeHtml(value)}" />
+      <span class="autocomplete-arrow" data-ac-toggle title="Show all options">▼</span>
+    </div>
+    <div class="autocomplete-list"></div>
+    <div class="field-error">${escapeHtml(errorText || "")}</div>
+  </div>`;
+}
+
+function buildBugFormHtml(inst) {
+  const f = inst.fields;
+  const d = state.data;
+  const isInvalid = (n) => inst.errors[n] ? " invalid" : "";
+  const err = (n) => inst.errors[n] || "";
+
+  return `
+    <div class="form-section">
+      <h4>Summary header</h4>
+      <div class="row-2">
+        <div class="field${isInvalid('team')}" data-field="team">
+          <label>Team</label>
+          <input type="text" data-bind="team" value="${escapeHtml(f.team)}" />
+          <div class="field-error">${err('team')}</div>
+        </div>
+        ${buildAcField('region', 'Region', f.region, 'regions', isInvalid('region'), err('region'))}
+      </div>
+      <div class="row-3">
+        <div class="field${isInvalid('version')}" data-field="version">
+          <label>Version</label>
+          <input type="text" data-bind="version" value="${escapeHtml(f.version)}" />
+          <div class="field-error">${err('version')}</div>
+        </div>
+        ${buildAcField('platform', 'Platform', f.platform, 'platforms', isInvalid('platform'), err('platform'))}
+        <div class="field${isInvalid('client')}" data-field="client">
+          <label>Client</label>
+          <input type="text" data-bind="client" value="${escapeHtml(f.client)}" />
+          <div class="field-error">${err('client')}</div>
+        </div>
+      </div>
+      <div class="row-3">
+        ${buildAcField('mode', 'Mode', f.mode, 'modes', isInvalid('mode'), err('mode'))}
+        ${buildAcField('map', 'Map', f.map, 'maps', isInvalid('map'), err('map'))}
+        ${buildAcField('poi', 'POI', f.poi, 'pois', isInvalid('poi'), err('poi'))}
+      </div>
+      <div class="row-2">
+        ${buildAcField('bugType', 'Bug type', f.bugType, 'bugTypes', isInvalid('bugType'), err('bugType'))}
+        <div class="field${isInvalid('shortDescription')}" data-field="shortDescription">
+          <label>Short description</label>
+          <input type="text" data-bind="shortDescription" value="${escapeHtml(f.shortDescription)}" />
+          <div class="field-error">${err('shortDescription')}</div>
+        </div>
+      </div>
+      <div class="field${isInvalid('narrativeCondition')}" data-field="narrativeCondition">
+        <label>Narrative condition (1-3 sentences)</label>
+        <textarea data-bind="narrativeCondition" rows="2">${escapeHtml(f.narrativeCondition)}</textarea>
+        <div class="field-error">${err('narrativeCondition')}</div>
+      </div>
+      <div class="field${isInvalid('coords')}" data-field="coords">
+        <label>Coordinates — format: ${escapeHtml(d.rules.coord_fmt)}</label>
+        <input type="text" data-bind="coords" value="${escapeHtml(f.coords)}" />
+        <div class="field-error">${err('coords')}</div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h4>Description</h4>
+      <div class="field">
+        <label>Long description</label>
+        <textarea data-bind="description" rows="4">${escapeHtml(f.description)}</textarea>
+      </div>
+      <div class="field">
+        <label>Variables / arguments (one per line)</label>
+        <textarea data-bind="variables" rows="3">${escapeHtml(f.variables)}</textarea>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h4>Build info</h4>
+      <div class="row-3">
+        <div class="field${isInvalid('cod')}" data-field="cod">
+          <label>COD</label>
+          <input type="text" data-bind="cod" value="${escapeHtml(f.cod)}" />
+          <div class="field-error">${err('cod')}</div>
+        </div>
+        <div class="field${isInvalid('cl')}" data-field="cl">
+          <label>CL</label>
+          <input type="text" data-bind="cl" value="${escapeHtml(f.cl)}" />
+          <div class="field-error">${err('cl')}</div>
+        </div>
+        <div class="field${isInvalid('bspCl')}" data-field="bspCl">
+          <label>BSP CL</label>
+          <input type="text" data-bind="bspCl" value="${escapeHtml(f.bspCl)}" />
+          <div class="field-error">${err('bspCl')}</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Package</label>
+        <input type="text" data-bind="package" value="${escapeHtml(f.package)}" />
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>CCS</label>
+          <input type="text" data-bind="ccs" value="${escapeHtml(f.ccs)}" />
+        </div>
+        <div class="field">
+          <label>BSP</label>
+          <input type="text" data-bind="bsp" value="${escapeHtml(f.bsp)}" />
+        </div>
+      </div>
+      <div class="field${isInvalid('buildUrl')}" data-field="buildUrl">
+        <label>Build URL</label>
+        <input type="text" data-bind="buildUrl" value="${escapeHtml(f.buildUrl)}" />
+        <div class="field-error">${err('buildUrl')}</div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h4>Repro</h4>
+      <div class="field">
+        <label>Steps to reproduce (one per line)</label>
+        <textarea data-bind="reproSteps" rows="4">${escapeHtml(f.reproSteps)}</textarea>
+      </div>
+      <div class="field">
+        <label>Results (Expected / Actual)</label>
+        <textarea data-bind="results" rows="3">${escapeHtml(f.results)}</textarea>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h4>Notes</h4>
+      <div class="row-3">
+        <div class="field${isInvalid('reproduction')}" data-field="reproduction">
+          <label>Reproduction (X/Y)</label>
+          <input type="text" data-bind="reproduction" value="${escapeHtml(f.reproduction)}" />
+          <div class="field-error">${err('reproduction')}</div>
+        </div>
+        <div class="field">
+          <label>Profile</label>
+          <input type="text" data-bind="profile" value="${escapeHtml(f.profile)}" />
+        </div>
+        <div class="field">
+          <label>Timestamp</label>
+          <input type="text" data-bind="timestamp" value="${escapeHtml(f.timestamp)}" />
+        </div>
+      </div>
+      <div class="row-3">
+        <div class="field">
+          <label>Timezone</label>
+          <input type="text" data-bind="tz" value="${escapeHtml(f.tz)}" />
+        </div>
+        ${buildAcField('onlineOrLan', 'Online / LAN', f.onlineOrLan, 'onlineOrLan', '', '')}
+        <div class="field">
+          <label>Executable</label>
+          <input type="text" data-bind="executable" value="${escapeHtml(f.executable)}" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Viewpos</label>
+        <input type="text" data-bind="notesViewpos" value="${escapeHtml(f.notesViewpos)}" />
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Material</label>
+          <input type="text" data-bind="material" value="${escapeHtml(f.material)}" />
+        </div>
+        <div class="field">
+          <label>Model</label>
+          <input type="text" data-bind="model" value="${escapeHtml(f.model)}" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h4>Keywords (${d.rules.kw_count} required, no overlap with bug body)</h4>
+      <div class="chips ${inst.errors.keywords ? 'invalid' : ''}" id="keywordsChips">
+        ${f.keywords.map(k => `
+          <span class="chip">${escapeHtml(k)}
+            <button data-kw-remove="${escapeHtml(k)}" title="Remove">×</button>
+          </span>
+        `).join("")}
+        <input type="text" id="keywordsInput" placeholder="Type and press Enter..." />
+      </div>
+      ${inst.errors.keywords ? `<div class="field-error" style="display:block;position:static;margin-top:4px;background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:3px;border-left:3px solid #dc2626;">
+        <strong>Keywords error:</strong> ${escapeHtml(inst.errors.keywords)}
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function buildRegressionFormHtml(inst) {
+  const f = inst.fields;
+  const d = state.data;
+  const isInvalid = (n) => inst.errors[n] ? " invalid" : "";
+  const err = (n) => inst.errors[n] || "";
+
+  return `
+    <div class="form-section">
+      <h4>Regression</h4>
+      <div class="row-3">
+        ${buildAcField('platform', 'Platform', f.platform, 'platforms', isInvalid('platform'), err('platform'))}
+        <div class="field${isInvalid('client')}" data-field="client">
+          <label>Client</label>
+          <input type="text" data-bind="client" value="${escapeHtml(f.client)}" />
+          <div class="field-error">${err('client')}</div>
+        </div>
+        ${buildAcField('regressionStatus', 'Status', f.regressionStatus, 'regressionStatuses', isInvalid('regressionStatus'), err('regressionStatus'))}
+      </div>
+      <div class="row-2">
+        <div class="field${isInvalid('cl')}" data-field="cl">
+          <label>CL</label>
+          <input type="text" data-bind="cl" value="${escapeHtml(f.cl)}" />
+          <div class="field-error">${err('cl')}</div>
+        </div>
+        <div class="field${isInvalid('verifiedBy')}" data-field="verifiedBy">
+          <label>Verified by</label>
+          <input type="text" data-bind="verifiedBy" value="${escapeHtml(f.verifiedBy)}" />
+          <div class="field-error">${err('verifiedBy')}</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input type="text" data-bind="location" value="${escapeHtml(f.location)}" />
+      </div>
+      <div class="field${isInvalid('description')}" data-field="description">
+        <label>Description (the line about the issue)</label>
+        <input type="text" data-bind="description" value="${escapeHtml(f.description)}" />
+        <div class="field-error">${err('description')}</div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h4>Reproduction</h4>
+      <div class="row-2">
+        <div class="field${isInvalid('reproductionRate')}" data-field="reproductionRate">
+          <label>Reproduction rate (X/Y)</label>
+          <input type="text" data-bind="reproductionRate" value="${escapeHtml(f.reproductionRate)}" />
+          <div class="field-error">${err('reproductionRate')}</div>
+        </div>
+        <div class="field">
+          <label>Regressed in (e.g. test.exe)</label>
+          <input type="text" data-bind="regressedIn" value="${escapeHtml(f.regressedIn)}" />
+        </div>
+      </div>
+      <div class="row-3">
+        <div class="field">
+          <label>Profile</label>
+          <input type="text" data-bind="profile" value="${escapeHtml(f.profile)}" />
+        </div>
+        <div class="field">
+          <label>Timestamp</label>
+          <input type="text" data-bind="timestamp" value="${escapeHtml(f.timestamp)}" />
+        </div>
+        <div class="field">
+          <label>Timezone</label>
+          <input type="text" data-bind="tz" value="${escapeHtml(f.tz)}" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h4>Build info</h4>
+      <div class="row-3">
+        <div class="field${isInvalid('cod')}" data-field="cod">
+          <label>COD</label>
+          <input type="text" data-bind="cod" value="${escapeHtml(f.cod)}" />
+          <div class="field-error">${err('cod')}</div>
+        </div>
+        <div class="field">
+          <label>CCS / FFOTD</label>
+          <input type="text" data-bind="ccsFfotd" value="${escapeHtml(f.ccsFfotd)}" />
+        </div>
+        <div class="field">
+          <label>BSP</label>
+          <input type="text" data-bind="bsp" value="${escapeHtml(f.bsp)}" />
+        </div>
+      </div>
+      <div class="field${isInvalid('buildUrl')}" data-field="buildUrl">
+        <label>Build URL</label>
+        <input type="text" data-bind="buildUrl" value="${escapeHtml(f.buildUrl)}" />
+        <div class="field-error">${err('buildUrl')}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   FORM WIRING
+   ============================================================ */
+function wireFormEvents(inst) {
+  const panel = document.getElementById("formPanel");
+  panel.querySelectorAll("[data-bind]").forEach(el => {
+    const name = el.dataset.bind;
+    // "input" only updates the model + dirty flag. It does NOT
+    // revalidate, re-render, or save — those happen on blur, on
+    // tab change, and on beforeunload. This keeps typing fast and
+    // never interrupts the user's keystroke.
+    el.addEventListener("input", () => {
+      inst.fields[name] = el.value;
+      // When the user edits the map, the POI is no longer valid.
+      // We just clear it in the model; we don't re-render the form
+      // because that would steal focus from the map input. The POI
+      // field's visible value will be cleared on the next revalidate
+      // (e.g. on blur, or when the user changes tab).
+      if (name === "map") {
+        inst.fields.poi = "";
+        // Refresh the POI input visually without re-rendering the form
+        const poiEl = panel.querySelector('[data-bind="poi"]');
+        if (poiEl) poiEl.value = "";
+      }
+      markInstanceDirty(inst);
+    });
+    // "blur" is when we do the heavy work: validate, render output,
+    // and save. This is the natural moment — the user has finished
+    // with this field.
+    el.addEventListener("blur", () => {
+      revalidate(inst);
+      renderOutput();
+      // The media panel depends on platform, client, and buildUrl —
+      // refresh it when any of those change.
+      if (name === "platform" || name === "client" || name === "buildUrl") {
+        renderMediaPanel();
+      }
+      saveState();
+      setSaveIndicator("saved");
+    });
+    // "change" covers cases that don't fire "input" (some selects,
+    // though we don't use them anymore) and Enter-key commits.
+    el.addEventListener("change", () => {
+      inst.fields[name] = el.value;
+      revalidate(inst);
+      renderOutput();
+      if (name === "platform" || name === "client" || name === "buildUrl") {
+        renderMediaPanel();
+      }
+      markInstanceDirty(inst);
+      saveState();
+      setSaveIndicator("saved");
+    });
+  });
+  // Autocomplete
+  panel.querySelectorAll(".autocomplete input[data-autocomplete]").forEach(input => {
+    wireAutocomplete(input, inst);
+  });
+  // Keywords
+  if (inst.kind === "bug") {
+    const chips = document.getElementById("keywordsChips");
+    const kwInput = document.getElementById("keywordsInput");
+    if (chips && kwInput) {
+      chips.addEventListener("click", () => kwInput.focus());
+      // Re-render the keyword chips in place without rebuilding the
+      // whole form (which would steal focus from the keyword input).
+      const refreshKeywords = () => {
+        const cur = kwInput.value;
+        chips.innerHTML = inst.fields.keywords.map(k =>
+          `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Remove">×</button></span>`
+        ).join("") + `<input type="text" id="keywordsInput" placeholder="Type and press Enter..." />`;
+        // re-bind the new input + remove buttons
+        const newInput = document.getElementById("keywordsInput");
+        newInput.value = cur;
+        newInput.addEventListener("keydown", kwKeyHandler);
+        newInput.focus();
+        chips.querySelectorAll("[data-kw-remove]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const v = btn.dataset.kwRemove;
+            inst.fields.keywords = inst.fields.keywords.filter(k => k !== v);
+            markInstanceDirty(inst);
+            revalidate(inst);
+            refreshKeywords();
+            saveState();
+          });
+        });
+      };
+      const kwKeyHandler = (e) => {
+        if (e.key === "Enter" || e.key === ",") {
+          e.preventDefault();
+          const v = kwInput.value.trim();
+          if (v && !inst.fields.keywords.includes(v)) {
+            inst.fields.keywords.push(v);
+            markInstanceDirty(inst);
+            revalidate(inst);
+            refreshKeywords();
+            saveState();
+          } else if (v) {
+            kwInput.value = "";
+          }
+        } else if (e.key === "Backspace" && !kwInput.value && inst.fields.keywords.length) {
+          inst.fields.keywords.pop();
+          markInstanceDirty(inst);
+          revalidate(inst);
+          refreshKeywords();
+          saveState();
+        }
+      };
+      kwInput.addEventListener("keydown", kwKeyHandler);
+      chips.querySelectorAll("[data-kw-remove]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const v = btn.dataset.kwRemove;
+          inst.fields.keywords = inst.fields.keywords.filter(k => k !== v);
+          markInstanceDirty(inst);
+          revalidate(inst);
+          refreshKeywords();
+          saveState();
+        });
+      });
+    }
+  }
+}
+
+// Map from data-autocomplete value to the corresponding list in state.data
+const AC_KEYS = {
+  regions:            "regions",
+  platforms:          "platforms",
+  modes:              "modes",
+  bugTypes:           "bugTypes",
+  regressionStatuses: "regressionStatuses",
+  onlineOrLan:        "onlineOrLan",
+  maps:               "maps",
+  pois:               null   // special: depends on the selected map
+};
+
+function wireAutocomplete(input, inst) {
+  const kind = input.dataset.autocomplete;
+  const wrap = input.closest(".autocomplete");
+  const list = wrap.querySelector(".autocomplete-list");
+  const arrow = wrap.querySelector("[data-ac-toggle]");
+  let activeIdx = -1;
+
+  const getOptions = () => {
+    if (kind === "pois") {
+      const m = inst.fields.map;
+      return (m && state.data.pois[m]) ? state.data.pois[m] : [];
+    }
+    const dataKey = AC_KEYS[kind];
+    if (dataKey) return state.data[dataKey] || [];
+    return [];
+  };
+
+  // showAll=true means: show every option (used by arrow click / focus)
+  // showAll=false means: filter by what the user has typed
+  const renderList = (showAll) => {
+    const all = getOptions();
+    const q = input.value.trim().toLowerCase();
+    let items = all;
+    if (!showAll && q) {
+      items = all.filter(v => v.toLowerCase().includes(q));
+    }
+    if (!items.length) {
+      // Free-text allowed: show a hint instead of nothing
+      list.innerHTML = `<div class="autocomplete-empty">No matches — keep typing for a free-text value</div>`;
+    } else {
+      const re = q ? new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig") : null;
+      list.innerHTML = items.slice(0, 50).map(v => {
+        const html = re ? escapeHtml(v).replace(re, "<mark>$1</mark>") : escapeHtml(v);
+        return `<div class="autocomplete-item" data-v="${escapeHtml(v)}">${html}</div>`;
+      }).join("");
+    }
+    list.querySelectorAll(".autocomplete-item").forEach(it => {
+      it.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        input.value = it.dataset.v;
+        input.dispatchEvent(new Event("input"));
+        wrap.classList.remove("open");
+      });
+    });
+    activeIdx = -1;
+    wrap.classList.add("open");
+  };
+
+  // Arrow click: open with all options
+  if (arrow) {
+    arrow.addEventListener("mousedown", (e) => {
+      e.preventDefault();  // don't steal focus from the input
+      if (wrap.classList.contains("open")) {
+        wrap.classList.remove("open");
+      } else {
+        renderList(true);
+        input.focus();
+      }
+    });
+  }
+
+  // Focus on the input: show filtered (or all if empty)
+  input.addEventListener("focus", () => renderList(false));
+  input.addEventListener("input", () => renderList(false));
+  // Blur: close, but use a delay so clicks on items still register
+  input.addEventListener("blur", () => setTimeout(() => {
+    wrap.classList.remove("open");
+    activeIdx = -1;
+  }, 150));
+
+  input.addEventListener("keydown", (e) => {
+    const items = list.querySelectorAll(".autocomplete-item");
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      // If list is closed, open it first
+      if (!wrap.classList.contains("open")) renderList(false);
+      activeIdx = Math.min(items.length - 1, activeIdx + 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIdx = Math.max(0, activeIdx - 1);
+    } else if (e.key === "Enter" && wrap.classList.contains("open") && activeIdx >= 0 && items[activeIdx]) {
+      e.preventDefault();
+      input.value = items[activeIdx].dataset.v;
+      input.dispatchEvent(new Event("input"));
+      wrap.classList.remove("open");
+      activeIdx = -1;
+      return;
+    } else if (e.key === "Escape") {
+      wrap.classList.remove("open");
+      activeIdx = -1;
+      return;
+    } else {
+      return;
+    }
+    items.forEach((it, i) => it.classList.toggle("active", i === activeIdx));
+    if (activeIdx >= 0 && items[activeIdx]) items[activeIdx].scrollIntoView({ block: "nearest" });
+  });
+}
+
+// Close all autocompletes when clicking outside any of them
+document.addEventListener("mousedown", (e) => {
+  if (!e.target.closest(".autocomplete")) {
+    document.querySelectorAll(".autocomplete.open").forEach(el => el.classList.remove("open"));
+  }
+});
+
+/* ============================================================
+   VALIDATION
+   ============================================================ */
+function revalidate(inst) {
+  inst.errors = {};
+  if (inst.kind === "bug") validateBug(inst);
+  else validateRegression(inst);
+  // Reflect errors into DOM
+  const panel = document.getElementById("formPanel");
+  panel.querySelectorAll(".field").forEach(el => {
+    const name = el.dataset.field;
+    if (!name) return;
+    const errEl = el.querySelector(".field-error");
+    const err = inst.errors[name];
+    if (err) {
+      el.classList.add("invalid");
+      if (errEl) errEl.textContent = err;
+    } else {
+      el.classList.remove("invalid");
+      if (errEl) errEl.textContent = "";
+    }
+  });
+  // chips (keywords): toggle invalid class; the error block is rendered
+  // inline by buildBugFormHtml, so we just toggle the class here.
+  const chips = document.getElementById("keywordsChips");
+  if (chips) {
+    chips.classList.toggle("invalid", !!inst.errors.keywords);
+  }
+}
+
+function validateBug(inst) {
+  const f = inst.fields;
+  const r = state.data.rules;
+  const req = (n) => { if (!String(f[n] || "").trim()) inst.errors[n] = "Required"; };
+  req("team"); req("region"); req("version"); req("platform");
+  req("client"); req("mode"); req("map"); req("poi");
+  req("bugType"); req("shortDescription"); req("narrativeCondition");
+  req("coords");
+  req("cod"); req("cl"); req("package"); req("buildUrl");
+  req("reproduction"); req("executable");
+  // description and variables are NOT required (free text)
+
+  // Coord regex
+  if (f.coords) {
+    try {
+      const re = new RegExp(r.coord_re);
+      if (!re.test(f.coords.trim())) inst.errors.coords = `Format: ${r.coord_fmt}`;
+    } catch (e) { /* bad regex, ignore */ }
+  }
+  // CL numeric
+  if (f.cl && !/^\d+$/.test(f.cl.trim())) inst.errors.cl = "Must be numeric";
+  // BSP CL
+  if (f.bspCl && f.bspCl !== "N/A") {
+    if (!/^\d+$/.test(f.bspCl.trim())) inst.errors.bspCl = "Numeric or N/A";
+    else if (f.bspCl.trim() === f.cl.trim()) inst.errors.bspCl = "BSP CL must differ from CL";
+  }
+  // Reproduction
+  if (f.reproduction) {
+    try { if (!new RegExp(r.repro_re).test(f.reproduction.trim()))
+      inst.errors.reproduction = "Format: X/Y"; } catch (e) {}
+  }
+  // Build URL prefix
+  if (f.buildUrl && !f.buildUrl.trim().startsWith(r.buildUrl_prefix)) {
+    inst.errors.buildUrl = `Must start with ${r.buildUrl_prefix}`;
+  }
+  // Keywords
+  const kwCount = parseInt(r.kw_count, 10) || 5;
+  if (f.keywords.length !== kwCount) {
+    inst.errors.keywords = `Need exactly ${kwCount} keywords (have ${f.keywords.length})`;
+  } else {
+    const unique = new Set(f.keywords.map(k => k.toLowerCase()));
+    if (unique.size !== f.keywords.length) {
+      inst.errors.keywords = "Keywords must be unique";
+    } else {
+      // overlap check (case-insensitive)
+      const body = (f.shortDescription + " " + f.narrativeCondition + " " +
+                    f.description + " " + f.variables + " " +
+                    f.reproSteps + " " + f.results + " " +
+                    f.material + " " + f.model).toLowerCase();
+      const conflict = f.keywords.find(k => body.includes(k.toLowerCase()));
+      if (conflict) inst.errors.keywords = `"${conflict}" appears in the bug body`;
+    }
+  }
+}
+
+function validateRegression(inst) {
+  const f = inst.fields;
+  const r = state.data.rules;
+  const req = (n) => { if (!String(f[n] || "").trim()) inst.errors[n] = "Required"; };
+  req("platform"); req("client"); req("regressionStatus");
+  req("cl"); req("verifiedBy"); req("description");
+  req("reproductionRate"); req("cod"); req("buildUrl");
+  if (f.cl && !/^\d+$/.test(f.cl.trim())) inst.errors.cl = "Must be numeric";
+  if (f.reproductionRate) {
+    try { if (!new RegExp(r.repro_re).test(f.reproductionRate.trim()))
+      inst.errors.reproductionRate = "Format: X/Y"; } catch (e) {}
+  }
+  if (f.buildUrl && !f.buildUrl.trim().startsWith(r.buildUrl_prefix)) {
+    inst.errors.buildUrl = `Must start with ${r.buildUrl_prefix}`;
+  }
+}
+
+/* ============================================================
+   OUTPUT
+   ============================================================ */
+function buildBugOutput(inst) {
+  const f = inst.fields;
+  // Platform may already include a client in parens (e.g. "PC(MSS)").
+  // If so, don't append the client twice.
+  const platformStr = f.platform && f.platform.includes("(")
+    ? f.platform
+    : `${f.platform}(${f.client})`;
+  const summary = [
+    f.team, f.region, f.version,
+    platformStr,
+    f.mode, f.map, f.poi, f.bugType, f.shortDescription,
+    `Cuando ${f.narrativeCondition} (${f.coords})`
+  ].filter(Boolean).join(" - ");
+
+  const description = f.description || "";
+  const variables = (f.variables || "").split("\n").filter(l => l.trim());
+  const repro = (f.reproSteps || "").split("\n").filter(l => l.trim());
+  const results = f.results || "";
+  const viewpos = f.notesViewpos || f.coords || "";
+
+  const parts = [];
+  parts.push(summary);
+  parts.push("");
+  parts.push(description);
+  parts.push("");
+  if (variables.length) {
+    parts.push("+Variables/Argumentos Usados:+");
+    variables.forEach(v => parts.push("+ " + v));
+    parts.push("");
+  }
+  parts.push("+Información de Compilación:+");
+  parts.push(`COD ${f.cod} CL: ${f.cl}`);
+  if (f.bspCl && f.bspCl !== "N/A") parts.push(`BSP CL: ${f.bspCl}`);
+  parts.push(`Paquete: ${f.package}`);
+  parts.push(`CCS/FFOTD: ${f.ccs || "N/A"}`);
+  parts.push(`BSP: ${f.bsp || "N/A"}`);
+  parts.push(`Ubicación de compilación: ${f.buildUrl}`);
+  parts.push("");
+  if (repro.length) {
+    parts.push("+Pasos para Reproducir:+");
+    repro.forEach((s, i) => parts.push(`# ${s}`));
+    parts.push("");
+  }
+  if (results) { parts.push("**Resultados:**"); parts.push(results); parts.push(""); }
+  parts.push("+Notas:+");
+  parts.push(`* *Reproducción:* ${f.reproduction}`);
+  parts.push(`* *Perfil:* ${f.profile}`);
+  parts.push(`* *Marca de tiempo:* ${f.timestamp} ${f.tz}`);
+  parts.push(`* *Online/LAN:* ${f.onlineOrLan}`);
+  parts.push(`* *Ejecutable:* ${f.executable}`);
+  if (viewpos) parts.push(`* *Posición de vista:* (${viewpos})`);
+  if (f.material) parts.push(`* *Material:* ${f.material}`);
+  if (f.model) parts.push(`* *Modelos:* ${f.model}`);
+  parts.push(`* *CCS/FFOTD:* ${f.ccs || "N/A"}`);
+  parts.push(`* *BSP:* ${f.bsp || "N/A"}`);
+  parts.push(`* *Ubicación de compilación:* ${f.buildUrl}`);
+  parts.push("");
+  parts.push(`+Palabras_clave:+ ${f.keywords.join(", ")}`);
+
+  return {
+    summary,
+    description: f.narrativeCondition + " " + f.coords,
+    viewpos: `(${viewpos})`,
+    mediaName: `${(f.map||"map").replace(/\s+/g,"_")}_${(f.poi||"poi").replace(/\s+/g,"")}_${(f.bugType||"type")}`,
+    full: parts.join("\n")
+  };
+}
+
+function buildRegressionOutput(inst) {
+  const f = inst.fields;
+  const platformStr = f.platform && f.platform.includes("(")
+    ? f.platform
+    : `${f.platform}(${f.client})`;
+  const head = `${platformStr} - ${f.regressionStatus} en CL# ${f.cl} por ${f.verifiedBy} desde ${f.location}`;
+  const lines = [];
+  lines.push(head);
+  if (f.description) lines.push("* " + f.description);
+  lines.push(`* Tasa de Reproducción: ${f.reproductionRate}`);
+  lines.push(`* Regresado en: ${f.regressedIn}`);
+  lines.push(`* Perfil: ${f.profile}`);
+  lines.push(`* Marca de tiempo: ${f.timestamp} ${f.tz}`);
+  lines.push(`* COD ${f.cod} CL: ${f.cl}`);
+  lines.push(`* CCS/FFOTD: ${f.ccsFfotd || "N/A"}`);
+  lines.push(`* BSP: ${f.bsp || "N/A"}`);
+  lines.push(`* Ubicación de compilación: ${f.buildUrl}`);
+  return { full: lines.join("\n") };
+}
+
+// ---------- Media naming ----------
+const MEDIA_TYPES = ["Vid", "Pic", "ConsoleLog", "DxDiag"];
+
+// Extract the buildId from a getbuild:// URL, or any numeric token
+// at the end of the URL path. Returns "" if nothing is found.
+function extractBuildNumber(url) {
+  if (!url) return "";
+  // Prefer the explicit buildId=... query parameter
+  const m = url.match(/[?&]buildId=([^&]+)/i);
+  if (m) return m[1];
+  // Fallback: any numeric-ish token in the URL (the last one)
+  const tokens = url.match(/[A-Za-z0-9_-]+/g) || [];
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    if (/^\d{3,}$/.test(tokens[i])) return tokens[i];
+  }
+  return "";
+}
+
+// Build the platform portion used in media filenames.
+// For Bug: prefer "platform(client)" if both are present, else just platform.
+// For Regression: same logic.
+function getPlatformForMedia(inst) {
+  const f = inst.fields || {};
+  const plat = (f.platform || "").trim();
+  const client = (f.client || "").trim();
+  if (!plat) return "";
+  // Avoid duplicate "(client)" if platform already has parens
+  if (plat.includes("(")) return plat;
+  if (client) return `${plat}(${client})`;
+  return plat;
+}
+
+// Build a media filename like "Vid_ABC123_PC(MSS)_12345_(1)".
+// Returns "" if any required piece is missing.
+function buildMediaName(mediaType, inst) {
+  if (!inst || !inst.mediaKeys) return "";
+  const key = (inst.mediaKeys[mediaType] || "").trim();
+  if (!key) return "";
+  const platform = getPlatformForMedia(inst);
+  if (!platform) return "";
+  const buildNumber = extractBuildNumber(inst.fields.buildUrl || "");
+  if (!buildNumber) return "";
+  return `${mediaType}_${key}_${platform}_${buildNumber}_(1)`;
+}
+
+// Update the media panel: input values (without overwriting if user
+// is typing in one), button states, and the preview line.
+function renderMediaPanel() {
+  const inst = getActiveInstance();
+  if (!inst) return;
+  // Ensure the keys object exists (older saved instances may not have it)
+  if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
+  const preview = document.getElementById("mediaPreview");
+  const lines = [];
+  MEDIA_TYPES.forEach(t => {
+    const row = document.querySelector(`[data-media="${t}"]`);
+    if (!row) return;
+    const input = row.querySelector(`[data-media-key="${t}"]`);
+    const btn = row.querySelector(`[data-media-copy="${t}"]`);
+    // Set input value only if it differs (don't fight the user's cursor)
+    if (input && document.activeElement !== input) {
+      input.value = inst.mediaKeys[t] || "";
+    }
+    const name = buildMediaName(t, inst);
+    if (btn) {
+      btn.disabled = !name;
+      btn.title = name ? `Copy "${name}"` : "Fill in key, platform, and build URL first";
+    }
+    if (name) lines.push(name);
+  });
+  if (preview) preview.textContent = lines.join("\n");
+}
+
+// Wire the media-panel inputs and copy buttons. Idempotent: only
+// attaches handlers once (we mark each element with a flag).
+let _mediaPanelWired = false;
+function wireMediaPanel() {
+  if (_mediaPanelWired) return;
+  _mediaPanelWired = true;
+  MEDIA_TYPES.forEach(t => {
+    const row = document.querySelector(`[data-media="${t}"]`);
+    if (!row) return;
+    const input = row.querySelector(`[data-media-key="${t}"]`);
+    const btn = row.querySelector(`[data-media-copy="${t}"]`);
+    if (input) {
+      input.addEventListener("input", () => {
+        const inst = getActiveInstance();
+        if (!inst) return;
+        if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
+        inst.mediaKeys[t] = input.value;
+        markInstanceDirty(inst);
+        // Live-update the preview line + button states, but don't
+        // revalidate or re-render the form (typing must stay smooth).
+        renderMediaPanel();
+      });
+      input.addEventListener("blur", () => {
+        saveState();
+        setSaveIndicator("saved");
+      });
+    }
+    if (btn) {
+      btn.addEventListener("click", () => {
+        const inst = getActiveInstance();
+        const name = buildMediaName(t, inst);
+        if (!name) {
+          flashBanner("Fill in key, platform, and build URL first.", true);
+          return;
+        }
+        copyToClipboard(name);
+      });
+    }
+  });
+}
+
+function renderOutput() {
+  const inst = getActiveInstance();
+  if (!inst) return;
+  let chunks;
+  if (inst.kind === "bug") chunks = buildBugOutput(inst);
+  else chunks = buildRegressionOutput(inst);
+  // If the user has NOT manually edited the output textarea,
+  // keep the live-generated text. If they HAVE edited, respect
+  // their version (the "Regenerate" button clears the override).
+  const ta = document.getElementById("outputTextarea");
+  if (inst.output === undefined || inst.output === null || inst.output === "" || !inst.outputEdited) {
+    inst.output = chunks.full;
+    inst.outputEdited = false;
+  }
+  ta.value = inst.output;
+
+  // Action buttons
+  const actions = document.getElementById("outputActions");
+  actions.innerHTML = "";
+  if (inst.kind === "bug") {
+    addBtn(actions, "Copy summary", () => copyToClipboard(chunks.summary));
+    addBtn(actions, "Copy description", () => copyToClipboard(chunks.description));
+    addBtn(actions, "Copy full", () => copyToClipboard(chunks.full));
+    addBtn(actions, "Copy viewpos", () => copyToClipboard(chunks.viewpos));
+    addBtn(actions, "Copy media name", () => copyToClipboard(chunks.mediaName));
+  } else {
+    addBtn(actions, "Copy full", () => copyToClipboard(chunks.full));
+  }
+  addBtn(actions, "Download .md", () => downloadFile(stripExt(inst.title) + ".md", inst.output));
+  addBtn(actions, "Download .txt", () => downloadFile(stripExt(inst.title) + ".txt", inst.output));
+  addBtn(actions, "Regenerate", () => {
+    inst.outputEdited = false;
+    renderOutput();
+    scheduleSave();
+  }, "primary");
+  addBtn(actions, "Clear instance", () => {
+    showConfirmModal({
+      title: "Clear instance",
+      body: `Clear all fields in "${inst.title}"? This cannot be undone.`,
+      confirmText: "Clear",
+      confirmClass: "danger",
+      onConfirm: () => {
+        const blank = inst.kind === "regression" ? makeEmptyRegressionInstance() : makeEmptyBugInstance();
+        inst.fields = blank.fields;
+        inst.output = "";
+        inst.outputEdited = false;
+        markInstanceDirty(inst);
+        scheduleSave();
+        renderForm();
+      }
+    });
+  }, "danger");
+}
+
+function addBtn(container, label, fn, cls) {
+  const b = document.createElement("button");
+  b.textContent = label;
+  if (cls) b.classList.add(cls);
+  b.addEventListener("click", fn);
+  container.appendChild(b);
+}
+
+function stripExt(s) { return s.replace(/\.[a-z0-9]+$/i, ""); }
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text || "").then(() => {
+    flashBanner("Copied to clipboard.");
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = text || "";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); flashBanner("Copied to clipboard."); }
+    catch (e) { flashBanner("Copy failed. Select and copy manually.", true); }
+    document.body.removeChild(ta);
+  });
+}
+
+function downloadFile(name, content) {
+  const blob = new Blob([content || ""], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ============================================================
+   DATA TAB
+   ============================================================ */
+function renderDataTab() {
+  renderDataSidebar();
+  renderDataTable();
+}
+
+function dataCategories() {
+  return [
+    { id: "list:regions",            label: "Regions",            cat: "list", key: "regions" },
+    { id: "list:platforms",          label: "Platforms",          cat: "list", key: "platforms" },
+    { id: "list:modes",              label: "Modes",              cat: "list", key: "modes" },
+    { id: "list:bugTypes",           label: "Bug types",          cat: "list", key: "bugTypes" },
+    { id: "list:regressionStatuses", label: "Regression statuses", cat: "list", key: "regressionStatuses" },
+    { id: "list:onlineOrLan",        label: "Online / LAN",       cat: "list", key: "onlineOrLan" },
+    { id: "list:severities",         label: "Severities",         cat: "list", key: "severities" },
+    { id: "list:priorities",         label: "Priorities",         cat: "list", key: "priorities" },
+    { id: "map",                     label: "Maps",               cat: "map",  key: "-" },
+    { id: "poi",                     label: "POIs by map",        cat: "poi",  key: null },
+    { id: "tier",                    label: "Tiers",              cat: "tier", key: null },
+    { id: "rule",                    label: "Rules",              cat: "rule", key: null }
+  ];
+}
+
+function renderDataSidebar() {
+  const sb = document.getElementById("dataSidebar");
+  sb.innerHTML = "";
+  dataCategories().forEach(c => {
+    const el = document.createElement("div");
+    el.className = "item" + (state.dataTab.selectedCategory === c.id ? " active" : "");
+    el.textContent = c.label;
+    el.addEventListener("click", () => {
+      state.dataTab.selectedCategory = c.id;
+      renderDataTab();
+    });
+    sb.appendChild(el);
+  });
+}
+
+function renderDataTable() {
+  const wrap = document.getElementById("dataTableWrap");
+  const sel = dataCategories().find(c => c.id === state.dataTab.selectedCategory);
+  if (!sel) { wrap.innerHTML = ""; return; }
+
+  let cols, rowsHtml;
+  if (sel.cat === "list") {
+    cols = ["#", "Value"];
+    const arr = state.data[sel.key] || [];
+    rowsHtml = arr.map((v, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td><input type="text" data-list-idx="${i}" data-list-key="${sel.key}" value="${escapeHtml(v)}" /></td>
+      </tr>
+    `).join("");
+  } else if (sel.cat === "map") {
+    cols = ["#", "Map name"];
+    rowsHtml = state.data.maps.map((m, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td><input type="text" data-map-idx="${i}" value="${escapeHtml(m)}" /></td>
+      </tr>
+    `).join("");
+  } else if (sel.cat === "poi") {
+    cols = ["#", "Map", "POI", ""];
+    let i = 0;
+    rowsHtml = Object.entries(state.data.pois).map(([map, pois]) => {
+      return pois.map(p => {
+        const isOrphan = !state.data.maps.includes(map);
+        i++;
+        return `<tr class="${isOrphan ? 'orphan' : ''}">
+          <td>${i}</td>
+          <td>${escapeHtml(map)}${isOrphan ? ' <span class="orphan">(orphan)</span>' : ''}</td>
+          <td>${escapeHtml(p)}</td>
+          <td><button class="danger" data-poi-del="${escapeHtml(map)}|${escapeHtml(p)}">Delete</button></td>
+        </tr>`;
+      }).join("");
+    }).join("");
+  } else if (sel.cat === "tier") {
+    cols = ["#", "Code", "Name"];
+    const tiers = Object.entries(state.data.tiers);
+    rowsHtml = tiers.map(([k, v], i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td>${escapeHtml(k)}</td>
+        <td><input type="text" data-tier-key="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
+      </tr>
+    `).join("");
+  } else if (sel.cat === "rule") {
+    cols = ["#", "Key", "Value"];
+    const rules = Object.entries(state.data.rules);
+    rowsHtml = rules.map(([k, v], i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td>${escapeHtml(k)}</td>
+        <td><input type="text" data-rule-key="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
+      </tr>
+    `).join("");
+  }
+
+  wrap.innerHTML = `
+    <table class="data-table">
+      <thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  `;
+
+  // Wire up edits
+  wrap.querySelectorAll("[data-list-idx]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const i = +inp.dataset.listIdx;
+      const k = inp.dataset.listKey;
+      state.data[k][i] = inp.value;
+    });
+  });
+  wrap.querySelectorAll("[data-map-idx]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const i = +inp.dataset.mapIdx;
+      const oldName = state.data.maps[i];
+      const newName = inp.value;
+      if (oldName !== newName) {
+        // Rename map and its POIs
+        if (state.data.pois[oldName]) {
+          state.data.pois[newName] = state.data.pois[oldName];
+          delete state.data.pois[oldName];
+        }
+        state.data.maps[i] = newName;
+        scheduleSave();
+        // re-render the form if relevant
+        refreshAll();
+      }
+    });
+  });
+  wrap.querySelectorAll("[data-poi-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const [m, p] = btn.dataset.poiDel.split("|");
+      if (state.data.pois[m]) {
+        state.data.pois[m] = state.data.pois[m].filter(x => x !== p);
+      }
+      renderDataTable();
+    });
+  });
+  wrap.querySelectorAll("[data-tier-key]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const k = inp.dataset.tierKey;
+      state.data.tiers[k] = inp.value;
+    });
+  });
+  wrap.querySelectorAll("[data-rule-key]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const k = inp.dataset.ruleKey;
+      state.data.rules[k] = inp.value;
+    });
+  });
+}
+
+function addDataRow() {
+  const sel = dataCategories().find(c => c.id === state.dataTab.selectedCategory);
+  if (sel.cat === "list") {
+    state.data[sel.key] = state.data[sel.key] || [];
+    state.data[sel.key].push("new_value");
+  } else if (sel.cat === "map") {
+    state.data.maps.push("NewMap");
+    state.data.pois["NewMap"] = [];
+  } else if (sel.cat === "poi") {
+    const m = state.data.maps[0];
+    if (!m) { flashBanner("Add a map first.", true); return; }
+    state.data.pois[m] = state.data.pois[m] || [];
+    state.data.pois[m].push("NewPOI");
+  } else if (sel.cat === "tier") {
+    let n = 1;
+    while (state.data.tiers["T" + n]) n++;
+    state.data.tiers["T" + n] = "New tier";
+  } else if (sel.cat === "rule") {
+    state.data.rules["new_rule"] = "";
+  }
+  renderDataTable();
+  scheduleSave();
+}
+
+function exportDataCsv() {
+  const rows = [["category", "key", "value"]];
+  for (const [k, arr] of Object.entries(state.data)) {
+    if (!Array.isArray(arr)) continue;
+    arr.forEach(v => rows.push(["list", k, v]));
+  }
+  state.data.maps.forEach(m => rows.push(["map", "-", m]));
+  Object.entries(state.data.pois).forEach(([m, pois]) => {
+    pois.forEach(p => rows.push(["poi", m, p]));
+  });
+  Object.entries(state.data.tiers).forEach(([k, v]) => rows.push(["tier", k, v]));
+  Object.entries(state.data.rules).forEach(([k, v]) => rows.push(["rule", k, v]));
+  const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n");
+  downloadFile("bug_data.csv", csv);
+  flashBanner("bug_data.csv downloaded. Drop it in the share folder to share with the team.");
+}
+
+function csvEscape(v) {
+  v = String(v == null ? "" : v);
+  if (/[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
+  return v;
+}
+
+/* ============================================================
+   CSV LOADING
+   ============================================================ */
+function handleCsvFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      parseCsv(e.target.result);
+      state.dataLoaded = true;
+      state.dataLoadedFrom = file.name;
+      state.settings.lastCsvPath = file.name;
+      hideLoadBanner();
+      flashBanner(`Loaded ${file.name}. Dropdowns are now populated.`);
+      refreshAll();
+      scheduleSave();
+    } catch (err) {
+      flashBanner("CSV parse error: " + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseCsv(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith("#"));
+  if (!lines.length) throw new Error("Empty file");
+  const header = parseCsvLine(lines[0]);
+  if (header.join(",") !== "category,key,value") {
+    throw new Error("Header must be: category,key,value");
+  }
+  // Reset
+  state.data.maps = [];
+  state.data.pois = {};
+  state.data.tiers = {};
+  state.data.regions = []; state.data.platforms = [];
+  state.data.modes = []; state.data.bugTypes = [];
+  state.data.regressionStatuses = []; state.data.onlineOrLan = [];
+  state.data.severities = []; state.data.priorities = [];
+  // rules keep defaults but will be overwritten
+  const rules = Object.assign({}, state.data.rules);
+  for (let i = 1; i < lines.length; i++) {
+    const row = parseCsvLine(lines[i]);
+    if (row.length < 3) continue;
+    const [cat, key, value] = row;
+    if (cat === "list") {
+      if (state.data[key] && Array.isArray(state.data[key])) state.data[key].push(value);
+    } else if (cat === "map") {
+      state.data.maps.push(value);
+    } else if (cat === "poi") {
+      state.data.pois[key] = state.data.pois[key] || [];
+      state.data.pois[key].push(value);
+    } else if (cat === "tier") {
+      state.data.tiers[key] = value;
+    } else if (cat === "rule") {
+      rules[key] = value;
+    }
+  }
+  state.data.rules = rules;
+}
+
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cur += c;
+    } else {
+      if (c === ',') { out.push(cur); cur = ""; }
+      else if (c === '"') inQ = true;
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out.map(s => s.trim());
+}
+
+/* ============================================================
+   SESSION JSON
+   ============================================================ */
+function saveSessionToFile() {
+  const snap = {
+    exportedAt: new Date().toISOString(),
+    state: {
+      topKind: state.topKind,
+      instances: state.instances,
+      activeInstanceId: state.activeInstanceId
+    }
+  };
+  downloadFile("bug_session_" + isoStamp() + ".json", JSON.stringify(snap, null, 2));
+}
+
+function loadSessionFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const snap = JSON.parse(e.target.result);
+      if (!snap.state) throw new Error("Missing 'state' in session file");
+      const apply = () => {
+        state.instances = snap.state.instances || [];
+        state.activeInstanceId = snap.state.activeInstanceId
+          || (state.instances[0] ? state.instances[0].id : null);
+        state.topKind = snap.state.topKind || "bug";
+        refreshAll();
+        scheduleSave();
+        flashBanner("Session loaded.");
+      };
+      const anyDirty = state.instances.some(i => i.dirty);
+      if (anyDirty) {
+        showConfirmModal({
+          title: "Load session?",
+          body: "Loading a session will replace the current instances. You have unsaved changes in some tabs.",
+          confirmText: "Replace",
+          confirmClass: "danger",
+          onConfirm: apply
+        });
+      } else {
+        apply();
+      }
+    } catch (err) {
+      flashBanner("Session load error: " + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function isoStamp() {
+  const d = new Date();
+  return d.toISOString().replace(/[:.]/g, "-").slice(0, 19);
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+function showConfirmModal({ title, body, confirmText, cancelText, confirmClass, showDontAsk, onConfirm }) {
+  const m = document.getElementById("modal");
+  document.getElementById("modalTitle").textContent = title || "Confirm";
+  document.getElementById("modalBody").innerHTML = body || "";
+  const actions = document.getElementById("modalActions");
+  actions.innerHTML = "";
+  if (showDontAsk) {
+    const lbl = document.createElement("label");
+    lbl.className = "checkbox";
+    lbl.style.marginRight = "auto";
+    lbl.innerHTML = `<input type="checkbox" id="modalDontAsk" /> Don't ask again`;
+    actions.appendChild(lbl);
+  }
+  const cancel = document.createElement("button");
+  cancel.textContent = cancelText || "Cancel";
+  cancel.addEventListener("click", closeModal);
+  actions.appendChild(cancel);
+  const ok = document.createElement("button");
+  ok.textContent = confirmText || "OK";
+  if (confirmClass) ok.classList.add(confirmClass);
+  ok.addEventListener("click", () => {
+    const dontAsk = document.getElementById("modalDontAsk");
+    closeModal();
+    onConfirm(dontAsk ? dontAsk.checked : false);
+  });
+  actions.appendChild(ok);
+  m.classList.add("open");
+}
+
+function showPromptModal({ title, body, placeholder, confirmText, onConfirm }) {
+  const m = document.getElementById("modal");
+  document.getElementById("modalTitle").textContent = title || "Input required";
+  document.getElementById("modalBody").innerHTML =
+    (body ? `<div style="margin-bottom:8px;">${escapeHtml(body)}</div>` : "")
+    + `<input type="text" id="modalPromptInput" placeholder="${escapeHtml(placeholder||"")}" style="width:100%;padding:6px;border:1px solid #c7ccd1;border-radius:3px;" />`;
+  const actions = document.getElementById("modalActions");
+  actions.innerHTML = "";
+  const cancel = document.createElement("button");
+  cancel.textContent = "Cancel";
+  cancel.addEventListener("click", closeModal);
+  actions.appendChild(cancel);
+  const ok = document.createElement("button");
+  ok.textContent = confirmText || "OK";
+  ok.classList.add("primary");
+  ok.addEventListener("click", () => {
+    const v = document.getElementById("modalPromptInput").value;
+    closeModal();
+    onConfirm(v);
+  });
+  actions.appendChild(ok);
+  m.classList.add("open");
+  setTimeout(() => document.getElementById("modalPromptInput").focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.remove("open");
+}
+
+document.getElementById("modal").addEventListener("click", (e) => {
+  if (e.target.id === "modal") closeModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeModal();
+});
+
+/* ============================================================
+   BANNER
+   ============================================================ */
+let bannerTimer = null;
+function flashBanner(text, isError) {
+  const b = document.getElementById("banner");
+  document.getElementById("bannerText").textContent = text;
+  document.getElementById("bannerAction").style.display = "none";
+  document.getElementById("bannerDismiss").style.display = isError ? "inline-block" : "none";
+  b.classList.remove("hidden", "error");
+  if (isError) b.classList.add("error");
+  if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => b.classList.add("hidden"), isError ? 5000 : 3000);
+}
+
+function showLoadBanner() {
+  const b = document.getElementById("banner");
+  document.getElementById("bannerText").textContent =
+    "No CSV loaded. Click 'Load' to pick bug_data.csv and populate dropdowns.";
+  document.getElementById("bannerAction").style.display = "inline-block";
+  document.getElementById("bannerDismiss").style.display = "inline-block";
+  b.classList.remove("hidden", "error");
+}
+
+function hideLoadBanner() {
+  const b = document.getElementById("banner");
+  // Only hide the persistent load-banner state. The dismiss button
+  // and the dismiss flash messages also use the banner element,
+  // so we only hide if it isn't currently showing a flash.
+  if (bannerTimer) return; // a flash is active
+  b.classList.add("hidden");
+}
+
+document.getElementById("bannerDismiss").addEventListener("click", () => {
+  document.getElementById("banner").classList.add("hidden");
+});
+
+/* ============================================================
+   TOP-LEVEL WIRE
+   ============================================================ */
+function refreshAll() {
+  renderTopTabs();
+  refreshSubTabs();
+  if (state.topKind === "data") {
+    renderDataTab();
+  } else {
+    renderForm();
+  }
+  renderOutput();
+  // The media panel is shared across all instances; its values are
+  // synced in renderMediaPanel() based on the active instance.
+  renderMediaPanel();
+  wireMediaPanel();
+}
+
+document.querySelectorAll(".top-tab").forEach(el => {
+  el.addEventListener("click", () => {
+    state.topKind = el.dataset.kind;
+    // Make sure there's an active instance of this kind
+    const has = state.instances.some(i => i.kind === state.topKind);
+    if (!has) addInstance();
+    else {
+      const inst = state.instances.find(i => i.kind === state.topKind);
+      if (inst) state.activeInstanceId = inst.id;
+    }
+    refreshAll();
+    scheduleSave();
+  });
+});
+
+document.getElementById("loadCsvBtn").addEventListener("click", () => {
+  document.getElementById("csvFileInput").click();
+});
+document.getElementById("csvFileInput").addEventListener("change", (e) => {
+  handleCsvFile(e.target.files[0]);
+  e.target.value = "";
+});
+
+document.getElementById("bannerAction").addEventListener("click", () => {
+  document.getElementById("csvFileInput").click();
+});
+
+document.getElementById("saveSessionBtn").addEventListener("click", saveSessionToFile);
+document.getElementById("loadSessionBtn").addEventListener("click", () => {
+  document.getElementById("sessionFileInput").click();
+});
+document.getElementById("sessionFileInput").addEventListener("change", (e) => {
+  loadSessionFromFile(e.target.files[0]);
+  e.target.value = "";
+});
+
+document.getElementById("clearLocalBtn").addEventListener("click", () => {
+  showPromptModal({
+    title: "Clear all local state",
+    body: "This will wipe localStorage (form data, dropdowns loaded from CSV) and reset to defaults. Type CLEAR to confirm.",
+    placeholder: "Type CLEAR",
+    confirmText: "Wipe",
+    onConfirm: (v) => {
+      if (v !== "CLEAR") { flashBanner("Cancelled.", true); return; }
+      localStorage.removeItem(STATE_KEY);
+      localStorage.removeItem(SETTINGS_KEY);
+      location.reload();
+    }
+  });
+});
+
+// Data tab buttons
+document.getElementById("addRowBtn").addEventListener("click", addDataRow);
+document.getElementById("deleteRowBtn").addEventListener("click", () => {
+  flashBanner("Use the per-row Delete button on POIs. For lists/maps, clear the cell value.", false);
+});
+document.getElementById("revertBtn").addEventListener("click", () => {
+  flashBanner("Re-read bug_data.csv to revert data tab edits.");
+  // For now: prompt to reload CSV
+  document.getElementById("csvFileInput").click();
+});
+document.getElementById("saveDataBtn").addEventListener("click", exportDataCsv);
+
+// Output textarea: live edit. The textarea itself is the source of
+// truth for the user's tweaks, so we update the model and the dirty
+// flag on every keystroke — but we don't save until blur, tab change,
+// or beforeunload.
+document.getElementById("outputTextarea").addEventListener("input", (e) => {
+  const inst = getActiveInstance();
+  if (!inst) return;
+  inst.output = e.target.value;
+  inst.outputEdited = true;
+  markInstanceDirty(inst);
+});
+document.getElementById("outputTextarea").addEventListener("blur", () => {
+  saveState();
+  setSaveIndicator("saved");
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+// Save synchronously when the user closes the window / tab.
+// The keystroke handler doesn't save on every char, so this is
+// the last chance to persist the in-progress work.
+window.addEventListener("beforeunload", () => {
+  saveState();
+});
+// Also save when the page goes into the background (mobile / tab switch)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") saveState();
+});
+
+function boot() {
+  const restored = loadState();
+  if (!restored || !state.instances.length) {
+    state.instances = defaultInstances();
+    state.activeInstanceId = state.instances[0].id;
+  }
+  // Ensure at least one instance of each kind isn't required — only the current kind
+  if (state.topKind === "data") {
+    // data tab doesn't need instances
+  } else {
+    const has = state.instances.some(i => i.kind === state.topKind);
+    if (!has) addInstance();
+  }
+  refreshAll();
+  if (!state.dataLoaded) {
+    showLoadBanner();
+  }
+  // Try auto-loading bug_data.csv next to the HTML
+  tryAutoLoadCsv();
+}
+
+async function tryAutoLoadCsv() {
+  try {
+    const r = await fetch("bug_data.csv");
+    if (r.ok) {
+      const text = await r.text();
+      parseCsv(text);
+      state.dataLoaded = true;
+      state.dataLoadedFrom = "bug_data.csv (auto)";
+      hideLoadBanner();
+      flashBanner("Loaded bug_data.csv (auto-detected next to the HTML).");
+      refreshAll();
+      scheduleSave();
+    }
+  } catch (e) { /* not allowed by browser, user will pick manually */ }
+}
+
+boot();
+</script>
+</body>
+</html>

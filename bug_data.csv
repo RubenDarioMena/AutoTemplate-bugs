@@ -1,0 +1,117 @@
+category,key,value
+list,regions,NA
+list,regions,EU
+list,regions,APAC
+list,regions,LATAM
+list,regions,BR
+list,platforms,PC(MSS)
+list,platforms,PC(Bnet)
+list,platforms,PS5
+list,platforms,Xbox Series X
+list,platforms,Xbox One
+list,platforms,Switch
+list,platforms,Mobile
+list,modes,MP
+list,modes,BR
+list,modes,WZ
+list,modes,Ranked
+list,modes,HC
+list,modes,Campaign
+list,modes,Spec Ops
+list,bugTypes,Visual
+list,bugTypes,Logic
+list,bugTypes,Audio
+list,bugTypes,Crash
+list,bugTypes,Performance
+list,bugTypes,Network
+list,bugTypes,HUD
+list,bugTypes,Animation
+list,bugTypes,UI
+list,bugTypes,AI
+list,bugTypes,Physics
+list,bugTypes,Collision
+list,bugTypes,Texture
+list,regressionStatuses,Verificado Corregido
+list,regressionStatuses,Regresado
+list,regressionStatuses,No Reproducible
+list,regressionStatuses,Aún Presente
+list,regressionStatuses,No Encontrado
+list,regressionStatuses,Fix Parcial
+list,onlineOrLan,Online
+list,onlineOrLan,LAN
+list,onlineOrLan,Offline
+list,onlineOrLan,Split-Screen
+list,severities,S0
+list,severities,S1
+list,severities,S2
+list,severities,S3
+list,priorities,P0
+list,priorities,P1
+list,priorities,P2
+list,priorities,P3
+map,-,Highrise
+map,-,Terminal
+map,-,Scrapyard
+map,-,Rust
+map,-,Atlas
+map,-,Boneyard
+map,-,Firing Range
+map,-,Nuketown
+map,-,ExampleMap_01
+map,-,ExampleMap_02
+poi,Highrise,Office A
+poi,Highrise,Office B
+poi,Highrise,Helipad
+poi,Highrise,Roof East
+poi,Highrise,Roof West
+poi,Highrise,Stairwell
+poi,Highrise,Server Room
+poi,Terminal,Check-in
+poi,Terminal,Gate 7
+poi,Terminal,Gate 12
+poi,Terminal,Baggage Claim
+poi,Terminal,Security
+poi,Terminal,Runway
+poi,Scrapyard,Container A
+poi,Scrapyard,Container B
+poi,Scrapyard,Crane Top
+poi,Scrapyard,Office
+poi,Scrapyard,Yard Center
+poi,Rust,Refinery
+poi,Rust,Storage Tank 1
+poi,Rust,Storage Tank 2
+poi,Rust,Pipe Bridge
+poi,Rust,Control Room
+poi,Atlas,Mech Bay
+poi,Atlas,Command Center
+poi,Atlas,Hangar
+poi,Boneyard,Hangar
+poi,Boneyard,Tower
+poi,Boneyard,Runway Edge
+poi,Firing Range,Range A
+poi,Firing Range,Range B
+poi,Firing Range,Center Lane
+poi,Nuketown,House Yellow
+poi,Nuketown,House Green
+poi,Nuketown,Backyard
+poi,Nuketown,Bus
+poi,ExampleMap_01,POI A
+poi,ExampleMap_01,POI B
+poi,ExampleMap_01,POI C
+poi,ExampleMap_02,POI X
+poi,ExampleMap_02,POI Y
+poi,ExampleMap_02,POI Z
+tier,T1,Gameplay
+tier,T2,Multiplayer
+tier,T3,Campaign
+tier,T4,Engine
+tier,T5,UI/UX
+tier,T6,Audio
+tier,T7,Netcode
+rule,kw_count,5
+rule,coord_fmt,(X, Y, Z) (X, Y, Z)
+rule,coord_re,^\(\d+,\s*\d+,\s*\d+\)\s*\(\d+,\s*\d+,\s*\d+\)$
+rule,repro_re,^\d+/\d+$
+rule,buildUrl_prefix,getbuild://
+rule,default_tz,CST
+rule,default_executable,Test.exe
