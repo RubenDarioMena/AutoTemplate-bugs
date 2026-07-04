@@ -1412,9 +1412,8 @@ function wireFormEvents(inst) {
     el.addEventListener("blur", () => {
       revalidate(inst);
       renderOutput();
-      // The media panel depends on platform, client, and buildUrl —
-      // refresh it when any of those change.
-      if (name === "platform" || name === "client" || name === "buildUrl") {
+      // The media panel depends on platform, client, and CL.
+      if (name === "platform" || name === "client" || name === "cl") {
         renderMediaPanel();
       }
       saveState();
@@ -1426,7 +1425,7 @@ function wireFormEvents(inst) {
       inst.fields[name] = el.value;
       revalidate(inst);
       renderOutput();
-      if (name === "platform" || name === "client" || name === "buildUrl") {
+      if (name === "platform" || name === "client" || name === "cl") {
         renderMediaPanel();
       }
       markInstanceDirty(inst);
@@ -1817,21 +1816,6 @@ function buildRegressionOutput(inst) {
 // ---------- Media naming ----------
 const MEDIA_TYPES = ["Vid", "Pic", "ConsoleLog", "DxDiag"];
 
-// Extract the buildId from a getbuild:// URL, or any numeric token
-// at the end of the URL path. Returns "" if nothing is found.
-function extractBuildNumber(url) {
-  if (!url) return "";
-  // Prefer the explicit buildId=... query parameter
-  const m = url.match(/[?&]buildId=([^&]+)/i);
-  if (m) return m[1];
-  // Fallback: any numeric-ish token in the URL (the last one)
-  const tokens = url.match(/[A-Za-z0-9_-]+/g) || [];
-  for (let i = tokens.length - 1; i >= 0; i--) {
-    if (/^\d{3,}$/.test(tokens[i])) return tokens[i];
-  }
-  return "";
-}
-
 // Build the platform portion used in media filenames.
 // For Bug: prefer "platform(client)" if both are present, else just platform.
 // For Regression: same logic.
@@ -1848,13 +1832,19 @@ function getPlatformForMedia(inst) {
 
 // Build a media filename like "Vid_ABC123_PC(MSS)_12345_(1)".
 // Returns "" if any required piece is missing.
+// - key:        the tester-provided value for this mediatype row
+// - platform:   from inst.fields.platform (with client appended if not
+//               already in parens)
+// - buildnumber: from inst.fields.cl (the CL, not the build URL)
+// - "_ (1)":    literal suffix (per tester convention)
 function buildMediaName(mediaType, inst) {
   if (!inst || !inst.mediaKeys) return "";
   const key = (inst.mediaKeys[mediaType] || "").trim();
   if (!key) return "";
   const platform = getPlatformForMedia(inst);
   if (!platform) return "";
-  const buildNumber = extractBuildNumber(inst.fields.buildUrl || "");
+  // Buildnumber comes from the CL field, not the build URL.
+  const buildNumber = (inst.fields.cl || "").trim();
   if (!buildNumber) return "";
   return `${mediaType}_${key}_${platform}_${buildNumber}_(1)`;
 }
@@ -1880,7 +1870,7 @@ function renderMediaPanel() {
     const name = buildMediaName(t, inst);
     if (btn) {
       btn.disabled = !name;
-      btn.title = name ? `Copy "${name}"` : "Fill in key, platform, and build URL first";
+      btn.title = name ? `Copy "${name}"` : "Fill in key, platform, and CL first";
     }
     if (name) lines.push(name);
   });
@@ -1919,7 +1909,7 @@ function wireMediaPanel() {
         const inst = getActiveInstance();
         const name = buildMediaName(t, inst);
         if (!name) {
-          flashBanner("Fill in key, platform, and build URL first.", true);
+          flashBanner("Fill in key, platform, and CL first.", true);
           return;
         }
         copyToClipboard(name);
