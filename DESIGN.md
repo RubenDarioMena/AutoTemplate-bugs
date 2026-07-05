@@ -607,3 +607,73 @@ exactly where they left off.
   * CCS / FFOTD — build content identifier (project-specific)
   * Tier      — broad category grouping (e.g. T1 = Gameplay)
   * CST       — Central Standard Time (used as the default tz label)
+
+---
+
+# ADDENDUM — v2 (2026-07-04): herramienta schema-driven
+
+La v1 tenía los formularios Bug/Regression escritos a mano en el JS.
+La v2 los convierte en DATOS: el monolito se edita a sí mismo.
+
+## Arquitectura
+
+  * **Bloque `<script type="application/json" id="vanillaConfig">`**
+    dentro del HTML: contiene `data` (listas, mapas, POIs, tiers,
+    reglas) y `schema` (formularios → secciones → campos). Es la
+    "config vanilla" del archivo distribuido, legible y editable.
+  * Al abrir, el JS captura el HTML prístino (`outerHTML` antes de
+    renderizar). **"Exportar herramienta"** reemplaza el bloque
+    vanilla por la config actual y descarga un `bug_tool.html` nuevo
+    (estilo TiddlyWiki). Ese archivo va al sharefolder.
+  * El día a día se guarda en `localStorage`
+    (`bug_tool_v2_config` + `bug_tool_v2_session`, debounce 300 ms).
+    Si la config local difiere de la vanilla, se muestra el chip
+    "Config modificada".
+
+## Schema
+
+  * Formulario → secciones (`mode: joined|lines`, `heading`, `sep`,
+    `noGap`) → campos.
+  * Campo: `id, label, type (text|textarea|autocomplete|keywords|
+    mirror), source, size (full|half|third), template ("{value}"),
+    sep, joinPrev, perLine, rows, required, regex, regexMsg,
+    default, emptyAs, omitValue, help`.
+  * Prefijo `@` = referencia a `data.rules` (ej. `regex: "@coord_re"`,
+    `default: "@default_tz"`).
+  * El output se genera recorriendo secciones/campos en orden; no
+    queda NINGÚN texto de formato fijo en el código.
+
+## UI nueva respecto a v1
+
+  * Modo edición (toggle "✎ Editar formulario"): ▲▼ para reordenar
+    (= orden del output), ✎ editor de campo/sección en modal, ✕ con
+    confirmación, "+ campo" y "+ Agregar sección".
+  * Dropdowns: fila "+ Agregar «...»" para sumar opciones y ✕ por
+    opción para borrarlas (con confirmación). Escriben en DATA.
+  * Botones del output en columna vertical a la derecha (más espacio
+    vertical para el textarea).
+  * Tiles de validación arriba (verde = listo; rojos clickeables por
+    campo con error) — base de los futuros tiles configurables.
+  * Pestaña **Rules**: tabla editable de required/regex/mensaje/
+    default por campo + reglas globales. Preparada para condiciones
+    entre campos (futuro).
+  * Pestañas superiores dinámicas: una por formulario del schema.
+
+## CSVs
+
+  * `bug_data.csv` — igual que v1 (`category,key,value`); las listas
+    con `key` nueva se crean solas.
+  * `bug_fields.csv` — NUEVO: serializa el schema completo (filas
+    `form` / `section` / campo, 20 columnas). Import valida todo y
+    no aplica nada si hay errores. Token `NONE` en la columna `sep`
+    = sin separador (campo pegado al anterior).
+  * Ambos con import/export desde el menú "Datos CSV".
+
+## Pendiente (siguientes iteraciones)
+
+  * Condiciones entre campos (if A entonces B), p. ej. cl != bspCl
+    (la única validación v1 que no se migró por ser cross-field).
+  * Tiles personalizados definidos por el usuario y conexión con
+    los nombres de media desde la pestaña Rules.
+  * Ids de media configurables (hoy usa los campos `platform`,
+    `client` y `cl` si existen).

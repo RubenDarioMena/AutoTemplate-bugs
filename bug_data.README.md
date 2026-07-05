@@ -2,9 +2,21 @@
 
 ## ¿Qué es este archivo?
 
-Es la **fuente única de verdad** para todas las listas y reglas
-que usa la herramienta de bug reports (`bug_tool.html`). Se edita
-en Excel como cualquier otro CSV.
+Contiene las listas y reglas que usa la herramienta de bug reports
+(`bug_tool.html`). Se edita en Excel como cualquier otro CSV.
+
+**Nota v2:** la herramienta ya trae estos datos integrados dentro
+del HTML; este CSV sirve para *actualizarlos* (menú **Datos CSV →
+Cargar bug_data.csv** en la herramienta) o para editarlos en Excel.
+También se puede editar todo directo en la pestaña **Data** de la
+herramienta y luego usar "Exportar herramienta" o "Exportar
+bug_data.csv". Los CAMPOS del formulario van en el otro archivo,
+`bug_fields.csv` (ver su propio README).
+
+**Nota v2 sobre listas:** la columna `key` de la categoría `list`
+acepta cualquier nombre nuevo — si agregas filas
+`list,weapons,AK-47`, la lista `weapons` se crea sola y queda
+disponible como fuente para campos dropdown.
 
 ## Estructura
 
@@ -72,8 +84,10 @@ Las reglas disponibles son:
      se escapen como `""` (dos comillas dobles).
   5. Guardar como **CSV (separado por comas)** con el mismo
      nombre `bug_data.csv` (sobrescribir el archivo existente).
-  6. Avisar al equipo para que recargue los datos en la
-     herramienta (botón "Load latest" en `bug_tool.html`).
+  6. Avisar al equipo para que lo cargue en la herramienta
+     (menú **Datos CSV → Cargar bug_data.csv** en `bug_tool.html`),
+     o mejor: cargarlo tú y repartir el HTML con
+     "Exportar herramienta" para que nadie más tenga que hacerlo.
 
 ## Edición multi-persona
 

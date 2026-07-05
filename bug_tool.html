@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,6 +15,8 @@
       color: #1d2129;
       background: #f5f6f7;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     button {
       font-family: inherit;
@@ -28,10 +30,7 @@
     }
     button:hover { background: #f0f2f5; }
     button:active { background: #e4e6eb; }
-    button:disabled {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
     button.primary {
       background: #2563eb;
       color: #fff;
@@ -75,18 +74,7 @@
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
-    label .req {
-      color: #dc2626;
-      font-size: 10px;
-      font-weight: 700;
-    }
-    label .opt {
-      color: #9ca3af;
-      font-size: 10px;
-      font-weight: 400;
-      text-transform: none;
-      letter-spacing: 0;
-    }
+    label .req { color: #dc2626; font-size: 10px; font-weight: 700; }
     .field { margin-bottom: 8px; position: relative; }
     .field.invalid input,
     .field.invalid textarea,
@@ -105,21 +93,29 @@
       padding: 4px 8px;
       border-radius: 3px;
       font-size: 11px;
-      white-space: nowrap;
+      max-width: 240px;
+      white-space: normal;
       z-index: 100;
       pointer-events: none;
     }
     .field.invalid:hover .field-error,
     .field.invalid:focus-within .field-error { display: block; }
+    .field-help {
+      font-size: 10px;
+      color: #9ca3af;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
 
-    /* ---------- Top tabs ---------- */
+    /* ---------- Barra superior (pestañas de formularios + Data + Rules) ---------- */
     .top-tabs {
       display: flex;
       background: #1f2937;
       padding: 0 8px;
-      height: 32px;
+      height: 34px;
       align-items: stretch;
       user-select: none;
+      flex: 0 0 auto;
     }
     .top-tab {
       padding: 0 16px;
@@ -129,6 +125,7 @@
       cursor: pointer;
       border-bottom: 2px solid transparent;
       font-weight: 500;
+      white-space: nowrap;
     }
     .top-tab:hover { color: #fff; }
     .top-tab.active {
@@ -144,6 +141,7 @@
       color: #9ca3af;
       font-size: 11px;
     }
+    .top-right button { font-size: 11px; padding: 3px 8px; }
     .save-indicator {
       display: inline-flex;
       align-items: center;
@@ -151,6 +149,7 @@
       padding: 2px 8px;
       border-radius: 10px;
       font-size: 11px;
+      white-space: nowrap;
     }
     .save-indicator .dot {
       width: 6px; height: 6px;
@@ -163,8 +162,76 @@
     .save-indicator.saving .dot { background: #f59e0b; }
     .save-indicator.unsaved { background: #7f1d1d; color: #fecaca; }
     .save-indicator.unsaved .dot { background: #ef4444; }
+    /* Aviso de que la configuración local difiere del HTML distribuido */
+    .config-chip {
+      background: #7c2d12;
+      color: #fed7aa;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      white-space: nowrap;
+      display: none;
+    }
+    .config-chip.visible { display: inline-block; }
 
-    /* ---------- Sub-tabs (instances) ---------- */
+    /* ---------- Menús desplegables de la barra superior ---------- */
+    .menu-wrap { position: relative; }
+    .menu-pop {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      background: #fff;
+      border: 1px solid #c7ccd1;
+      border-radius: 4px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+      z-index: 300;
+      min-width: 230px;
+      display: none;
+      padding: 4px;
+    }
+    .menu-wrap.open .menu-pop { display: block; }
+    .menu-pop button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: none;
+      padding: 6px 10px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+    .menu-pop button:hover { background: #f0f2f5; }
+    .menu-pop button.danger:hover { background: #fee2e2; }
+    .menu-pop .sep { border-top: 1px solid #e5e7eb; margin: 4px 0; }
+
+    /* ---------- Tiles de estado (validación) ---------- */
+    .tiles-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 4px 8px;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      flex: 0 0 auto;
+    }
+    .tiles-bar.hidden { display: none; }
+    .tile {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tile.ok {
+      background: #ecfdf5; color: #065f46; border-color: #a7f3d0;
+      cursor: default;
+    }
+    .tile.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+    .tile.err:hover { background: #fee2e2; }
+    .tile.more { background: #f3f4f6; color: #4b5563; border-color: #d1d5db; cursor: default; }
+
+    /* ---------- Sub-pestañas (instancias) ---------- */
     .sub-tabs {
       display: flex;
       background: #e5e7eb;
@@ -173,6 +240,7 @@
       align-items: stretch;
       min-height: 28px;
       user-select: none;
+      flex: 0 0 auto;
     }
     .sub-tab {
       display: flex;
@@ -197,10 +265,7 @@
       color: #1d2129;
       font-weight: 600;
     }
-    .sub-tab .label {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .sub-tab .label { overflow: hidden; text-overflow: ellipsis; }
     .sub-tab .close {
       width: 16px; height: 16px;
       display: inline-flex;
@@ -232,18 +297,54 @@
     }
     .sub-tab-new:hover { color: #1d2129; }
 
-    /* ---------- Main split ---------- */
+    /* ---------- Split principal ---------- */
+    #subTabsAndMain {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
     .main {
       display: flex;
-      height: calc(100vh - 32px - 28px);
+      flex: 1;
+      min-height: 0;
     }
-    .form-panel {
+    .form-col {
       width: 50%;
       min-width: 380px;
+      display: flex;
+      flex-direction: column;
       background: #fff;
       border-right: 1px solid #d1d5db;
+      min-height: 0;
+    }
+    .form-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f9fafb;
+      flex: 0 0 auto;
+    }
+    .form-toolbar h3 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .form-toolbar .edit-toggle { margin-left: auto; }
+    .form-toolbar .edit-toggle.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #1d4ed8;
+    }
+    .form-panel {
+      flex: 1;
       overflow-y: auto;
       padding: 12px 16px;
+      min-height: 0;
     }
     .output-panel {
       flex: 1;
@@ -251,39 +352,33 @@
       flex-direction: column;
       background: #fafbfc;
       overflow: hidden;
+      min-height: 0;
     }
-    .output-header {
-      padding: 8px 16px;
-      background: #f3f4f6;
-      border-bottom: 1px solid #d1d5db;
+    /* El textarea crece a lo alto; los botones van en una columna
+       pegada al borde derecho para no robarle espacio vertical. */
+    .output-body {
+      flex: 1;
       display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .output-header h3 {
-      font-size: 12px;
-      font-weight: 600;
-      color: #4b5563;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .output-actions {
-      margin-left: auto;
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
+      min-height: 0;
     }
     .output-textarea-wrap {
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 8px 16px 12px 16px;
+      padding: 8px 8px 12px 16px;
+      min-width: 0;
     }
-    .output-textarea-wrap textarea {
-      flex: 1;
-      min-height: 100%;
+    .output-textarea-wrap textarea { flex: 1; }
+    .output-side {
+      flex: 0 0 148px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 24px 12px 12px 4px;
     }
-    /* ---------- Media naming panel ---------- */
+    .output-side button { width: 100%; }
+
+    /* ---------- Panel de nombres de media ---------- */
     .media-panel {
       border-top: 1px solid #d1d5db;
       background: #f9fafb;
@@ -327,15 +422,8 @@
       font-family: "SF Mono", Menlo, Consolas, monospace;
       font-size: 11px;
       padding: 3px 6px;
-      border: 1px solid #c7ccd1;
-      border-radius: 3px;
-      background: #fff;
-      color: #1d2129;
     }
-    .media-row button {
-      font-size: 11px;
-      padding: 2px 8px;
-    }
+    .media-row button { font-size: 11px; padding: 2px 8px; }
     .media-preview {
       margin-top: 6px;
       padding: 4px 6px;
@@ -351,10 +439,8 @@
     }
     .media-preview:empty { display: none; }
 
-    /* ---------- Form groups ---------- */
-    .form-section {
-      margin-bottom: 16px;
-    }
+    /* ---------- Secciones del formulario ---------- */
+    .form-section { margin-bottom: 16px; }
     .form-section h4 {
       font-size: 11px;
       font-weight: 700;
@@ -364,30 +450,48 @@
       padding-bottom: 4px;
       border-bottom: 1px solid #e5e7eb;
       margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
-    .row-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    /* ---------- Controles del modo edición ---------- */
+    /* Ocultos por defecto; body.editing los muestra. */
+    .sec-tools, .fld-tools, .add-section-btn, .mirror-field { display: none; }
+    body.editing .sec-tools { display: inline-flex; gap: 2px; margin-left: auto; }
+    body.editing .fld-tools { display: inline-flex; gap: 2px; margin-left: auto; }
+    body.editing .add-section-btn { display: block; width: 100%; margin-top: 8px; }
+    body.editing .mirror-field { display: block; }
+    .tool-btn {
+      padding: 0 5px;
+      font-size: 11px;
+      line-height: 16px;
+      height: 18px;
+      border-radius: 2px;
+      color: #6b7280;
     }
-    .row-3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
+    .tool-btn:hover { color: #1d2129; }
+    .tool-btn.del:hover { background: #fee2e2; color: #b91c1c; }
+    .mirror-note {
+      font-size: 11px;
+      color: #6b7280;
+      font-style: italic;
+      padding: 4px 6px;
+      background: #f3f4f6;
+      border: 1px dashed #d1d5db;
+      border-radius: 3px;
     }
 
-    /* ---------- Autocomplete (input + dropdown arrow + suggestion list) ---------- */
-    .autocomplete {
-      position: relative;
-    }
+    /* ---------- Autocomplete ---------- */
+    .autocomplete { position: relative; }
     .autocomplete-input-wrap {
       position: relative;
       display: flex;
       align-items: center;
     }
-    .autocomplete-input-wrap input {
-      padding-right: 22px;  /* room for the arrow */
-    }
+    .autocomplete-input-wrap input { padding-right: 22px; }
     .autocomplete-arrow {
       position: absolute;
       right: 4px;
@@ -432,6 +536,10 @@
       padding: 4px 8px;
       cursor: pointer;
       font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
     }
     .autocomplete-item:hover,
     .autocomplete-item.active { background: #eff6ff; color: #1d4ed8; }
@@ -440,8 +548,29 @@
       color: inherit;
       font-weight: 600;
     }
+    /* Botón para borrar una opción de la lista (aparece al pasar el mouse) */
+    .ac-del {
+      visibility: hidden;
+      color: #9ca3af;
+      padding: 0 4px;
+      border-radius: 2px;
+      font-size: 12px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+    .autocomplete-item:hover .ac-del { visibility: visible; }
+    .ac-del:hover { background: #fee2e2; color: #b91c1c; }
+    /* Fila "+ Agregar..." al final del dropdown */
+    .autocomplete-add {
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #1d4ed8;
+      border-top: 1px dashed #e5e7eb;
+    }
+    .autocomplete-add:hover { background: #eff6ff; }
 
-    /* ---------- Keywords chips ---------- */
+    /* ---------- Chips de palabras clave ---------- */
     .chips {
       display: flex;
       flex-wrap: wrap;
@@ -482,18 +611,31 @@
       font-size: 12px;
       padding: 2px;
       background: transparent;
+      width: auto;
+    }
+    .chips-error {
+      display: block;
+      margin-top: 4px;
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 4px 8px;
+      border-radius: 3px;
+      border-left: 3px solid #dc2626;
+      font-size: 11px;
     }
 
-    /* ---------- Data tab ---------- */
+    /* ---------- Pestaña DATA ---------- */
     .data-layout {
       display: flex;
-      height: calc(100vh - 32px - 28px);
+      flex: 1;
+      min-height: 0;
     }
     .data-sidebar {
       width: 200px;
       background: #fff;
       border-right: 1px solid #d1d5db;
       overflow-y: auto;
+      flex: 0 0 auto;
     }
     .data-sidebar .item {
       padding: 8px 12px;
@@ -514,6 +656,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-height: 0;
     }
     .data-toolbar {
       padding: 8px 12px;
@@ -522,6 +665,7 @@
       display: flex;
       gap: 6px;
       align-items: center;
+      flex-wrap: wrap;
     }
     .data-table-wrap {
       flex: 1;
@@ -538,6 +682,7 @@
       border: 1px solid #e5e7eb;
       padding: 4px 8px;
       text-align: left;
+      vertical-align: top;
     }
     table.data-table th {
       background: #f3f4f6;
@@ -546,22 +691,59 @@
       text-transform: uppercase;
       font-size: 10px;
       letter-spacing: 0.3px;
+      position: sticky;
+      top: -13px;
     }
-    table.data-table input {
+    table.data-table input[type="text"] {
       border: none;
       padding: 2px;
       width: 100%;
       background: transparent;
     }
-    table.data-table input:focus {
+    table.data-table input[type="text"]:focus {
       background: #fff;
       outline: 1px solid #2563eb;
+      box-shadow: none;
     }
     table.data-table tr:hover { background: #f9fafb; }
-    table.data-table tr.dirty { background: #fef3c7; }
-    table.data-table tr.dirty:hover { background: #fde68a; }
-    table.data-table tr.deleted { display: none; }
     .orphan { color: #dc2626; font-weight: 600; }
+    .row-del {
+      border: none;
+      background: none;
+      color: #9ca3af;
+      font-size: 13px;
+      padding: 0 6px;
+    }
+    .row-del:hover { background: #fee2e2; color: #b91c1c; }
+
+    /* ---------- Pestaña RULES ---------- */
+    .rules-layout {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      min-height: 0;
+    }
+    .rules-layout h3 {
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .rules-layout .rules-intro {
+      font-size: 12px;
+      color: #4b5563;
+      margin-bottom: 12px;
+      max-width: 760px;
+      line-height: 1.5;
+    }
+    .rules-block { margin-bottom: 24px; }
+    .rules-future {
+      border: 1px dashed #c7ccd1;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 11px;
+      color: #9ca3af;
+      max-width: 760px;
+    }
+    td.rules-form-cell { color: #6b7280; white-space: nowrap; }
 
     /* ---------- Modal ---------- */
     .modal-backdrop {
@@ -580,8 +762,11 @@
       padding: 20px;
       min-width: 360px;
       max-width: 600px;
+      max-height: 88vh;
+      overflow-y: auto;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
+    .modal.wide { max-width: 780px; width: 740px; }
     .modal h3 { margin-bottom: 12px; font-size: 14px; }
     .modal-body { margin-bottom: 16px; font-size: 12px; color: #4b5563; }
     .modal-actions {
@@ -596,6 +781,29 @@
       font-size: 11px;
       color: #6b7280;
       margin-top: 8px;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+    /* Grid del editor de campos/secciones */
+    .fe-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 14px;
+    }
+    .fe-grid .fe-full { grid-column: 1 / -1; }
+    .fe-grid label { margin-top: 4px; }
+    .fe-grid label.checkbox { margin-top: 2px; }
+    .fe-sep {
+      grid-column: 1 / -1;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 6px;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
 
     /* ---------- Banner ---------- */
@@ -607,78 +815,103 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex: 0 0 auto;
     }
     .banner.error { background: #fee2e2; border-bottom-color: #dc2626; }
     .banner.hidden { display: none; }
     .banner button { font-size: 11px; padding: 2px 8px; }
-
-    /* ---------- Tooltip (chip errors) ---------- */
-    .field-error { max-width: 240px; white-space: normal; }
   </style>
 </head>
 <body>
 
-  <!-- ============ TOP TABS ============ -->
+  <!-- ============ BARRA SUPERIOR ============ -->
   <div class="top-tabs" id="topTabs">
-    <div class="top-tab active" data-kind="bug">Bug</div>
-    <div class="top-tab" data-kind="regression">Regression</div>
-    <div class="top-tab" data-kind="data">Data</div>
+    <!-- Las pestañas de formularios (Bug, Regression, ...) se generan
+         desde el schema. Data y Rules son fijas. -->
+    <div id="formTabs" style="display:flex;"></div>
+    <div class="top-tab" data-tab="data">Data</div>
+    <div class="top-tab" data-tab="rules">Rules</div>
     <div class="top-right">
+      <span class="config-chip" id="configChip" title="Tu configuración local (campos/datos/reglas) es distinta a la del archivo distribuido. Usa 'Exportar herramienta' para compartirla.">Config modificada</span>
       <span class="save-indicator saved" id="saveIndicator">
-        <span class="dot"></span><span id="saveIndicatorText">Saved</span>
+        <span class="dot"></span><span id="saveIndicatorText">Guardado</span>
       </span>
-      <button id="loadCsvBtn" title="Load bug_data.csv">Load data</button>
-      <button id="saveSessionBtn" title="Export full session to JSON file">Save session</button>
-      <button id="loadSessionBtn" title="Load a previously-saved session">Load session</button>
-      <button id="clearLocalBtn" class="danger" title="Wipe localStorage and start fresh">Clear local</button>
+      <div class="menu-wrap" id="menuDatos">
+        <button>Datos CSV ▾</button>
+        <div class="menu-pop">
+          <button id="importDataBtn">Cargar bug_data.csv…</button>
+          <button id="exportDataBtn">Exportar bug_data.csv</button>
+          <div class="sep"></div>
+          <button id="importFieldsBtn">Cargar bug_fields.csv…</button>
+          <button id="exportFieldsBtn">Exportar bug_fields.csv</button>
+        </div>
+      </div>
+      <div class="menu-wrap" id="menuSesion">
+        <button>Sesión ▾</button>
+        <div class="menu-pop">
+          <button id="saveSessionBtn">Guardar sesión como archivo…</button>
+          <button id="loadSessionBtn">Cargar sesión desde archivo…</button>
+          <div class="sep"></div>
+          <button id="resetVanillaBtn">Restaurar config del archivo (vanilla)</button>
+          <button id="clearLocalBtn" class="danger">Borrar todo lo local…</button>
+        </div>
+      </div>
+      <button id="exportToolBtn" class="primary" title="Descarga un bug_tool.html nuevo con tus campos, datos y reglas integrados, listo para el sharefolder">Exportar herramienta</button>
     </div>
   </div>
 
   <!-- ============ BANNER ============ -->
   <div class="banner hidden" id="banner">
     <span id="bannerText"></span>
-    <button id="bannerAction" class="primary">Load</button>
-    <button id="bannerDismiss">Dismiss</button>
+    <button id="bannerDismiss">Cerrar</button>
   </div>
 
-  <!-- ============ SUB-TABS + MAIN ============ -->
+  <!-- ============ TILES DE VALIDACIÓN ============ -->
+  <div class="tiles-bar" id="tilesBar"></div>
+
+  <!-- ============ SUB-PESTAÑAS + PRINCIPAL ============ -->
   <div id="subTabsAndMain">
     <div class="sub-tabs" id="subTabs"></div>
     <div class="main" id="main">
-      <div class="form-panel" id="formPanel"></div>
-      <div class="output-panel">
-        <div class="output-header">
-          <h3>Output</h3>
-          <div class="output-actions" id="outputActions"></div>
+      <div class="form-col">
+        <div class="form-toolbar">
+          <h3 id="formTitle">Formulario</h3>
+          <button class="edit-toggle" id="editToggle" title="Activa el modo edición para agregar, mover o borrar secciones y campos">✎ Editar formulario</button>
         </div>
-        <div class="output-textarea-wrap">
-          <label>Output (edit freely before copying)</label>
-          <textarea id="outputTextarea" spellcheck="false"></textarea>
+        <div class="form-panel" id="formPanel"></div>
+      </div>
+      <div class="output-panel">
+        <div class="output-body">
+          <div class="output-textarea-wrap">
+            <label>Output (editable antes de copiar)</label>
+            <textarea id="outputTextarea" spellcheck="false"></textarea>
+          </div>
+          <div class="output-side" id="outputActions"></div>
         </div>
         <div class="media-panel" id="mediaPanel">
           <div class="media-panel-header">
-            <h4>Media filenames</h4>
-            <span class="hint">Format: Mediatype_key_platform_buildnumber_(1)</span>
+            <h4>Nombres de media</h4>
+            <span class="hint">Formato: Mediatype_key_platform_buildnumber_(1)</span>
           </div>
           <div class="media-row" data-media="Vid">
             <span class="media-type">Vid</span>
             <input type="text" data-media-key="Vid" placeholder="key" />
-            <button data-media-copy="Vid">Copy</button>
+            <button data-media-copy="Vid">Copiar</button>
           </div>
           <div class="media-row" data-media="Pic">
             <span class="media-type">Pic</span>
             <input type="text" data-media-key="Pic" placeholder="key" />
-            <button data-media-copy="Pic">Copy</button>
+            <button data-media-copy="Pic">Copiar</button>
           </div>
           <div class="media-row" data-media="ConsoleLog">
             <span class="media-type">ConsoleLog</span>
             <input type="text" data-media-key="ConsoleLog" placeholder="key" />
-            <button data-media-copy="ConsoleLog">Copy</button>
+            <button data-media-copy="ConsoleLog">Copiar</button>
           </div>
           <div class="media-row" data-media="DxDiag">
             <span class="media-type">DxDiag</span>
             <input type="text" data-media-key="DxDiag" placeholder="key" />
-            <button data-media-copy="DxDiag">Copy</button>
+            <button data-media-copy="DxDiag">Copiar</button>
           </div>
           <div class="media-preview" id="mediaPreview"></div>
         </div>
@@ -686,298 +919,613 @@
     </div>
   </div>
 
-  <!-- ============ DATA TAB ============ -->
-  <div id="dataContainer" style="display:none;">
-    <div class="data-layout">
-      <div class="data-sidebar" id="dataSidebar"></div>
-      <div class="data-main">
-        <div class="data-toolbar">
-          <button id="addRowBtn">+ Add row</button>
-          <button id="deleteRowBtn" class="danger">Delete selected</button>
-          <button id="revertBtn">Revert</button>
-          <span style="flex:1"></span>
-          <span id="dataDirtyHint" style="font-size:11px;color:#92400e;"></span>
-          <button id="saveDataBtn" class="primary">Save &amp; export bug_data.csv</button>
-        </div>
-        <div class="data-table-wrap" id="dataTableWrap"></div>
+  <!-- ============ PESTAÑA DATA ============ -->
+  <div id="dataContainer" class="data-layout" style="display:none;">
+    <div class="data-sidebar" id="dataSidebar"></div>
+    <div class="data-main">
+      <div class="data-toolbar">
+        <button id="addRowBtn">+ Agregar fila</button>
+        <button id="addListBtn">+ Nueva lista</button>
+        <span style="flex:1"></span>
+        <button id="dataImportBtn">Cargar bug_data.csv…</button>
+        <button id="dataExportBtn" class="primary">Exportar bug_data.csv</button>
       </div>
+      <div class="data-table-wrap" id="dataTableWrap"></div>
     </div>
   </div>
 
+  <!-- ============ PESTAÑA RULES ============ -->
+  <div id="rulesContainer" class="rules-layout" style="display:none;"></div>
+
   <!-- ============ MODAL ============ -->
   <div class="modal-backdrop" id="modal">
-    <div class="modal">
-      <h3 id="modalTitle">Confirm</h3>
+    <div class="modal" id="modalBox">
+      <h3 id="modalTitle">Confirmar</h3>
       <div class="modal-body" id="modalBody"></div>
       <div class="modal-actions" id="modalActions"></div>
     </div>
   </div>
 
-  <!-- ============ HIDDEN FILE INPUTS ============ -->
-  <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none" />
+  <!-- ============ INPUTS DE ARCHIVO OCULTOS ============ -->
+  <input type="file" id="dataCsvInput" accept=".csv,text/csv" style="display:none" />
+  <input type="file" id="fieldsCsvInput" accept=".csv,text/csv" style="display:none" />
   <input type="file" id="sessionFileInput" accept=".json,application/json" style="display:none" />
+
+<!-- ================================================================
+     CONFIG VANILLA (fuente de verdad embebida)
+     ================================================================
+     Este bloque JSON contiene los formularios (schema), los datos
+     (listas, mapas, POIs, tiers, reglas) tal como se distribuyen.
+     La herramienta lo lee al abrir. "Exportar herramienta" descarga
+     un bug_tool.html nuevo con este bloque actualizado.
+     El equipo de Database puede editarlo aquí a mano si lo prefiere,
+     pero lo normal es editarlo desde la propia herramienta o via CSV.
+     ================================================================ -->
+<script type="application/json" id="vanillaConfig">
+{
+  "version": 2,
+  "data": {
+    "lists": {
+      "regions": ["NA", "EU", "APAC", "LATAM", "BR"],
+      "platforms": ["PC(MSS)", "PC(Bnet)", "PS5", "Xbox Series X", "Xbox One", "Switch", "Mobile"],
+      "modes": ["MP", "BR", "WZ", "Ranked", "HC", "Campaign", "Spec Ops"],
+      "bugTypes": ["Visual", "Logic", "Audio", "Crash", "Performance", "Network", "HUD", "Animation", "UI", "AI", "Physics", "Collision", "Texture"],
+      "regressionStatuses": ["Verificado Corregido", "Regresado", "No Reproducible", "Aún Presente", "No Encontrado", "Fix Parcial"],
+      "onlineOrLan": ["Online", "LAN", "Offline", "Split-Screen"],
+      "severities": ["S0", "S1", "S2", "S3"],
+      "priorities": ["P0", "P1", "P2", "P3"]
+    },
+    "maps": ["Highrise", "Terminal", "Scrapyard", "Rust", "Atlas", "Boneyard", "Firing Range", "Nuketown", "ExampleMap_01", "ExampleMap_02"],
+    "pois": {
+      "Highrise": ["Office A", "Office B", "Helipad", "Roof East", "Roof West", "Stairwell", "Server Room"],
+      "Terminal": ["Check-in", "Gate 7", "Gate 12", "Baggage Claim", "Security", "Runway"],
+      "Scrapyard": ["Container A", "Container B", "Crane Top", "Office", "Yard Center"],
+      "Rust": ["Refinery", "Storage Tank 1", "Storage Tank 2", "Pipe Bridge", "Control Room"],
+      "Atlas": ["Mech Bay", "Command Center", "Hangar"],
+      "Boneyard": ["Hangar", "Tower", "Runway Edge"],
+      "Firing Range": ["Range A", "Range B", "Center Lane"],
+      "Nuketown": ["House Yellow", "House Green", "Backyard", "Bus"],
+      "ExampleMap_01": ["POI A", "POI B", "POI C"],
+      "ExampleMap_02": ["POI X", "POI Y", "POI Z"]
+    },
+    "tiers": {
+      "T1": "Gameplay", "T2": "Multiplayer", "T3": "Campaign", "T4": "Engine",
+      "T5": "UI/UX", "T6": "Audio", "T7": "Netcode"
+    },
+    "rules": {
+      "kw_count": "5",
+      "coord_fmt": "(X, Y, Z) (X, Y, Z)",
+      "coord_re": "^\\(\\d+,\\s*\\d+,\\s*\\d+\\)\\s*\\(\\d+,\\s*\\d+,\\s*\\d+\\)$",
+      "repro_re": "^\\d+/\\d+$",
+      "buildUrl_prefix": "getbuild://",
+      "default_tz": "CST",
+      "default_executable": "Test.exe"
+    }
+  },
+  "schema": {
+    "forms": [
+      {
+        "id": "bug",
+        "label": "Bug",
+        "sections": [
+          {
+            "id": "resumen",
+            "label": "Resumen (encabezado)",
+            "mode": "joined",
+            "sep": " - ",
+            "fields": [
+              { "id": "team", "label": "Team", "type": "text", "size": "half", "required": true },
+              { "id": "region", "label": "Región", "type": "autocomplete", "source": "regions", "size": "half", "required": true },
+              { "id": "version", "label": "Versión", "type": "text", "size": "third", "required": true },
+              { "id": "platform", "label": "Plataforma", "type": "autocomplete", "source": "platforms", "size": "third", "required": true },
+              { "id": "client", "label": "Cliente", "type": "text", "size": "third", "template": "({value})", "sep": "", "help": "Déjalo vacío si la plataforma ya lo incluye, p. ej. PC(MSS)" },
+              { "id": "mode", "label": "Modo", "type": "autocomplete", "source": "modes", "size": "third", "required": true },
+              { "id": "map", "label": "Mapa", "type": "autocomplete", "source": "maps", "size": "third", "required": true },
+              { "id": "poi", "label": "POI", "type": "autocomplete", "source": "pois:map", "size": "third", "required": true },
+              { "id": "bugType", "label": "Tipo de bug", "type": "autocomplete", "source": "bugTypes", "size": "half", "required": true },
+              { "id": "shortDescription", "label": "Descripción corta", "type": "text", "size": "half", "required": true },
+              { "id": "narrativeCondition", "label": "Condición narrativa (1-3 frases)", "type": "textarea", "rows": 2, "required": true, "template": "Cuando {value}" },
+              { "id": "coords", "label": "Coordenadas", "type": "text", "required": true, "regex": "@coord_re", "regexMsg": "Formato: (X, Y, Z) (X, Y, Z)", "template": "({value})", "sep": " " }
+            ]
+          },
+          {
+            "id": "descripcion",
+            "label": "Descripción",
+            "mode": "lines",
+            "fields": [
+              { "id": "description", "label": "Descripción larga", "type": "textarea", "rows": 4 }
+            ]
+          },
+          {
+            "id": "variables",
+            "label": "Variables / Argumentos",
+            "mode": "lines",
+            "heading": "+Variables/Argumentos Usados:+",
+            "fields": [
+              { "id": "variables", "label": "Variables (una por línea)", "type": "textarea", "rows": 3, "perLine": true, "template": "+ {value}" }
+            ]
+          },
+          {
+            "id": "build",
+            "label": "Información de compilación",
+            "mode": "lines",
+            "heading": "+Información de Compilación:+",
+            "fields": [
+              { "id": "cod", "label": "COD", "type": "text", "size": "third", "required": true, "template": "COD {value}" },
+              { "id": "cl", "label": "CL", "type": "text", "size": "third", "required": true, "regex": "^\\d+$", "regexMsg": "Debe ser numérico", "template": "CL: {value}", "joinPrev": true },
+              { "id": "bspCl", "label": "BSP CL", "type": "text", "size": "third", "default": "N/A", "regex": "^(\\d+|N/A)$", "regexMsg": "Numérico o N/A", "template": "BSP CL: {value}", "omitValue": "N/A" },
+              { "id": "package", "label": "Paquete", "type": "text", "required": true, "template": "Paquete: {value}" },
+              { "id": "ccs", "label": "CCS", "type": "text", "size": "half", "template": "CCS/FFOTD: {value}", "emptyAs": "N/A" },
+              { "id": "bsp", "label": "BSP", "type": "text", "size": "half", "default": "N/A", "template": "BSP: {value}", "emptyAs": "N/A" },
+              { "id": "buildUrl", "label": "Build URL", "type": "text", "required": true, "regex": "^getbuild://", "regexMsg": "Debe empezar con getbuild://", "template": "Ubicación de compilación: {value}" }
+            ]
+          },
+          {
+            "id": "repro",
+            "label": "Pasos para reproducir",
+            "mode": "lines",
+            "heading": "+Pasos para Reproducir:+",
+            "fields": [
+              { "id": "reproSteps", "label": "Pasos (uno por línea)", "type": "textarea", "rows": 4, "perLine": true, "template": "# {value}" }
+            ]
+          },
+          {
+            "id": "resultados",
+            "label": "Resultados",
+            "mode": "lines",
+            "heading": "**Resultados:**",
+            "fields": [
+              { "id": "results", "label": "Resultados (Esperado / Actual)", "type": "textarea", "rows": 3 }
+            ]
+          },
+          {
+            "id": "notas",
+            "label": "Notas",
+            "mode": "lines",
+            "heading": "+Notas:+",
+            "fields": [
+              { "id": "reproduction", "label": "Reproducción (X/Y)", "type": "text", "size": "third", "required": true, "regex": "@repro_re", "regexMsg": "Formato: X/Y", "template": "* *Reproducción:* {value}" },
+              { "id": "profile", "label": "Perfil", "type": "text", "size": "third", "template": "* *Perfil:* {value}" },
+              { "id": "timestamp", "label": "Marca de tiempo", "type": "text", "size": "third", "template": "* *Marca de tiempo:* {value}" },
+              { "id": "tz", "label": "Zona horaria", "type": "text", "size": "third", "default": "@default_tz", "joinPrev": true },
+              { "id": "onlineOrLan", "label": "Online / LAN", "type": "autocomplete", "source": "onlineOrLan", "size": "third", "template": "* *Online/LAN:* {value}" },
+              { "id": "executable", "label": "Ejecutable", "type": "text", "size": "third", "required": true, "default": "@default_executable", "template": "* *Ejecutable:* {value}" },
+              { "id": "notesViewpos", "label": "Posición de vista", "type": "text", "template": "* *Posición de vista:* ({value})", "help": "Normalmente las mismas coordenadas del resumen" },
+              { "id": "material", "label": "Material", "type": "text", "size": "half", "template": "* *Material:* {value}" },
+              { "id": "model", "label": "Modelos", "type": "text", "size": "half", "template": "* *Modelos:* {value}" },
+              { "id": "ccsMirror", "label": "CCS (copia)", "type": "mirror", "source": "ccs", "template": "* *CCS/FFOTD:* {value}", "emptyAs": "N/A" },
+              { "id": "bspMirror", "label": "BSP (copia)", "type": "mirror", "source": "bsp", "template": "* *BSP:* {value}", "emptyAs": "N/A" },
+              { "id": "buildUrlMirror", "label": "Build URL (copia)", "type": "mirror", "source": "buildUrl", "template": "* *Ubicación de compilación:* {value}" }
+            ]
+          },
+          {
+            "id": "keywords",
+            "label": "Palabras clave",
+            "mode": "lines",
+            "fields": [
+              { "id": "keywords", "label": "Palabras clave", "type": "keywords", "template": "+Palabras_clave:+ {value}", "help": "Cantidad exacta según la regla kw_count; únicas y sin aparecer en el cuerpo del bug" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "regression",
+        "label": "Regression",
+        "sections": [
+          {
+            "id": "encabezado",
+            "label": "Encabezado",
+            "mode": "joined",
+            "sep": " ",
+            "noGap": true,
+            "fields": [
+              { "id": "platform", "label": "Plataforma", "type": "autocomplete", "source": "platforms", "size": "half", "required": true },
+              { "id": "client", "label": "Cliente", "type": "text", "size": "half", "template": "({value})", "sep": "", "help": "Déjalo vacío si la plataforma ya lo incluye" },
+              { "id": "regressionStatus", "label": "Estatus", "type": "autocomplete", "source": "regressionStatuses", "required": true, "sep": " - " },
+              { "id": "cl", "label": "CL", "type": "text", "size": "third", "required": true, "regex": "^\\d+$", "regexMsg": "Debe ser numérico", "template": "en CL# {value}" },
+              { "id": "verifiedBy", "label": "Verificado por", "type": "text", "size": "third", "required": true, "template": "por {value}" },
+              { "id": "location", "label": "Ubicación", "type": "text", "size": "third", "template": "desde {value}" }
+            ]
+          },
+          {
+            "id": "detalle",
+            "label": "Detalle",
+            "mode": "lines",
+            "fields": [
+              { "id": "description", "label": "Descripción (línea del issue)", "type": "text", "required": true, "template": "* {value}" },
+              { "id": "reproductionRate", "label": "Tasa de reproducción (X/Y)", "type": "text", "size": "half", "required": true, "regex": "@repro_re", "regexMsg": "Formato: X/Y", "template": "* Tasa de Reproducción: {value}" },
+              { "id": "regressedIn", "label": "Regresado en", "type": "text", "size": "half", "template": "* Regresado en: {value}" },
+              { "id": "profile", "label": "Perfil", "type": "text", "size": "third", "template": "* Perfil: {value}" },
+              { "id": "timestamp", "label": "Marca de tiempo", "type": "text", "size": "third", "template": "* Marca de tiempo: {value}" },
+              { "id": "tz", "label": "Zona horaria", "type": "text", "size": "third", "default": "@default_tz", "joinPrev": true },
+              { "id": "cod", "label": "COD", "type": "text", "size": "half", "required": true, "template": "* COD {value}" },
+              { "id": "clMirror", "label": "CL (copia)", "type": "mirror", "source": "cl", "template": "CL: {value}", "joinPrev": true },
+              { "id": "ccsFfotd", "label": "CCS / FFOTD", "type": "text", "size": "half", "template": "* CCS/FFOTD: {value}", "emptyAs": "N/A" },
+              { "id": "bsp", "label": "BSP", "type": "text", "size": "half", "default": "N/A", "template": "* BSP: {value}", "emptyAs": "N/A" },
+              { "id": "buildUrl", "label": "Build URL", "type": "text", "required": true, "regex": "^getbuild://", "regexMsg": "Debe empezar con getbuild://", "template": "* Ubicación de compilación: {value}" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+</script>
 
 <script>
 "use strict";
 
-/* ============================================================
-   STATE
-   ============================================================ */
-const STATE_KEY      = "bug_tool_state_v1";
-const PENDING_KEY    = "bug_tool_pending_data_v1";
-const PREFS_KEY      = "bug_tool_prefs";
-const SETTINGS_KEY   = "bug_tool_settings_v1";
+/* ================================================================
+   BUG REPORT TOOL v2 — schema-driven
+   ================================================================
+   Índice del código (buscar el número para saltar):
+     [1] Captura prístina y constantes
+     [2] Utilidades generales
+     [3] Config (vanilla embebida + copia local editable)
+     [4] Helpers de schema (formularios, secciones, campos)
+     [5] Instancias (Bug 1, Bug 2, ...) y persistencia
+     [6] Render: pestañas superiores y sub-pestañas
+     [7] Render: formulario (normal + modo edición)
+     [8] Widgets: autocomplete (+/borrar opción) y palabras clave
+     [9] Edición de schema: secciones y campos (modales)
+    [10] Validación y tiles de estado
+    [11] Generador de output (usa el schema, no código fijo)
+    [12] Panel de media
+    [13] Pestaña DATA
+    [14] Pestaña RULES
+    [15] CSV: bug_data.csv y bug_fields.csv (importar/exportar)
+    [16] Exportar herramienta (HTML autocontenido)
+    [17] Sesión (guardar/cargar archivo), modales, banner, menús
+    [18] Boot
+   ================================================================ */
 
-const DEFAULT_INSTANCE_COUNT = 3;
+/* ================================================================
+   [1] CAPTURA PRÍSTINA Y CONSTANTES
+   ================================================================
+   Guardamos el HTML del archivo TAL COMO ESTÁ EN DISCO antes de que
+   el JS pinte nada. "Exportar herramienta" toma esta copia, le
+   reemplaza el bloque JSON #vanillaConfig por la config actual y la
+   descarga: así los cambios quedan DENTRO del nuevo .html. */
+const PRISTINE_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+// Escrito en dos partes para que el parser HTML no corte el script aquí.
+const SCRIPT_END = "</scr" + "ipt>";
 
-const state = {
-  topKind: "bug",         // "bug" | "regression" | "data"
-  data: {
-    // populated from CSV; structure:
-    //   { regions:[], platforms:[], modes:[], bugTypes:[],
-    //     regressionStatuses:[], onlineOrLan:[], severities:[],
-    //     priorities:[], maps:[], pois:{ mapName: [poi,...] },
-    //     tiers:{}, rules:{} }
-    regions: [],
-    platforms: [],
-    modes: [],
-    bugTypes: [],
-    regressionStatuses: [],
-    onlineOrLan: [],
-    severities: [],
-    priorities: [],
-    maps: [],
-    pois: {},
-    tiers: {},
-    rules: {
-      kw_count: "5",
-      coord_fmt: "(X, Y, Z) (X, Y, Z)",
-      coord_re: "^\\(\\d+,\\s*\\d+,\\s*\\d+\\)\\s*\\(\\d+,\\s*\\d+,\\s*\\d+\\)$",
-      repro_re: "^\\d+/\\d+$",
-      buildUrl_prefix: "getbuild://",
-      default_tz: "CST",
-      default_executable: "Test.exe"
-    }
-  },
-  dataLoaded: false,
-  dataLoadedFrom: null,   // last path/name
-  instances: [],          // [{ id, kind, title, fields, errors, dirty }]
-  activeInstanceId: null,
-  dataTab: {
-    selectedCategory: "list:regions",
-    workingRows: [],      // in-memory copy of CSV rows being edited
-    originalRows: [],     // for revert
-    selectedRowIndex: -1
-  },
-  prefs: {
-    dontAskOnClose: false
-  },
-  settings: {
-    lastCsvPath: ""
-  }
-};
+const CONFIG_KEY  = "bug_tool_v2_config";   // schema + data (localStorage)
+const SESSION_KEY = "bug_tool_v2_session";  // instancias y preferencias
+
+const FIELD_TYPES = [
+  { id: "text",         label: "Texto (una línea)" },
+  { id: "textarea",     label: "Texto (varias líneas)" },
+  { id: "autocomplete", label: "Texto + dropdown autocompletable" },
+  { id: "keywords",     label: "Palabras clave (chips)" },
+  { id: "mirror",       label: "Copia de otro campo (solo output)" }
+];
+const FIELD_SIZES = [
+  { id: "full",  label: "Ancho completo" },
+  { id: "half",  label: "1/2 de fila" },
+  { id: "third", label: "1/3 de fila" }
+];
+
+/* ================================================================
+   [2] UTILIDADES GENERALES
+   ================================================================ */
+function $(id) { return document.getElementById(id); }
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 function newId() {
   return "i_" + Math.random().toString(36).slice(2, 10);
 }
 
-function makeEmptyBugInstance() {
-  return {
-    id: newId(),
-    kind: "bug",
-    title: "Bug 1",
-    fields: {
-      team: "",
-      region: "",
-      version: "",
-      platform: "",
-      client: "",
-      mode: "",
-      map: "",
-      poi: "",
-      bugType: "",
-      shortDescription: "",
-      narrativeCondition: "",
-      coords: "",
-      description: "",
-      variables: "",
-      reproSteps: "",
-      results: "",
-      keywords: [],
-      // build
-      cod: "",
-      cl: "",
-      bspCl: "N/A",
-      package: "",
-      ccs: "",
-      bsp: "N/A",
-      buildUrl: "",
-      // notes
-      reproduction: "",
-      profile: "",
-      timestamp: "",
-      tz: state.data.rules.default_tz || "CST",
-      onlineOrLan: "",
-      executable: state.data.rules.default_executable || "Test.exe",
-      notesViewpos: "",
-      material: "",
-      model: ""
-    },
-    mediaKeys: { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" },
-    output: "",
-    outputEdited: false,
-    errors: {},
-    dirty: false
-  };
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
 }
 
-function makeEmptyRegressionInstance() {
-  return {
-    id: newId(),
-    kind: "regression",
-    title: "Regression 1",
-    fields: {
-      platform: "",
-      client: "",
-      regressionStatus: "",
-      cl: "",
-      verifiedBy: "",
-      location: "",
-      description: "",
-      reproductionRate: "",
-      regressedIn: "",
-      profile: "",
-      timestamp: "",
-      tz: state.data.rules.default_tz || "CST",
-      cod: "",
-      ccsFfotd: "",
-      bsp: "N/A",
-      buildUrl: ""
-    },
-    mediaKeys: { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" },
-    output: "",
-    outputEdited: false,
-    errors: {},
-    dirty: false
-  };
+// Convierte un nombre libre en un id seguro: "Posición de vista" -> "posicionDeVista"
+function slugify(label) {
+  const clean = String(label || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // sin acentos
+    .replace(/[^a-zA-Z0-9]+/g, " ").trim();
+  if (!clean) return "campo";
+  const parts = clean.split(" ");
+  return parts[0].toLowerCase() +
+    parts.slice(1).map(p => p[0].toUpperCase() + p.slice(1).toLowerCase()).join("");
 }
 
-function defaultInstances() {
-  const bugs = [];
-  for (let i = 1; i <= DEFAULT_INSTANCE_COUNT; i++) {
-    const inst = makeEmptyBugInstance();
-    inst.title = "Bug " + i;
-    bugs.push(inst);
+// Los valores que empiezan con "@" son referencias a data.rules.
+// Ej.: regex "@coord_re" usa la regla coord_re; default "@default_tz" usa CST.
+function resolveRef(v) {
+  if (typeof v === "string" && v.startsWith("@")) {
+    const key = v.slice(1);
+    return config.data.rules[key] != null ? config.data.rules[key] : "";
   }
-  return bugs;
+  return v == null ? "" : v;
 }
 
-/* ============================================================
-   PERSISTENCE
-   ============================================================ */
+function isoStamp() {
+  const d = new Date();
+  return d.toISOString().replace(/[:.]/g, "-").slice(0, 19);
+}
+
+function downloadFile(name, content) {
+  const blob = new Blob([content || ""], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text || "").then(() => {
+    flashBanner("Copiado al portapapeles.");
+  }).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = text || "";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); flashBanner("Copiado al portapapeles."); }
+    catch (e) { flashBanner("No se pudo copiar. Selecciona y copia a mano.", true); }
+    document.body.removeChild(ta);
+  });
+}
+
+/* ================================================================
+   [3] CONFIG (VANILLA EMBEBIDA + COPIA LOCAL EDITABLE)
+   ================================================================
+   - `vanilla`: lo que trae el archivo .html (bloque #vanillaConfig).
+   - `config`:  la copia con la que se trabaja. Vive en localStorage
+     para que los cambios sobrevivan al cerrar el navegador.
+   Si config != vanilla se muestra el aviso "Config modificada" para
+   recordar exportar la herramienta o los CSV. */
+let vanilla = null;
+let config = null;
+
+function loadVanillaConfig() {
+  const el = $("vanillaConfig");
+  vanilla = JSON.parse(el.textContent);
+}
+
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem(CONFIG_KEY);
+    if (raw) {
+      const c = JSON.parse(raw);
+      if (c && c.schema && c.data) { config = c; return; }
+    }
+  } catch (e) { console.error("loadConfig", e); }
+  config = deepClone(vanilla);
+}
+
+function configIsDirty() {
+  return JSON.stringify(config) !== JSON.stringify(vanilla);
+}
+
+function updateConfigChip() {
+  $("configChip").classList.toggle("visible", configIsDirty());
+}
+
+/* ================================================================
+   [4] HELPERS DE SCHEMA
+   ================================================================ */
+function getForms() { return config.schema.forms; }
+
+function getForm(formId) {
+  return getForms().find(f => f.id === formId) || null;
+}
+
+function getSection(form, secId) {
+  return form.sections.find(s => s.id === secId) || null;
+}
+
+function getField(form, fieldId) {
+  for (const sec of form.sections) {
+    const idx = sec.fields.findIndex(f => f.id === fieldId);
+    if (idx >= 0) return { sec, field: sec.fields[idx], idx };
+  }
+  return null;
+}
+
+function allFields(form) {
+  const out = [];
+  form.sections.forEach(sec => sec.fields.forEach(f => out.push({ sec, field: f })));
+  return out;
+}
+
+// Opciones disponibles para la columna "source" de un autocomplete:
+// nombres de lista, "maps", o "pois:<campo de mapa>".
+function sourceOptions(form) {
+  const opts = Object.keys(config.data.lists).slice();
+  opts.push("maps");
+  allFields(form).forEach(({ field }) => {
+    if (field.type === "text" || field.type === "autocomplete") {
+      opts.push("pois:" + field.id);
+    }
+  });
+  return opts;
+}
+
+// Devuelve las opciones actuales de un campo autocomplete.
+function optionsForField(field, inst) {
+  const src = field.source || "";
+  if (src === "maps") return config.data.maps;
+  if (src.startsWith("pois:")) {
+    const mapField = src.slice(5);
+    const mapVal = inst ? String(inst.values[mapField] || "") : "";
+    return (mapVal && config.data.pois[mapVal]) ? config.data.pois[mapVal] : [];
+  }
+  return config.data.lists[src] || [];
+}
+
+/* ================================================================
+   [5] INSTANCIAS Y PERSISTENCIA
+   ================================================================ */
+const state = {
+  topTab: "",            // id de formulario, "data" o "rules"
+  editMode: false,
+  instances: [],         // { id, formId, title, values, mediaKeys, output, outputEdited, errors, dirty }
+  activeInstanceId: null,
+  dataTab: { selectedCategory: "" },
+  prefs: { dontAskOnClose: false }
+};
+
+function makeInstance(formId) {
+  const form = getForm(formId);
+  const values = {};
+  allFields(form).forEach(({ field }) => {
+    if (field.type === "mirror") return;
+    if (field.type === "keywords") values[field.id] = [];
+    else values[field.id] = resolveRef(field.default || "");
+  });
+  return {
+    id: newId(),
+    formId: formId,
+    title: form.label + " 1",
+    values: values,
+    mediaKeys: { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" },
+    output: "",
+    outputEdited: false,
+    errors: {},
+    dirty: false
+  };
+}
+
+// Tras editar el schema (agregar campos, importar CSV) las instancias
+// viejas pueden no tener todos los ids: aquí se completan.
+function ensureInstanceFields(inst) {
+  const form = getForm(inst.formId);
+  if (!form) return;
+  allFields(form).forEach(({ field }) => {
+    if (field.type === "mirror") return;
+    if (inst.values[field.id] === undefined) {
+      inst.values[field.id] = field.type === "keywords" ? [] : resolveRef(field.default || "");
+    }
+    if (field.type === "keywords" && !Array.isArray(inst.values[field.id])) {
+      inst.values[field.id] = [];
+    }
+  });
+  if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
+  if (!inst.errors) inst.errors = {};
+}
+
+function getActiveInstance() {
+  return state.instances.find(i => i.id === state.activeInstanceId) || null;
+}
+
+// ---- Guardado en localStorage (debounced) ----
 let saveTimer = null;
+// true mientras se ejecuta "Borrar todo lo local": bloquea cualquier
+// guardado para que beforeunload no re-escriba lo recién borrado.
+let suppressSave = false;
 function scheduleSave() {
   if (saveTimer) clearTimeout(saveTimer);
   setSaveIndicator("saving");
   saveTimer = setTimeout(() => {
-    saveState();
+    saveAll();
     setSaveIndicator("saved");
   }, 300);
 }
 
-function setSaveIndicator(kind) {
-  const el = document.getElementById("saveIndicator");
-  const txt = document.getElementById("saveIndicatorText");
-  el.classList.remove("saved", "saving", "unsaved");
-  el.classList.add(kind);
-  txt.textContent = kind === "saved" ? "Saved"
-                  : kind === "saving" ? "Saving..."
-                  : "Unsaved";
-}
-
-function saveState() {
+function saveAll() {
+  if (suppressSave) return;
   try {
-    const snap = {
-      topKind: state.topKind,
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      topTab: state.topTab,
       instances: state.instances,
       activeInstanceId: state.activeInstanceId,
-      dataLoadedFrom: state.dataLoadedFrom,
-      settings: state.settings
-    };
-    localStorage.setItem(STATE_KEY, JSON.stringify(snap));
-    localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+      dataTab: state.dataTab,
+      prefs: state.prefs
+    }));
   } catch (e) {
-    console.error("saveState failed", e);
+    console.error("saveAll", e);
   }
+  updateConfigChip();
 }
 
-function loadState() {
+function loadSession() {
   try {
-    const raw = localStorage.getItem(STATE_KEY);
+    const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return false;
     const snap = JSON.parse(raw);
-    if (snap.topKind) state.topKind = snap.topKind;
-    if (Array.isArray(snap.instances) && snap.instances.length) {
-      state.instances = snap.instances;
-    }
+    if (snap.topTab) state.topTab = snap.topTab;
+    if (Array.isArray(snap.instances)) state.instances = snap.instances;
     if (snap.activeInstanceId) state.activeInstanceId = snap.activeInstanceId;
-    if (snap.dataLoadedFrom) state.dataLoadedFrom = snap.dataLoadedFrom;
-    if (snap.settings) state.settings = Object.assign(state.settings, snap.settings);
-    const prefsRaw = localStorage.getItem(PREFS_KEY);
-    if (prefsRaw) {
-      const p = JSON.parse(prefsRaw);
-      state.prefs = Object.assign(state.prefs, p);
-    }
+    if (snap.dataTab) state.dataTab = Object.assign(state.dataTab, snap.dataTab);
+    if (snap.prefs) state.prefs = Object.assign(state.prefs, snap.prefs);
     return true;
   } catch (e) {
-    console.error("loadState failed", e);
+    console.error("loadSession", e);
     return false;
   }
 }
 
+function setSaveIndicator(kind) {
+  const el = $("saveIndicator");
+  el.classList.remove("saved", "saving", "unsaved");
+  el.classList.add(kind);
+  $("saveIndicatorText").textContent =
+    kind === "saved" ? "Guardado" : kind === "saving" ? "Guardando..." : "Sin guardar";
+}
+
 function markInstanceDirty(inst) {
-  inst.dirty = true;
-  refreshSubTabs();
+  if (!inst.dirty) { inst.dirty = true; refreshSubTabs(); }
 }
 
-function markInstanceClean(inst) {
-  inst.dirty = false;
-  refreshSubTabs();
-}
-
-/* ============================================================
-   RENDER — top tabs
-   ============================================================ */
+/* ================================================================
+   [6] RENDER: PESTAÑAS SUPERIORES Y SUB-PESTAÑAS
+   ================================================================ */
 function renderTopTabs() {
-  document.querySelectorAll(".top-tab").forEach(el => {
-    el.classList.toggle("active", el.dataset.kind === state.topKind);
+  const cont = $("formTabs");
+  cont.innerHTML = getForms().map(f =>
+    `<div class="top-tab${state.topTab === f.id ? " active" : ""}" data-form="${escapeHtml(f.id)}">${escapeHtml(f.label)}</div>`
+  ).join("");
+  cont.querySelectorAll("[data-form]").forEach(el => {
+    el.addEventListener("click", () => switchToForm(el.dataset.form));
   });
-  const showInstance = state.topKind !== "data";
-  document.getElementById("subTabsAndMain").style.display = showInstance ? "block" : "none";
-  document.getElementById("dataContainer").style.display = showInstance ? "none" : "block";
+  document.querySelectorAll('#topTabs [data-tab]').forEach(el => {
+    el.classList.toggle("active", state.topTab === el.dataset.tab);
+  });
+  // Mostrar el contenedor que toca
+  const isForm = !!getForm(state.topTab);
+  $("subTabsAndMain").style.display = isForm ? "flex" : "none";
+  $("tilesBar").classList.toggle("hidden", !isForm);
+  $("dataContainer").style.display = state.topTab === "data" ? "flex" : "none";
+  $("rulesContainer").style.display = state.topTab === "rules" ? "block" : "none";
 }
 
-/* ============================================================
-   RENDER — sub tabs (instances)
-   ============================================================ */
+function switchToForm(formId) {
+  state.topTab = formId;
+  const existing = state.instances.find(i => i.formId === formId);
+  if (!existing) addInstance();
+  else if (!getActiveInstance() || getActiveInstance().formId !== formId) {
+    state.activeInstanceId = existing.id;
+  }
+  refreshAll();
+  scheduleSave();
+}
+
 function refreshSubTabs() {
-  const bar = document.getElementById("subTabs");
+  const bar = $("subTabs");
   bar.innerHTML = "";
-  const visible = state.instances.filter(i => i.kind === state.topKind);
+  const visible = state.instances.filter(i => i.formId === state.topTab);
   visible.forEach(inst => {
     const el = document.createElement("div");
     el.className = "sub-tab" + (inst.id === state.activeInstanceId ? " active" : "")
                  + (inst.dirty ? " dirty" : "");
-    el.dataset.id = inst.id;
     el.innerHTML = `<span class="dirty-dot"></span>
                     <span class="label">${escapeHtml(inst.title)}</span>
-                    <span class="close" title="Close">×</span>`;
+                    <span class="close" title="Cerrar">×</span>`;
     el.addEventListener("click", e => {
       if (e.target.classList.contains("close")) {
         e.stopPropagation();
         closeInstance(inst.id);
-      } else {
+      } else if (inst.id !== state.activeInstanceId) {
         state.activeInstanceId = inst.id;
         refreshAll();
         scheduleSave();
@@ -988,24 +1536,19 @@ function refreshSubTabs() {
   const plus = document.createElement("div");
   plus.className = "sub-tab-new";
   plus.textContent = "+";
-  plus.title = "New instance";
+  plus.title = "Nueva instancia";
   plus.addEventListener("click", addInstance);
   bar.appendChild(plus);
 }
 
-function getActiveInstance() {
-  return state.instances.find(i => i.id === state.activeInstanceId) || null;
-}
-
 function addInstance() {
+  const form = getForm(state.topTab);
+  if (!form) return;
   let count = 1;
-  const baseName = state.topKind === "regression" ? "Regression" : "Bug";
-  const existing = state.instances.filter(i => i.kind === state.topKind);
-  while (existing.some(i => i.title === baseName + " " + count)) count++;
-  const inst = state.topKind === "regression"
-    ? makeEmptyRegressionInstance()
-    : makeEmptyBugInstance();
-  inst.title = baseName + " " + count;
+  const existing = state.instances.filter(i => i.formId === state.topTab);
+  while (existing.some(i => i.title === form.label + " " + count)) count++;
+  const inst = makeInstance(state.topTab);
+  inst.title = form.label + " " + count;
   inst.dirty = true;
   state.instances.push(inst);
   state.activeInstanceId = inst.id;
@@ -1019,25 +1562,22 @@ function closeInstance(id) {
   const doClose = () => {
     state.instances = state.instances.filter(i => i.id !== id);
     if (state.activeInstanceId === id) {
-      const remaining = state.instances.filter(i => i.kind === state.topKind);
+      const remaining = state.instances.filter(i => i.formId === state.topTab);
       state.activeInstanceId = remaining.length ? remaining[0].id : null;
-      if (!state.activeInstanceId) addInstance();
+      if (!state.activeInstanceId) { addInstance(); return; }
     }
     refreshAll();
     scheduleSave();
   };
   if (inst.dirty && !state.prefs.dontAskOnClose) {
     showConfirmModal({
-      title: "Discard changes?",
-      body: `Discard unsaved changes to "${inst.title}"?`,
-      confirmText: "Discard",
+      title: "¿Descartar cambios?",
+      body: `¿Descartar los cambios sin guardar de "${escapeHtml(inst.title)}"?`,
+      confirmText: "Descartar",
       confirmClass: "danger",
       showDontAsk: true,
       onConfirm: (dontAsk) => {
-        if (dontAsk) {
-          state.prefs.dontAskOnClose = true;
-          localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
-        }
+        if (dontAsk) state.prefs.dontAskOnClose = true;
         doClose();
       }
     });
@@ -1046,539 +1586,295 @@ function closeInstance(id) {
   }
 }
 
-/* ============================================================
-   RENDER — form panel
-   ============================================================ */
+function refreshAll() {
+  renderTopTabs();
+  const isForm = !!getForm(state.topTab);
+  if (isForm) {
+    refreshSubTabs();
+    renderForm();
+    renderMediaPanel();
+  } else if (state.topTab === "data") {
+    renderDataTab();
+  } else if (state.topTab === "rules") {
+    renderRulesTab();
+  }
+  updateConfigChip();
+}
+
+/* ================================================================
+   [7] RENDER: FORMULARIO (NORMAL + MODO EDICIÓN)
+   ================================================================
+   Todo el formulario se pinta a partir del schema. En modo edición
+   aparecen los controles ↑ ↓ ✎ ✕ en secciones y campos. El orden
+   visual de arriba hacia abajo ES el orden del output. */
 function renderForm() {
   const inst = getActiveInstance();
-  const panel = document.getElementById("formPanel");
-  if (!inst) { panel.innerHTML = "<p>No instance selected.</p>"; return; }
-  if (inst.kind === "bug") {
-    panel.innerHTML = buildBugFormHtml(inst);
-  } else {
-    panel.innerHTML = buildRegressionFormHtml(inst);
-  }
-  wireFormEvents(inst);
+  const form = getForm(state.topTab);
+  const panel = $("formPanel");
+  if (!inst || !form) { panel.innerHTML = "<p>No hay instancia activa.</p>"; return; }
+  ensureInstanceFields(inst);
+  $("formTitle").textContent = form.label;
+  const toggle = $("editToggle");
+  toggle.classList.toggle("active", state.editMode);
+  toggle.textContent = state.editMode ? "✓ Terminar edición" : "✎ Editar formulario";
+  document.body.classList.toggle("editing", state.editMode);
+
+  panel.innerHTML = form.sections.map(sec => sectionHtml(sec, inst)).join("")
+    + `<button class="add-section-btn" id="addSectionBtn">+ Agregar sección</button>`;
+  wireFormEvents(inst, form);
   revalidate(inst);
   renderOutput();
 }
 
-function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-function buildOptions(list, current, placeholder) {
-  const ph = placeholder ? `<option value="">${escapeHtml(placeholder)}</option>` : "";
-  const opts = list.map(v => {
-    const sel = v === current ? " selected" : "";
-    return `<option value="${escapeHtml(v)}"${sel}>${escapeHtml(v)}</option>`;
+function sectionHtml(sec, inst) {
+  const tools = `
+    <span class="sec-tools">
+      <button class="tool-btn" data-sec-add="${sec.id}" title="Agregar campo a esta sección">+ campo</button>
+      <button class="tool-btn" data-sec-up="${sec.id}" title="Subir sección">▲</button>
+      <button class="tool-btn" data-sec-down="${sec.id}" title="Bajar sección">▼</button>
+      <button class="tool-btn" data-sec-edit="${sec.id}" title="Editar sección">✎</button>
+      <button class="tool-btn del" data-sec-del="${sec.id}" title="Borrar sección">✕</button>
+    </span>`;
+  // Agrupar campos consecutivos del mismo tamaño en filas de 2 o 3
+  const rows = [];
+  let group = null;
+  sec.fields.forEach(f => {
+    const size = f.size === "half" ? 2 : f.size === "third" ? 3 : 1;
+    if (group && group.size === size && size > 1 && group.items.length < size) {
+      group.items.push(f);
+    } else {
+      group = { size, items: [f] };
+      rows.push(group);
+    }
+  });
+  const body = rows.map(g => {
+    const cells = g.items.map(f => fieldHtml(f, inst)).join("");
+    if (g.size === 2) return `<div class="row-2">${cells}</div>`;
+    if (g.size === 3) return `<div class="row-3">${cells}</div>`;
+    return cells;
   }).join("");
-  return ph + opts;
+  return `<div class="form-section" data-section="${escapeHtml(sec.id)}">
+    <h4>${escapeHtml(sec.label)}${tools}</h4>
+    ${body}
+  </div>`;
 }
 
-function fieldHtml(name, label, value, opts = {}) {
-  const err = opts._error || "";
+function fieldHtml(field, inst) {
+  const err = inst.errors[field.id] || "";
   const invalid = err ? " invalid" : "";
-  return `<div class="field${invalid}" data-field="${name}">
-    <label>${escapeHtml(label)}</label>
-    ${opts.html || `<input type="text" data-bind="${name}" value="${escapeHtml(value)}" />`}
-    <div class="field-error">${escapeHtml(err)}</div>
+  const tools = `
+    <span class="fld-tools">
+      <button class="tool-btn" data-fld-up="${field.id}" title="Subir campo (sube en el output)">▲</button>
+      <button class="tool-btn" data-fld-down="${field.id}" title="Bajar campo (baja en el output)">▼</button>
+      <button class="tool-btn" data-fld-edit="${field.id}" title="Editar campo">✎</button>
+      <button class="tool-btn del" data-fld-del="${field.id}" title="Borrar campo definitivamente">✕</button>
+    </span>`;
+  const labelHtml = `<label>${escapeHtml(field.label)}${field.required ? '<span class="req">*</span>' : ""}${tools}</label>`;
+  const helpHtml = field.help ? `<div class="field-help">${escapeHtml(field.help)}</div>` : "";
+  const errHtml = `<div class="field-error">${escapeHtml(err)}</div>`;
+  const val = field.type === "mirror" ? "" : (inst.values[field.id] != null ? inst.values[field.id] : "");
+
+  if (field.type === "mirror") {
+    // Solo visible en modo edición: no se llena, copia otro campo en el output.
+    return `<div class="field mirror-field" data-field="${escapeHtml(field.id)}">
+      ${labelHtml}
+      <div class="mirror-note">= copia del campo «${escapeHtml(field.source || "?")}» (solo aparece en el output)</div>
+    </div>`;
+  }
+  if (field.type === "textarea") {
+    return `<div class="field${invalid}" data-field="${escapeHtml(field.id)}">
+      ${labelHtml}
+      <textarea data-bind="${escapeHtml(field.id)}" rows="${field.rows || 3}">${escapeHtml(val)}</textarea>
+      ${errHtml}${helpHtml}
+    </div>`;
+  }
+  if (field.type === "autocomplete") {
+    return `<div class="field autocomplete${invalid}" data-field="${escapeHtml(field.id)}">
+      ${labelHtml}
+      <div class="autocomplete-input-wrap">
+        <input type="text" data-bind="${escapeHtml(field.id)}" data-ac="${escapeHtml(field.id)}" value="${escapeHtml(val)}" />
+        <span class="autocomplete-arrow" data-ac-toggle title="Ver todas las opciones">▼</span>
+      </div>
+      <div class="autocomplete-list"></div>
+      ${errHtml}${helpHtml}
+    </div>`;
+  }
+  if (field.type === "keywords") {
+    const kws = Array.isArray(val) ? val : [];
+    return `<div class="field" data-field="${escapeHtml(field.id)}">
+      ${labelHtml}
+      <div class="chips${err ? " invalid" : ""}" data-kw-chips="${escapeHtml(field.id)}">
+        ${kws.map(k => `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`).join("")}
+        <input type="text" data-kw-input="${escapeHtml(field.id)}" placeholder="Escribe y presiona Enter..." />
+      </div>
+      ${err ? `<div class="chips-error">${escapeHtml(err)}</div>` : ""}
+      ${helpHtml}
+    </div>`;
+  }
+  // text (default)
+  return `<div class="field${invalid}" data-field="${escapeHtml(field.id)}">
+    ${labelHtml}
+    <input type="text" data-bind="${escapeHtml(field.id)}" value="${escapeHtml(val)}" />
+    ${errHtml}${helpHtml}
   </div>`;
 }
 
-// Helper: render an autocomplete input field. `acKey` identifies which
-// list to use (e.g. "regions", "platforms", "maps", "pois"). The user
-// can type freely; matching items appear in the dropdown. Free-text
-// values that don't match the list are allowed.
-function buildAcField(name, label, value, acKey, isInvalidClass, errorText) {
-  return `<div class="field autocomplete${isInvalidClass}" data-field="${name}">
-    <label>${escapeHtml(label)}</label>
-    <div class="autocomplete-input-wrap">
-      <input type="text" data-bind="${name}" data-autocomplete="${acKey}" value="${escapeHtml(value)}" />
-      <span class="autocomplete-arrow" data-ac-toggle title="Show all options">▼</span>
-    </div>
-    <div class="autocomplete-list"></div>
-    <div class="field-error">${escapeHtml(errorText || "")}</div>
-  </div>`;
-}
+function wireFormEvents(inst, form) {
+  const panel = $("formPanel");
 
-function buildBugFormHtml(inst) {
-  const f = inst.fields;
-  const d = state.data;
-  const isInvalid = (n) => inst.errors[n] ? " invalid" : "";
-  const err = (n) => inst.errors[n] || "";
-
-  return `
-    <div class="form-section">
-      <h4>Summary header</h4>
-      <div class="row-2">
-        <div class="field${isInvalid('team')}" data-field="team">
-          <label>Team</label>
-          <input type="text" data-bind="team" value="${escapeHtml(f.team)}" />
-          <div class="field-error">${err('team')}</div>
-        </div>
-        ${buildAcField('region', 'Region', f.region, 'regions', isInvalid('region'), err('region'))}
-      </div>
-      <div class="row-3">
-        <div class="field${isInvalid('version')}" data-field="version">
-          <label>Version</label>
-          <input type="text" data-bind="version" value="${escapeHtml(f.version)}" />
-          <div class="field-error">${err('version')}</div>
-        </div>
-        ${buildAcField('platform', 'Platform', f.platform, 'platforms', isInvalid('platform'), err('platform'))}
-        <div class="field${isInvalid('client')}" data-field="client">
-          <label>Client</label>
-          <input type="text" data-bind="client" value="${escapeHtml(f.client)}" />
-          <div class="field-error">${err('client')}</div>
-        </div>
-      </div>
-      <div class="row-3">
-        ${buildAcField('mode', 'Mode', f.mode, 'modes', isInvalid('mode'), err('mode'))}
-        ${buildAcField('map', 'Map', f.map, 'maps', isInvalid('map'), err('map'))}
-        ${buildAcField('poi', 'POI', f.poi, 'pois', isInvalid('poi'), err('poi'))}
-      </div>
-      <div class="row-2">
-        ${buildAcField('bugType', 'Bug type', f.bugType, 'bugTypes', isInvalid('bugType'), err('bugType'))}
-        <div class="field${isInvalid('shortDescription')}" data-field="shortDescription">
-          <label>Short description</label>
-          <input type="text" data-bind="shortDescription" value="${escapeHtml(f.shortDescription)}" />
-          <div class="field-error">${err('shortDescription')}</div>
-        </div>
-      </div>
-      <div class="field${isInvalid('narrativeCondition')}" data-field="narrativeCondition">
-        <label>Narrative condition (1-3 sentences)</label>
-        <textarea data-bind="narrativeCondition" rows="2">${escapeHtml(f.narrativeCondition)}</textarea>
-        <div class="field-error">${err('narrativeCondition')}</div>
-      </div>
-      <div class="field${isInvalid('coords')}" data-field="coords">
-        <label>Coordinates — format: ${escapeHtml(d.rules.coord_fmt)}</label>
-        <input type="text" data-bind="coords" value="${escapeHtml(f.coords)}" />
-        <div class="field-error">${err('coords')}</div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h4>Description</h4>
-      <div class="field">
-        <label>Long description</label>
-        <textarea data-bind="description" rows="4">${escapeHtml(f.description)}</textarea>
-      </div>
-      <div class="field">
-        <label>Variables / arguments (one per line)</label>
-        <textarea data-bind="variables" rows="3">${escapeHtml(f.variables)}</textarea>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h4>Build info</h4>
-      <div class="row-3">
-        <div class="field${isInvalid('cod')}" data-field="cod">
-          <label>COD</label>
-          <input type="text" data-bind="cod" value="${escapeHtml(f.cod)}" />
-          <div class="field-error">${err('cod')}</div>
-        </div>
-        <div class="field${isInvalid('cl')}" data-field="cl">
-          <label>CL</label>
-          <input type="text" data-bind="cl" value="${escapeHtml(f.cl)}" />
-          <div class="field-error">${err('cl')}</div>
-        </div>
-        <div class="field${isInvalid('bspCl')}" data-field="bspCl">
-          <label>BSP CL</label>
-          <input type="text" data-bind="bspCl" value="${escapeHtml(f.bspCl)}" />
-          <div class="field-error">${err('bspCl')}</div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Package</label>
-        <input type="text" data-bind="package" value="${escapeHtml(f.package)}" />
-      </div>
-      <div class="row-2">
-        <div class="field">
-          <label>CCS</label>
-          <input type="text" data-bind="ccs" value="${escapeHtml(f.ccs)}" />
-        </div>
-        <div class="field">
-          <label>BSP</label>
-          <input type="text" data-bind="bsp" value="${escapeHtml(f.bsp)}" />
-        </div>
-      </div>
-      <div class="field${isInvalid('buildUrl')}" data-field="buildUrl">
-        <label>Build URL</label>
-        <input type="text" data-bind="buildUrl" value="${escapeHtml(f.buildUrl)}" />
-        <div class="field-error">${err('buildUrl')}</div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h4>Repro</h4>
-      <div class="field">
-        <label>Steps to reproduce (one per line)</label>
-        <textarea data-bind="reproSteps" rows="4">${escapeHtml(f.reproSteps)}</textarea>
-      </div>
-      <div class="field">
-        <label>Results (Expected / Actual)</label>
-        <textarea data-bind="results" rows="3">${escapeHtml(f.results)}</textarea>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h4>Notes</h4>
-      <div class="row-3">
-        <div class="field${isInvalid('reproduction')}" data-field="reproduction">
-          <label>Reproduction (X/Y)</label>
-          <input type="text" data-bind="reproduction" value="${escapeHtml(f.reproduction)}" />
-          <div class="field-error">${err('reproduction')}</div>
-        </div>
-        <div class="field">
-          <label>Profile</label>
-          <input type="text" data-bind="profile" value="${escapeHtml(f.profile)}" />
-        </div>
-        <div class="field">
-          <label>Timestamp</label>
-          <input type="text" data-bind="timestamp" value="${escapeHtml(f.timestamp)}" />
-        </div>
-      </div>
-      <div class="row-3">
-        <div class="field">
-          <label>Timezone</label>
-          <input type="text" data-bind="tz" value="${escapeHtml(f.tz)}" />
-        </div>
-        ${buildAcField('onlineOrLan', 'Online / LAN', f.onlineOrLan, 'onlineOrLan', '', '')}
-        <div class="field">
-          <label>Executable</label>
-          <input type="text" data-bind="executable" value="${escapeHtml(f.executable)}" />
-        </div>
-      </div>
-      <div class="field">
-        <label>Viewpos</label>
-        <input type="text" data-bind="notesViewpos" value="${escapeHtml(f.notesViewpos)}" />
-      </div>
-      <div class="row-2">
-        <div class="field">
-          <label>Material</label>
-          <input type="text" data-bind="material" value="${escapeHtml(f.material)}" />
-        </div>
-        <div class="field">
-          <label>Model</label>
-          <input type="text" data-bind="model" value="${escapeHtml(f.model)}" />
-        </div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h4>Keywords (${d.rules.kw_count} required, no overlap with bug body)</h4>
-      <div class="chips ${inst.errors.keywords ? 'invalid' : ''}" id="keywordsChips">
-        ${f.keywords.map(k => `
-          <span class="chip">${escapeHtml(k)}
-            <button data-kw-remove="${escapeHtml(k)}" title="Remove">×</button>
-          </span>
-        `).join("")}
-        <input type="text" id="keywordsInput" placeholder="Type and press Enter..." />
-      </div>
-      ${inst.errors.keywords ? `<div class="field-error" style="display:block;position:static;margin-top:4px;background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:3px;border-left:3px solid #dc2626;">
-        <strong>Keywords error:</strong> ${escapeHtml(inst.errors.keywords)}
-      </div>` : ''}
-    </div>
-  `;
-}
-
-function buildRegressionFormHtml(inst) {
-  const f = inst.fields;
-  const d = state.data;
-  const isInvalid = (n) => inst.errors[n] ? " invalid" : "";
-  const err = (n) => inst.errors[n] || "";
-
-  return `
-    <div class="form-section">
-      <h4>Regression</h4>
-      <div class="row-3">
-        ${buildAcField('platform', 'Platform', f.platform, 'platforms', isInvalid('platform'), err('platform'))}
-        <div class="field${isInvalid('client')}" data-field="client">
-          <label>Client</label>
-          <input type="text" data-bind="client" value="${escapeHtml(f.client)}" />
-          <div class="field-error">${err('client')}</div>
-        </div>
-        ${buildAcField('regressionStatus', 'Status', f.regressionStatus, 'regressionStatuses', isInvalid('regressionStatus'), err('regressionStatus'))}
-      </div>
-      <div class="row-2">
-        <div class="field${isInvalid('cl')}" data-field="cl">
-          <label>CL</label>
-          <input type="text" data-bind="cl" value="${escapeHtml(f.cl)}" />
-          <div class="field-error">${err('cl')}</div>
-        </div>
-        <div class="field${isInvalid('verifiedBy')}" data-field="verifiedBy">
-          <label>Verified by</label>
-          <input type="text" data-bind="verifiedBy" value="${escapeHtml(f.verifiedBy)}" />
-          <div class="field-error">${err('verifiedBy')}</div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Location</label>
-        <input type="text" data-bind="location" value="${escapeHtml(f.location)}" />
-      </div>
-      <div class="field${isInvalid('description')}" data-field="description">
-        <label>Description (the line about the issue)</label>
-        <input type="text" data-bind="description" value="${escapeHtml(f.description)}" />
-        <div class="field-error">${err('description')}</div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h4>Reproduction</h4>
-      <div class="row-2">
-        <div class="field${isInvalid('reproductionRate')}" data-field="reproductionRate">
-          <label>Reproduction rate (X/Y)</label>
-          <input type="text" data-bind="reproductionRate" value="${escapeHtml(f.reproductionRate)}" />
-          <div class="field-error">${err('reproductionRate')}</div>
-        </div>
-        <div class="field">
-          <label>Regressed in (e.g. test.exe)</label>
-          <input type="text" data-bind="regressedIn" value="${escapeHtml(f.regressedIn)}" />
-        </div>
-      </div>
-      <div class="row-3">
-        <div class="field">
-          <label>Profile</label>
-          <input type="text" data-bind="profile" value="${escapeHtml(f.profile)}" />
-        </div>
-        <div class="field">
-          <label>Timestamp</label>
-          <input type="text" data-bind="timestamp" value="${escapeHtml(f.timestamp)}" />
-        </div>
-        <div class="field">
-          <label>Timezone</label>
-          <input type="text" data-bind="tz" value="${escapeHtml(f.tz)}" />
-        </div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h4>Build info</h4>
-      <div class="row-3">
-        <div class="field${isInvalid('cod')}" data-field="cod">
-          <label>COD</label>
-          <input type="text" data-bind="cod" value="${escapeHtml(f.cod)}" />
-          <div class="field-error">${err('cod')}</div>
-        </div>
-        <div class="field">
-          <label>CCS / FFOTD</label>
-          <input type="text" data-bind="ccsFfotd" value="${escapeHtml(f.ccsFfotd)}" />
-        </div>
-        <div class="field">
-          <label>BSP</label>
-          <input type="text" data-bind="bsp" value="${escapeHtml(f.bsp)}" />
-        </div>
-      </div>
-      <div class="field${isInvalid('buildUrl')}" data-field="buildUrl">
-        <label>Build URL</label>
-        <input type="text" data-bind="buildUrl" value="${escapeHtml(f.buildUrl)}" />
-        <div class="field-error">${err('buildUrl')}</div>
-      </div>
-    </div>
-  `;
-}
-
-/* ============================================================
-   FORM WIRING
-   ============================================================ */
-function wireFormEvents(inst) {
-  const panel = document.getElementById("formPanel");
+  // ---- Inputs normales: escribir solo actualiza el modelo; el
+  //      trabajo pesado (validar, output, guardar) ocurre en blur. ----
   panel.querySelectorAll("[data-bind]").forEach(el => {
     const name = el.dataset.bind;
-    // "input" only updates the model + dirty flag. It does NOT
-    // revalidate, re-render, or save — those happen on blur, on
-    // tab change, and on beforeunload. This keeps typing fast and
-    // never interrupts the user's keystroke.
     el.addEventListener("input", () => {
-      inst.fields[name] = el.value;
-      // When the user edits the map, the POI is no longer valid.
-      // We just clear it in the model; we don't re-render the form
-      // because that would steal focus from the map input. The POI
-      // field's visible value will be cleared on the next revalidate
-      // (e.g. on blur, or when the user changes tab).
-      if (name === "map") {
-        inst.fields.poi = "";
-        // Refresh the POI input visually without re-rendering the form
-        const poiEl = panel.querySelector('[data-bind="poi"]');
-        if (poiEl) poiEl.value = "";
-      }
+      inst.values[name] = el.value;
+      clearDependents(form, name, inst, panel);
       markInstanceDirty(inst);
     });
-    // "blur" is when we do the heavy work: validate, render output,
-    // and save. This is the natural moment — the user has finished
-    // with this field.
     el.addEventListener("blur", () => {
       revalidate(inst);
       renderOutput();
-      // The media panel depends on platform, client, and CL.
-      if (name === "platform" || name === "client" || name === "cl") {
-        renderMediaPanel();
-      }
-      saveState();
+      renderMediaPanel();
+      saveAll();
       setSaveIndicator("saved");
     });
-    // "change" covers cases that don't fire "input" (some selects,
-    // though we don't use them anymore) and Enter-key commits.
     el.addEventListener("change", () => {
-      inst.fields[name] = el.value;
+      inst.values[name] = el.value;
+      clearDependents(form, name, inst, panel);
       revalidate(inst);
       renderOutput();
-      if (name === "platform" || name === "client" || name === "cl") {
-        renderMediaPanel();
-      }
+      renderMediaPanel();
       markInstanceDirty(inst);
-      saveState();
+      saveAll();
       setSaveIndicator("saved");
     });
   });
-  // Autocomplete
-  panel.querySelectorAll(".autocomplete input[data-autocomplete]").forEach(input => {
-    wireAutocomplete(input, inst);
+
+  // ---- Autocompletes ----
+  panel.querySelectorAll("input[data-ac]").forEach(input => {
+    const found = getField(form, input.dataset.ac);
+    if (found) wireAutocomplete(input, inst, form, found.field);
   });
-  // Keywords
-  if (inst.kind === "bug") {
-    const chips = document.getElementById("keywordsChips");
-    const kwInput = document.getElementById("keywordsInput");
-    if (chips && kwInput) {
-      chips.addEventListener("click", () => kwInput.focus());
-      // Re-render the keyword chips in place without rebuilding the
-      // whole form (which would steal focus from the keyword input).
-      const refreshKeywords = () => {
-        const cur = kwInput.value;
-        chips.innerHTML = inst.fields.keywords.map(k =>
-          `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Remove">×</button></span>`
-        ).join("") + `<input type="text" id="keywordsInput" placeholder="Type and press Enter..." />`;
-        // re-bind the new input + remove buttons
-        const newInput = document.getElementById("keywordsInput");
-        newInput.value = cur;
-        newInput.addEventListener("keydown", kwKeyHandler);
-        newInput.focus();
-        chips.querySelectorAll("[data-kw-remove]").forEach(btn => {
-          btn.addEventListener("click", () => {
-            const v = btn.dataset.kwRemove;
-            inst.fields.keywords = inst.fields.keywords.filter(k => k !== v);
-            markInstanceDirty(inst);
-            revalidate(inst);
-            refreshKeywords();
-            saveState();
-          });
-        });
-      };
-      const kwKeyHandler = (e) => {
-        if (e.key === "Enter" || e.key === ",") {
-          e.preventDefault();
-          const v = kwInput.value.trim();
-          if (v && !inst.fields.keywords.includes(v)) {
-            inst.fields.keywords.push(v);
-            markInstanceDirty(inst);
-            revalidate(inst);
-            refreshKeywords();
-            saveState();
-          } else if (v) {
-            kwInput.value = "";
-          }
-        } else if (e.key === "Backspace" && !kwInput.value && inst.fields.keywords.length) {
-          inst.fields.keywords.pop();
-          markInstanceDirty(inst);
-          revalidate(inst);
-          refreshKeywords();
-          saveState();
-        }
-      };
-      kwInput.addEventListener("keydown", kwKeyHandler);
-      chips.querySelectorAll("[data-kw-remove]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const v = btn.dataset.kwRemove;
-          inst.fields.keywords = inst.fields.keywords.filter(k => k !== v);
-          markInstanceDirty(inst);
-          revalidate(inst);
-          refreshKeywords();
-          saveState();
-        });
-      });
-    }
-  }
+
+  // ---- Palabras clave ----
+  panel.querySelectorAll("[data-kw-chips]").forEach(chips => {
+    wireKeywords(chips, inst, form);
+  });
+
+  // ---- Controles del modo edición ----
+  $("addSectionBtn").addEventListener("click", () => showSectionEditor(form, null));
+  panel.querySelectorAll("[data-sec-add]").forEach(b => b.addEventListener("click", () =>
+    showFieldEditor(form, getSection(form, b.dataset.secAdd), null)));
+  panel.querySelectorAll("[data-sec-up]").forEach(b => b.addEventListener("click", () =>
+    moveSection(form, b.dataset.secUp, -1)));
+  panel.querySelectorAll("[data-sec-down]").forEach(b => b.addEventListener("click", () =>
+    moveSection(form, b.dataset.secDown, +1)));
+  panel.querySelectorAll("[data-sec-edit]").forEach(b => b.addEventListener("click", () =>
+    showSectionEditor(form, getSection(form, b.dataset.secEdit))));
+  panel.querySelectorAll("[data-sec-del]").forEach(b => b.addEventListener("click", () =>
+    deleteSection(form, b.dataset.secDel)));
+  panel.querySelectorAll("[data-fld-up]").forEach(b => b.addEventListener("click", () =>
+    moveField(form, b.dataset.fldUp, -1)));
+  panel.querySelectorAll("[data-fld-down]").forEach(b => b.addEventListener("click", () =>
+    moveField(form, b.dataset.fldDown, +1)));
+  panel.querySelectorAll("[data-fld-edit]").forEach(b => b.addEventListener("click", () => {
+    const found = getField(form, b.dataset.fldEdit);
+    if (found) showFieldEditor(form, found.sec, found.field);
+  }));
+  panel.querySelectorAll("[data-fld-del]").forEach(b => b.addEventListener("click", () =>
+    deleteField(form, b.dataset.fldDel)));
 }
 
-// Map from data-autocomplete value to the corresponding list in state.data
-const AC_KEYS = {
-  regions:            "regions",
-  platforms:          "platforms",
-  modes:              "modes",
-  bugTypes:           "bugTypes",
-  regressionStatuses: "regressionStatuses",
-  onlineOrLan:        "onlineOrLan",
-  maps:               "maps",
-  pois:               null   // special: depends on the selected map
-};
+// Si cambia el campo del que dependen otros (ej. mapa -> POIs),
+// se limpian los dependientes sin re-pintar el formulario completo.
+function clearDependents(form, name, inst, panel) {
+  allFields(form).forEach(({ field }) => {
+    if (field.source === "pois:" + name) {
+      inst.values[field.id] = "";
+      const el = panel.querySelector(`[data-bind="${field.id}"]`);
+      if (el) el.value = "";
+    }
+  });
+}
 
-function wireAutocomplete(input, inst) {
-  const kind = input.dataset.autocomplete;
+/* ================================================================
+   [8] WIDGETS: AUTOCOMPLETE Y PALABRAS CLAVE
+   ================================================================
+   El dropdown permite texto libre. Al final muestra "+ Agregar ..."
+   para sumar el texto escrito a la lista (queda en DATA), y cada
+   opción tiene una ✕ para borrarla definitivamente (con
+   confirmación). */
+function wireAutocomplete(input, inst, form, field) {
   const wrap = input.closest(".autocomplete");
   const list = wrap.querySelector(".autocomplete-list");
   const arrow = wrap.querySelector("[data-ac-toggle]");
   let activeIdx = -1;
 
-  const getOptions = () => {
-    if (kind === "pois") {
-      const m = inst.fields.map;
-      return (m && state.data.pois[m]) ? state.data.pois[m] : [];
-    }
-    const dataKey = AC_KEYS[kind];
-    if (dataKey) return state.data[dataKey] || [];
-    return [];
-  };
-
-  // showAll=true means: show every option (used by arrow click / focus)
-  // showAll=false means: filter by what the user has typed
   const renderList = (showAll) => {
-    const all = getOptions();
+    const all = optionsForField(field, inst);
     const q = input.value.trim().toLowerCase();
     let items = all;
-    if (!showAll && q) {
-      items = all.filter(v => v.toLowerCase().includes(q));
-    }
+    if (!showAll && q) items = all.filter(v => v.toLowerCase().includes(q));
+
+    let html = "";
     if (!items.length) {
-      // Free-text allowed: show a hint instead of nothing
-      list.innerHTML = `<div class="autocomplete-empty">No matches — keep typing for a free-text value</div>`;
+      html = `<div class="autocomplete-empty">Sin coincidencias — puedes escribir un valor libre</div>`;
     } else {
       const re = q ? new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig") : null;
-      list.innerHTML = items.slice(0, 50).map(v => {
-        const html = re ? escapeHtml(v).replace(re, "<mark>$1</mark>") : escapeHtml(v);
-        return `<div class="autocomplete-item" data-v="${escapeHtml(v)}">${html}</div>`;
+      html = items.slice(0, 50).map(v => {
+        const marked = re ? escapeHtml(v).replace(re, "<mark>$1</mark>") : escapeHtml(v);
+        return `<div class="autocomplete-item" data-v="${escapeHtml(v)}">
+          <span>${marked}</span>
+          <span class="ac-del" data-del="${escapeHtml(v)}" title="Borrar esta opción de la lista">✕</span>
+        </div>`;
       }).join("");
     }
+    // Fila "+ Agregar" cuando lo escrito no existe tal cual en la lista
+    const typed = input.value.trim();
+    if (typed && !all.some(v => v.toLowerCase() === typed.toLowerCase())) {
+      html += `<div class="autocomplete-add" data-add="${escapeHtml(typed)}">+ Agregar «${escapeHtml(typed)}» a la lista</div>`;
+    }
+    list.innerHTML = html;
+
     list.querySelectorAll(".autocomplete-item").forEach(it => {
       it.addEventListener("mousedown", (e) => {
+        if (e.target.closest(".ac-del")) return; // la ✕ tiene su propio handler
         e.preventDefault();
         input.value = it.dataset.v;
         input.dispatchEvent(new Event("input"));
         wrap.classList.remove("open");
       });
     });
+    list.querySelectorAll(".ac-del").forEach(x => {
+      x.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        confirmDeleteOption(field, inst, x.dataset.del, () => renderList(showAll));
+      });
+    });
+    const addEl = list.querySelector(".autocomplete-add");
+    if (addEl) {
+      addEl.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        addOptionToSource(field, inst, addEl.dataset.add);
+        input.value = addEl.dataset.add;
+        input.dispatchEvent(new Event("input"));
+        wrap.classList.remove("open");
+      });
+    }
     activeIdx = -1;
     wrap.classList.add("open");
   };
 
-  // Arrow click: open with all options
   if (arrow) {
     arrow.addEventListener("mousedown", (e) => {
-      e.preventDefault();  // don't steal focus from the input
-      if (wrap.classList.contains("open")) {
-        wrap.classList.remove("open");
-      } else {
-        renderList(true);
-        input.focus();
-      }
+      e.preventDefault();
+      if (wrap.classList.contains("open")) wrap.classList.remove("open");
+      else { renderList(true); input.focus(); }
     });
   }
-
-  // Focus on the input: show filtered (or all if empty)
   input.addEventListener("focus", () => renderList(false));
   input.addEventListener("input", () => renderList(false));
-  // Blur: close, but use a delay so clicks on items still register
   input.addEventListener("blur", () => setTimeout(() => {
     wrap.classList.remove("open");
     activeIdx = -1;
@@ -1588,7 +1884,6 @@ function wireAutocomplete(input, inst) {
     const items = list.querySelectorAll(".autocomplete-item");
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      // If list is closed, open it first
       if (!wrap.classList.contains("open")) renderList(false);
       activeIdx = Math.min(items.length - 1, activeIdx + 1);
     } else if (e.key === "ArrowUp") {
@@ -1613,355 +1908,645 @@ function wireAutocomplete(input, inst) {
   });
 }
 
-// Close all autocompletes when clicking outside any of them
-document.addEventListener("mousedown", (e) => {
-  if (!e.target.closest(".autocomplete")) {
-    document.querySelectorAll(".autocomplete.open").forEach(el => el.classList.remove("open"));
+// Agrega un valor a la fuente del campo (lista, mapas o POIs del mapa activo).
+function addOptionToSource(field, inst, value) {
+  const src = field.source || "";
+  if (src === "maps") {
+    config.data.maps.push(value);
+    if (!config.data.pois[value]) config.data.pois[value] = [];
+  } else if (src.startsWith("pois:")) {
+    const mapVal = String(inst.values[src.slice(5)] || "");
+    if (!mapVal) { flashBanner("Primero elige un mapa.", true); return; }
+    config.data.pois[mapVal] = config.data.pois[mapVal] || [];
+    config.data.pois[mapVal].push(value);
+  } else {
+    config.data.lists[src] = config.data.lists[src] || [];
+    config.data.lists[src].push(value);
   }
-});
+  scheduleSave();
+  flashBanner(`«${value}» agregado. Recuerda exportar los datos o la herramienta para compartirlo.`);
+}
 
-/* ============================================================
-   VALIDATION
-   ============================================================ */
+function confirmDeleteOption(field, inst, value, after) {
+  const src = field.source || "";
+  const listName = src === "maps" ? "mapas" : src.startsWith("pois:") ? "POIs" : src;
+  showConfirmModal({
+    title: "Borrar opción",
+    body: `¿Borrar definitivamente «${escapeHtml(value)}» de la lista de ${escapeHtml(listName)}? Afecta a todos los formularios que usan esta lista.`,
+    confirmText: "Borrar",
+    confirmClass: "danger",
+    onConfirm: () => {
+      if (src === "maps") {
+        config.data.maps = config.data.maps.filter(v => v !== value);
+        // Los POIs del mapa quedan huérfanos y visibles en DATA (a propósito).
+      } else if (src.startsWith("pois:")) {
+        const mapVal = String(inst.values[src.slice(5)] || "");
+        if (config.data.pois[mapVal]) {
+          config.data.pois[mapVal] = config.data.pois[mapVal].filter(v => v !== value);
+        }
+      } else if (config.data.lists[src]) {
+        config.data.lists[src] = config.data.lists[src].filter(v => v !== value);
+      }
+      scheduleSave();
+      if (after) after();
+    }
+  });
+}
+
+function wireKeywords(chips, inst, form) {
+  const fieldId = chips.dataset.kwChips;
+  const getInput = () => chips.querySelector("[data-kw-input]");
+
+  const refresh = () => {
+    const cur = getInput().value;
+    chips.innerHTML = (inst.values[fieldId] || []).map(k =>
+      `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`
+    ).join("") + `<input type="text" data-kw-input="${escapeHtml(fieldId)}" placeholder="Escribe y presiona Enter..." />`;
+    const inp = getInput();
+    inp.value = cur;
+    inp.addEventListener("keydown", keyHandler);
+    inp.focus();
+    bindRemoves();
+  };
+  const bindRemoves = () => {
+    chips.querySelectorAll("[data-kw-remove]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        inst.values[fieldId] = (inst.values[fieldId] || []).filter(k => k !== btn.dataset.kwRemove);
+        markInstanceDirty(inst);
+        revalidate(inst);
+        renderOutput();
+        refresh();
+        saveAll();
+      });
+    });
+  };
+  const keyHandler = (e) => {
+    const inp = getInput();
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const v = inp.value.trim();
+      const arr = inst.values[fieldId] || [];
+      if (v && !arr.includes(v)) {
+        arr.push(v);
+        inst.values[fieldId] = arr;
+        inp.value = "";
+        markInstanceDirty(inst);
+        revalidate(inst);
+        renderOutput();
+        refresh();
+        saveAll();
+      } else if (v) {
+        inp.value = "";
+      }
+    } else if (e.key === "Backspace" && !inp.value && (inst.values[fieldId] || []).length) {
+      inst.values[fieldId].pop();
+      markInstanceDirty(inst);
+      revalidate(inst);
+      renderOutput();
+      refresh();
+      saveAll();
+    }
+  };
+
+  chips.addEventListener("click", (e) => {
+    if (e.target === chips) getInput().focus();
+  });
+  getInput().addEventListener("keydown", keyHandler);
+  bindRemoves();
+}
+
+/* ================================================================
+   [9] EDICIÓN DE SCHEMA: SECCIONES Y CAMPOS
+   ================================================================ */
+function moveSection(form, secId, dir) {
+  const idx = form.sections.findIndex(s => s.id === secId);
+  const to = idx + dir;
+  if (idx < 0 || to < 0 || to >= form.sections.length) return;
+  const [sec] = form.sections.splice(idx, 1);
+  form.sections.splice(to, 0, sec);
+  renderForm();
+  scheduleSave();
+}
+
+// Mueve el campo dentro de su sección; en los bordes salta a la
+// sección vecina, así el orden del output es totalmente libre.
+function moveField(form, fieldId, dir) {
+  const found = getField(form, fieldId);
+  if (!found) return;
+  const { sec, idx } = found;
+  const to = idx + dir;
+  if (to >= 0 && to < sec.fields.length) {
+    const [f] = sec.fields.splice(idx, 1);
+    sec.fields.splice(to, 0, f);
+  } else {
+    const sIdx = form.sections.indexOf(sec);
+    const neighbor = form.sections[sIdx + dir];
+    if (!neighbor) return;
+    const [f] = sec.fields.splice(idx, 1);
+    if (dir < 0) neighbor.fields.push(f);
+    else neighbor.fields.unshift(f);
+  }
+  renderForm();
+  scheduleSave();
+}
+
+function deleteField(form, fieldId) {
+  const found = getField(form, fieldId);
+  if (!found) return;
+  showConfirmModal({
+    title: "Borrar campo",
+    body: `¿Borrar definitivamente el campo «${escapeHtml(found.field.label)}»? Dejará de aparecer en el formulario y en el output.`,
+    confirmText: "Borrar",
+    confirmClass: "danger",
+    onConfirm: () => {
+      found.sec.fields = found.sec.fields.filter(f => f.id !== fieldId);
+      renderForm();
+      scheduleSave();
+    }
+  });
+}
+
+function deleteSection(form, secId) {
+  const sec = getSection(form, secId);
+  if (!sec) return;
+  showConfirmModal({
+    title: "Borrar sección",
+    body: `¿Borrar definitivamente la sección «${escapeHtml(sec.label)}» y sus ${sec.fields.length} campo(s)?`,
+    confirmText: "Borrar todo",
+    confirmClass: "danger",
+    onConfirm: () => {
+      form.sections = form.sections.filter(s => s.id !== secId);
+      renderForm();
+      scheduleSave();
+    }
+  });
+}
+
+function uniqueFieldId(form, base) {
+  let id = base, n = 2;
+  while (getField(form, id)) { id = base + n; n++; }
+  return id;
+}
+
+function uniqueSectionId(form, base) {
+  let id = base, n = 2;
+  while (getSection(form, id)) { id = base + n; n++; }
+  return id;
+}
+
+// ---- Editor de sección (crear o modificar) ----
+function showSectionEditor(form, sec) {
+  const isNew = !sec;
+  const s = sec || { label: "", mode: "lines", heading: "", sep: " - ", noGap: false };
+  const body = `
+    <div class="fe-grid">
+      <div class="fe-full">
+        <label>Nombre de la sección</label>
+        <input type="text" id="se_label" value="${escapeHtml(s.label)}" />
+      </div>
+      <div>
+        <label>Modo de salida</label>
+        <select id="se_mode">
+          <option value="lines"${s.mode !== "joined" ? " selected" : ""}>Líneas (cada campo en su línea)</option>
+          <option value="joined"${s.mode === "joined" ? " selected" : ""}>Unida (todo en una sola línea)</option>
+        </select>
+        <div class="field-help">"Unida" sirve para encabezados tipo resumen.</div>
+      </div>
+      <div>
+        <label>Separador (modo unida)</label>
+        <input type="text" id="se_sep" value="${escapeHtml(s.sep != null ? s.sep : " - ")}" />
+        <div class="field-help">Texto entre campos, p. ej. " - "</div>
+      </div>
+      <div class="fe-full">
+        <label>Encabezado en el output (opcional)</label>
+        <input type="text" id="se_heading" value="${escapeHtml(s.heading || "")}" />
+        <div class="field-help">P. ej. "+Notas:+". Vacío = sin encabezado.</div>
+      </div>
+      <label class="checkbox fe-full"><input type="checkbox" id="se_nogap"${s.noGap ? " checked" : ""} /> Sin línea en blanco después de esta sección</label>
+    </div>`;
+  showEditorModal({
+    title: isNew ? "Nueva sección" : `Editar sección «${escapeHtml(s.label)}»`,
+    bodyHtml: body,
+    onConfirm: () => {
+      const label = $("se_label").value.trim();
+      if (!label) { flashBanner("La sección necesita un nombre.", true); return false; }
+      const target = isNew
+        ? { id: uniqueSectionId(form, slugify(label)), label: "", mode: "lines", fields: [] }
+        : sec;
+      target.label = label;
+      target.mode = $("se_mode").value;
+      target.heading = $("se_heading").value;
+      target.sep = $("se_sep").value;
+      target.noGap = $("se_nogap").checked;
+      if (!target.heading) delete target.heading;
+      if (!target.noGap) delete target.noGap;
+      if (isNew) form.sections.push(target);
+      renderForm();
+      scheduleSave();
+      return true;
+    }
+  });
+}
+
+// ---- Editor de campo (crear o modificar) ----
+function showFieldEditor(form, sec, field) {
+  const isNew = !field;
+  const f = field || {
+    label: "", type: "text", size: "full", source: "", template: "{value}",
+    sep: "", rows: 3, required: false, regex: "", regexMsg: "",
+    default: "", emptyAs: "", omitValue: "", help: "",
+    joinPrev: false, perLine: false
+  };
+  const typeOpts = FIELD_TYPES.map(t =>
+    `<option value="${t.id}"${f.type === t.id ? " selected" : ""}>${t.label}</option>`).join("");
+  const sizeOpts = FIELD_SIZES.map(t =>
+    `<option value="${t.id}"${(f.size || "full") === t.id ? " selected" : ""}>${t.label}</option>`).join("");
+
+  const body = `
+    <div class="fe-grid">
+      <div class="fe-sep">Básico</div>
+      <div>
+        <label>Etiqueta (lo que ve el tester)</label>
+        <input type="text" id="fe_label" value="${escapeHtml(f.label)}" />
+      </div>
+      <div>
+        <label>Tipo de campo</label>
+        <select id="fe_type">${typeOpts}</select>
+      </div>
+      <div>
+        <label>Fuente (para dropdown / copia)</label>
+        <select id="fe_source"></select>
+        <div class="field-help">Dropdown: qué lista muestra. Copia: qué campo copia.</div>
+      </div>
+      <div>
+        <label>Tamaño en el formulario</label>
+        <select id="fe_size">${sizeOpts}</select>
+      </div>
+      <div>
+        <label>Valor por defecto</label>
+        <input type="text" id="fe_default" value="${escapeHtml(f.default || "")}" />
+        <div class="field-help">Acepta @regla, p. ej. @default_tz</div>
+      </div>
+      <div>
+        <label>Renglones (solo texto multilínea)</label>
+        <input type="number" id="fe_rows" value="${f.rows || 3}" min="1" max="20" />
+      </div>
+      <div class="fe-full">
+        <label>Ayuda para el tester (opcional)</label>
+        <input type="text" id="fe_help" value="${escapeHtml(f.help || "")}" />
+      </div>
+
+      <div class="fe-sep">Cómo sale en el output</div>
+      <div class="fe-full">
+        <label>Plantilla</label>
+        <input type="text" id="fe_template" value="${escapeHtml(f.template || "{value}")}" />
+        <div class="field-help">{value} se reemplaza por lo escrito. Ej.: "* *Perfil:* {value}" o "# {value}" para pasos numerados.</div>
+      </div>
+      <div>
+        <label>Separador antes del campo</label>
+        <input type="text" id="fe_sep" value="${escapeHtml(f.sep != null && f.sep !== "" ? f.sep : "")}" />
+        <div class="field-help">Solo en secciones "unidas". Vacío = usar el de la sección.</div>
+        <label class="checkbox"><input type="checkbox" id="fe_glue"${f.sep === "" ? " checked" : ""} /> Pegado al campo anterior (sin separador)</label>
+      </div>
+      <div>
+        <label>Si está vacío, mostrar</label>
+        <input type="text" id="fe_emptyAs" value="${escapeHtml(f.emptyAs || "")}" />
+        <div class="field-help">P. ej. "N/A". Vacío = omitir la línea.</div>
+      </div>
+      <div>
+        <label>Omitir si el valor es</label>
+        <input type="text" id="fe_omitValue" value="${escapeHtml(f.omitValue || "")}" />
+        <div class="field-help">P. ej. "N/A" para no imprimir BSP CL: N/A</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;justify-content:end;">
+        <label class="checkbox"><input type="checkbox" id="fe_joinPrev"${f.joinPrev ? " checked" : ""} /> Continúa en la línea anterior</label>
+        <label class="checkbox"><input type="checkbox" id="fe_perLine"${f.perLine ? " checked" : ""} /> Aplicar plantilla a cada línea escrita</label>
+      </div>
+
+      <div class="fe-sep">Validación</div>
+      <label class="checkbox fe-full"><input type="checkbox" id="fe_required"${f.required ? " checked" : ""} /> Obligatorio</label>
+      <div>
+        <label>REGEX</label>
+        <input type="text" id="fe_regex" value="${escapeHtml(f.regex || "")}" />
+        <div class="field-help">Expresión regular o @regla de DATA (ej. @coord_re)</div>
+      </div>
+      <div>
+        <label>Mensaje si no cumple</label>
+        <input type="text" id="fe_regexMsg" value="${escapeHtml(f.regexMsg || "")}" />
+      </div>
+    </div>`;
+
+  showEditorModal({
+    title: isNew ? `Nuevo campo en «${escapeHtml(sec.label)}»` : `Editar campo «${escapeHtml(f.label)}»`,
+    bodyHtml: body,
+    wide: true,
+    onOpen: () => {
+      // La fuente depende del tipo: listas para dropdown, campos para copia.
+      const typeSel = $("fe_type");
+      const srcSel = $("fe_source");
+      const fillSources = () => {
+        const t = typeSel.value;
+        let opts = [];
+        if (t === "autocomplete") opts = sourceOptions(form);
+        else if (t === "mirror") {
+          opts = allFields(form).filter(x => x.field.type !== "mirror" && x.field.id !== f.id)
+                                 .map(x => x.field.id);
+        }
+        srcSel.disabled = !opts.length;
+        srcSel.innerHTML = opts.length
+          ? opts.map(o => `<option value="${escapeHtml(o)}"${f.source === o ? " selected" : ""}>${escapeHtml(o)}</option>`).join("")
+          : `<option value="">(no aplica)</option>`;
+      };
+      typeSel.addEventListener("change", fillSources);
+      fillSources();
+    },
+    onConfirm: () => {
+      const label = $("fe_label").value.trim();
+      if (!label) { flashBanner("El campo necesita una etiqueta.", true); return false; }
+      const regexTxt = $("fe_regex").value.trim();
+      if (regexTxt) {
+        try { new RegExp(resolveRef(regexTxt)); }
+        catch (e) { flashBanner("La REGEX no es válida: " + e.message, true); return false; }
+      }
+      const target = isNew ? { id: uniqueFieldId(form, slugify(label)) } : field;
+      target.label = label;
+      target.type = $("fe_type").value;
+      // Solo guardamos las propiedades con contenido para que el
+      // schema (y el CSV) queden limpios y legibles.
+      const setOrDel = (key, val, emptyVal) => {
+        if (val === emptyVal || val === "" || val == null) delete target[key];
+        else target[key] = val;
+      };
+      setOrDel("size", $("fe_size").value, "full");
+      setOrDel("source", $("fe_source").disabled ? "" : $("fe_source").value, "");
+      setOrDel("default", $("fe_default").value, "");
+      setOrDel("rows", parseInt($("fe_rows").value, 10) || 3, 3);
+      setOrDel("help", $("fe_help").value.trim(), "");
+      setOrDel("template", $("fe_template").value, "{value}");
+      // Separador: el checkbox "pegado" fuerza sep = "" (sin separador);
+      // si no, texto no vacío = separador propio; vacío = usar el de la sección.
+      if ($("fe_glue").checked) target.sep = "";
+      else setOrDel("sep", $("fe_sep").value, "");
+      setOrDel("emptyAs", $("fe_emptyAs").value.trim(), "");
+      setOrDel("omitValue", $("fe_omitValue").value.trim(), "");
+      if ($("fe_joinPrev").checked) target.joinPrev = true; else delete target.joinPrev;
+      if ($("fe_perLine").checked) target.perLine = true; else delete target.perLine;
+      if ($("fe_required").checked) target.required = true; else delete target.required;
+      setOrDel("regex", regexTxt, "");
+      setOrDel("regexMsg", $("fe_regexMsg").value.trim(), "");
+      if (target.type === "mirror") { delete target.required; delete target.regex; }
+      if (isNew) sec.fields.push(target);
+      state.instances.forEach(ensureInstanceFields);
+      renderForm();
+      scheduleSave();
+      return true;
+    }
+  });
+}
+
+/* ================================================================
+   [10] VALIDACIÓN Y TILES DE ESTADO
+   ================================================================
+   Reglas por campo (desde el schema, editables en RULES):
+     - required: no puede quedar vacío
+     - regex: expresión regular literal o @regla de DATA
+   Las palabras clave validan cantidad (regla kw_count), unicidad y
+   que no aparezcan en el cuerpo del bug (como en Jira, sin
+   distinguir mayúsculas). */
 function revalidate(inst) {
   inst.errors = {};
-  if (inst.kind === "bug") validateBug(inst);
-  else validateRegression(inst);
-  // Reflect errors into DOM
-  const panel = document.getElementById("formPanel");
+  const form = getForm(inst.formId);
+  if (!form) return;
+
+  // Cuerpo del bug: todos los campos de texto, para el chequeo de keywords
+  const bodyText = allFields(form)
+    .filter(({ field }) => field.type === "text" || field.type === "textarea")
+    .map(({ field }) => String(inst.values[field.id] || ""))
+    .join(" ")
+    .toLowerCase();
+
+  allFields(form).forEach(({ field }) => {
+    if (field.type === "mirror") return;
+
+    if (field.type === "keywords") {
+      const arr = inst.values[field.id] || [];
+      const want = parseInt(config.data.rules.kw_count, 10) || 5;
+      if (arr.length !== want) {
+        inst.errors[field.id] = `Se necesitan exactamente ${want} palabras clave (hay ${arr.length})`;
+      } else if (new Set(arr.map(k => k.toLowerCase())).size !== arr.length) {
+        inst.errors[field.id] = "Las palabras clave deben ser únicas";
+      } else {
+        const conflict = arr.find(k => bodyText.includes(k.toLowerCase()));
+        if (conflict) inst.errors[field.id] = `«${conflict}» aparece en el cuerpo del bug`;
+      }
+      return;
+    }
+
+    const v = String(inst.values[field.id] || "");
+    if (field.required && !v.trim()) {
+      inst.errors[field.id] = "Obligatorio";
+      return;
+    }
+    if (v.trim() && field.regex) {
+      try {
+        const re = new RegExp(resolveRef(field.regex));
+        if (!re.test(v.trim())) {
+          inst.errors[field.id] = field.regexMsg || "Formato inválido";
+        }
+      } catch (e) { /* regex rota: se ignora, se corrige en RULES */ }
+    }
+  });
+
+  reflectErrors(inst);
+  renderTiles(inst);
+}
+
+// Pinta los errores en los campos sin re-renderizar el formulario.
+function reflectErrors(inst) {
+  const panel = $("formPanel");
   panel.querySelectorAll(".field").forEach(el => {
     const name = el.dataset.field;
     if (!name) return;
-    const errEl = el.querySelector(".field-error");
-    const err = inst.errors[name];
-    if (err) {
-      el.classList.add("invalid");
-      if (errEl) errEl.textContent = err;
-    } else {
-      el.classList.remove("invalid");
-      if (errEl) errEl.textContent = "";
-    }
-  });
-  // chips (keywords): toggle invalid class; the error block is rendered
-  // inline by buildBugFormHtml, so we just toggle the class here.
-  const chips = document.getElementById("keywordsChips");
-  if (chips) {
-    chips.classList.toggle("invalid", !!inst.errors.keywords);
-  }
-}
-
-function validateBug(inst) {
-  const f = inst.fields;
-  const r = state.data.rules;
-  const req = (n) => { if (!String(f[n] || "").trim()) inst.errors[n] = "Required"; };
-  req("team"); req("region"); req("version"); req("platform");
-  req("client"); req("mode"); req("map"); req("poi");
-  req("bugType"); req("shortDescription"); req("narrativeCondition");
-  req("coords");
-  req("cod"); req("cl"); req("package"); req("buildUrl");
-  req("reproduction"); req("executable");
-  // description and variables are NOT required (free text)
-
-  // Coord regex
-  if (f.coords) {
-    try {
-      const re = new RegExp(r.coord_re);
-      if (!re.test(f.coords.trim())) inst.errors.coords = `Format: ${r.coord_fmt}`;
-    } catch (e) { /* bad regex, ignore */ }
-  }
-  // CL numeric
-  if (f.cl && !/^\d+$/.test(f.cl.trim())) inst.errors.cl = "Must be numeric";
-  // BSP CL
-  if (f.bspCl && f.bspCl !== "N/A") {
-    if (!/^\d+$/.test(f.bspCl.trim())) inst.errors.bspCl = "Numeric or N/A";
-    else if (f.bspCl.trim() === f.cl.trim()) inst.errors.bspCl = "BSP CL must differ from CL";
-  }
-  // Reproduction
-  if (f.reproduction) {
-    try { if (!new RegExp(r.repro_re).test(f.reproduction.trim()))
-      inst.errors.reproduction = "Format: X/Y"; } catch (e) {}
-  }
-  // Build URL prefix
-  if (f.buildUrl && !f.buildUrl.trim().startsWith(r.buildUrl_prefix)) {
-    inst.errors.buildUrl = `Must start with ${r.buildUrl_prefix}`;
-  }
-  // Keywords
-  const kwCount = parseInt(r.kw_count, 10) || 5;
-  if (f.keywords.length !== kwCount) {
-    inst.errors.keywords = `Need exactly ${kwCount} keywords (have ${f.keywords.length})`;
-  } else {
-    const unique = new Set(f.keywords.map(k => k.toLowerCase()));
-    if (unique.size !== f.keywords.length) {
-      inst.errors.keywords = "Keywords must be unique";
-    } else {
-      // overlap check (case-insensitive)
-      const body = (f.shortDescription + " " + f.narrativeCondition + " " +
-                    f.description + " " + f.variables + " " +
-                    f.reproSteps + " " + f.results + " " +
-                    f.material + " " + f.model).toLowerCase();
-      const conflict = f.keywords.find(k => body.includes(k.toLowerCase()));
-      if (conflict) inst.errors.keywords = `"${conflict}" appears in the bug body`;
-    }
-  }
-}
-
-function validateRegression(inst) {
-  const f = inst.fields;
-  const r = state.data.rules;
-  const req = (n) => { if (!String(f[n] || "").trim()) inst.errors[n] = "Required"; };
-  req("platform"); req("client"); req("regressionStatus");
-  req("cl"); req("verifiedBy"); req("description");
-  req("reproductionRate"); req("cod"); req("buildUrl");
-  if (f.cl && !/^\d+$/.test(f.cl.trim())) inst.errors.cl = "Must be numeric";
-  if (f.reproductionRate) {
-    try { if (!new RegExp(r.repro_re).test(f.reproductionRate.trim()))
-      inst.errors.reproductionRate = "Format: X/Y"; } catch (e) {}
-  }
-  if (f.buildUrl && !f.buildUrl.trim().startsWith(r.buildUrl_prefix)) {
-    inst.errors.buildUrl = `Must start with ${r.buildUrl_prefix}`;
-  }
-}
-
-/* ============================================================
-   OUTPUT
-   ============================================================ */
-function buildBugOutput(inst) {
-  const f = inst.fields;
-  // Platform may already include a client in parens (e.g. "PC(MSS)").
-  // If so, don't append the client twice.
-  const platformStr = f.platform && f.platform.includes("(")
-    ? f.platform
-    : `${f.platform}(${f.client})`;
-  const summary = [
-    f.team, f.region, f.version,
-    platformStr,
-    f.mode, f.map, f.poi, f.bugType, f.shortDescription,
-    `Cuando ${f.narrativeCondition} (${f.coords})`
-  ].filter(Boolean).join(" - ");
-
-  const description = f.description || "";
-  const variables = (f.variables || "").split("\n").filter(l => l.trim());
-  const repro = (f.reproSteps || "").split("\n").filter(l => l.trim());
-  const results = f.results || "";
-  const viewpos = f.notesViewpos || f.coords || "";
-
-  const parts = [];
-  parts.push(summary);
-  parts.push("");
-  parts.push(description);
-  parts.push("");
-  if (variables.length) {
-    parts.push("+Variables/Argumentos Usados:+");
-    variables.forEach(v => parts.push("+ " + v));
-    parts.push("");
-  }
-  parts.push("+Información de Compilación:+");
-  parts.push(`COD ${f.cod} CL: ${f.cl}`);
-  if (f.bspCl && f.bspCl !== "N/A") parts.push(`BSP CL: ${f.bspCl}`);
-  parts.push(`Paquete: ${f.package}`);
-  parts.push(`CCS/FFOTD: ${f.ccs || "N/A"}`);
-  parts.push(`BSP: ${f.bsp || "N/A"}`);
-  parts.push(`Ubicación de compilación: ${f.buildUrl}`);
-  parts.push("");
-  if (repro.length) {
-    parts.push("+Pasos para Reproducir:+");
-    repro.forEach((s, i) => parts.push(`# ${s}`));
-    parts.push("");
-  }
-  if (results) { parts.push("**Resultados:**"); parts.push(results); parts.push(""); }
-  parts.push("+Notas:+");
-  parts.push(`* *Reproducción:* ${f.reproduction}`);
-  parts.push(`* *Perfil:* ${f.profile}`);
-  parts.push(`* *Marca de tiempo:* ${f.timestamp} ${f.tz}`);
-  parts.push(`* *Online/LAN:* ${f.onlineOrLan}`);
-  parts.push(`* *Ejecutable:* ${f.executable}`);
-  if (viewpos) parts.push(`* *Posición de vista:* (${viewpos})`);
-  if (f.material) parts.push(`* *Material:* ${f.material}`);
-  if (f.model) parts.push(`* *Modelos:* ${f.model}`);
-  parts.push(`* *CCS/FFOTD:* ${f.ccs || "N/A"}`);
-  parts.push(`* *BSP:* ${f.bsp || "N/A"}`);
-  parts.push(`* *Ubicación de compilación:* ${f.buildUrl}`);
-  parts.push("");
-  parts.push(`+Palabras_clave:+ ${f.keywords.join(", ")}`);
-
-  return {
-    summary,
-    description: f.narrativeCondition + " " + f.coords,
-    viewpos: `(${viewpos})`,
-    mediaName: `${(f.map||"map").replace(/\s+/g,"_")}_${(f.poi||"poi").replace(/\s+/g,"")}_${(f.bugType||"type")}`,
-    full: parts.join("\n")
-  };
-}
-
-function buildRegressionOutput(inst) {
-  const f = inst.fields;
-  const platformStr = f.platform && f.platform.includes("(")
-    ? f.platform
-    : `${f.platform}(${f.client})`;
-  const head = `${platformStr} - ${f.regressionStatus} en CL# ${f.cl} por ${f.verifiedBy} desde ${f.location}`;
-  const lines = [];
-  lines.push(head);
-  if (f.description) lines.push("* " + f.description);
-  lines.push(`* Tasa de Reproducción: ${f.reproductionRate}`);
-  lines.push(`* Regresado en: ${f.regressedIn}`);
-  lines.push(`* Perfil: ${f.profile}`);
-  lines.push(`* Marca de tiempo: ${f.timestamp} ${f.tz}`);
-  lines.push(`* COD ${f.cod} CL: ${f.cl}`);
-  lines.push(`* CCS/FFOTD: ${f.ccsFfotd || "N/A"}`);
-  lines.push(`* BSP: ${f.bsp || "N/A"}`);
-  lines.push(`* Ubicación de compilación: ${f.buildUrl}`);
-  return { full: lines.join("\n") };
-}
-
-// ---------- Media naming ----------
-const MEDIA_TYPES = ["Vid", "Pic", "ConsoleLog", "DxDiag"];
-
-// Build the platform portion used in media filenames.
-// For Bug: prefer "platform(client)" if both are present, else just platform.
-// For Regression: same logic.
-function getPlatformForMedia(inst) {
-  const f = inst.fields || {};
-  const plat = (f.platform || "").trim();
-  const client = (f.client || "").trim();
-  if (!plat) return "";
-  // Avoid duplicate "(client)" if platform already has parens
-  if (plat.includes("(")) return plat;
-  if (client) return `${plat}(${client})`;
-  return plat;
-}
-
-// Build a media filename like "Vid_ABC123_PC(MSS)_12345_(1)".
-// Returns "" if any required piece is missing.
-// - key:        the tester-provided value for this mediatype row
-// - platform:   from inst.fields.platform (with client appended if not
-//               already in parens)
-// - buildnumber: from inst.fields.cl (the CL, not the build URL)
-// - "_ (1)":    literal suffix (per tester convention)
-function buildMediaName(mediaType, inst) {
-  if (!inst || !inst.mediaKeys) return "";
-  const key = (inst.mediaKeys[mediaType] || "").trim();
-  if (!key) return "";
-  const platform = getPlatformForMedia(inst);
-  if (!platform) return "";
-  // Buildnumber comes from the CL field, not the build URL.
-  const buildNumber = (inst.fields.cl || "").trim();
-  if (!buildNumber) return "";
-  return `${mediaType}_${key}_${platform}_${buildNumber}_(1)`;
-}
-
-// Update the media panel: input values (without overwriting if user
-// is typing in one), button states, and the preview line.
-function renderMediaPanel() {
-  const inst = getActiveInstance();
-  if (!inst) return;
-  // Ensure the keys object exists (older saved instances may not have it)
-  if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
-  const preview = document.getElementById("mediaPreview");
-  const lines = [];
-  MEDIA_TYPES.forEach(t => {
-    const row = document.querySelector(`[data-media="${t}"]`);
-    if (!row) return;
-    const input = row.querySelector(`[data-media-key="${t}"]`);
-    const btn = row.querySelector(`[data-media-copy="${t}"]`);
-    // Set input value only if it differs (don't fight the user's cursor)
-    if (input && document.activeElement !== input) {
-      input.value = inst.mediaKeys[t] || "";
-    }
-    const name = buildMediaName(t, inst);
-    if (btn) {
-      btn.disabled = !name;
-      btn.title = name ? `Copy "${name}"` : "Fill in key, platform, and CL first";
-    }
-    if (name) lines.push(name);
-  });
-  if (preview) preview.textContent = lines.join("\n");
-}
-
-// Wire the media-panel inputs and copy buttons. Idempotent: only
-// attaches handlers once (we mark each element with a flag).
-let _mediaPanelWired = false;
-function wireMediaPanel() {
-  if (_mediaPanelWired) return;
-  _mediaPanelWired = true;
-  MEDIA_TYPES.forEach(t => {
-    const row = document.querySelector(`[data-media="${t}"]`);
-    if (!row) return;
-    const input = row.querySelector(`[data-media-key="${t}"]`);
-    const btn = row.querySelector(`[data-media-copy="${t}"]`);
-    if (input) {
-      input.addEventListener("input", () => {
-        const inst = getActiveInstance();
-        if (!inst) return;
-        if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
-        inst.mediaKeys[t] = input.value;
-        markInstanceDirty(inst);
-        // Live-update the preview line + button states, but don't
-        // revalidate or re-render the form (typing must stay smooth).
-        renderMediaPanel();
-      });
-      input.addEventListener("blur", () => {
-        saveState();
-        setSaveIndicator("saved");
-      });
-    }
-    if (btn) {
-      btn.addEventListener("click", () => {
-        const inst = getActiveInstance();
-        const name = buildMediaName(t, inst);
-        if (!name) {
-          flashBanner("Fill in key, platform, and CL first.", true);
-          return;
+    const err = inst.errors[name] || "";
+    const chips = el.querySelector("[data-kw-chips]");
+    if (chips) {
+      chips.classList.toggle("invalid", !!err);
+      let msg = el.querySelector(".chips-error");
+      if (err) {
+        if (!msg) {
+          msg = document.createElement("div");
+          msg.className = "chips-error";
+          chips.after(msg);
         }
-        copyToClipboard(name);
-      });
+        msg.textContent = err;
+      } else if (msg) {
+        msg.remove();
+      }
+      return;
     }
+    el.classList.toggle("invalid", !!err);
+    const errEl = el.querySelector(".field-error");
+    if (errEl) errEl.textContent = err;
   });
+}
+
+// Tiles de colores arriba: verde si todo bien, rojos por cada campo
+// con error. Click en un tile = saltar a ese campo.
+function renderTiles(inst) {
+  const bar = $("tilesBar");
+  if (!inst || !getForm(state.topTab)) { bar.innerHTML = ""; return; }
+  const form = getForm(inst.formId);
+  const errs = Object.entries(inst.errors);
+  if (!errs.length) {
+    bar.innerHTML = `<span class="tile ok">✓ Sin errores — listo para copiar</span>`;
+    return;
+  }
+  const MAX_TILES = 10;
+  bar.innerHTML = errs.slice(0, MAX_TILES).map(([id, msg]) => {
+    const found = getField(form, id);
+    const label = found ? found.field.label : id;
+    return `<span class="tile err" data-tile="${escapeHtml(id)}" title="${escapeHtml(msg)}">${escapeHtml(label)}</span>`;
+  }).join("") + (errs.length > MAX_TILES
+    ? `<span class="tile more">+${errs.length - MAX_TILES} más</span>` : "");
+  bar.querySelectorAll("[data-tile]").forEach(t => {
+    t.addEventListener("click", () => {
+      const el = document.querySelector(`#formPanel .field[data-field="${t.dataset.tile}"]`);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        const inp = el.querySelector("input, textarea");
+        if (inp) inp.focus({ preventScroll: true });
+      }
+    });
+  });
+}
+
+/* ================================================================
+   [11] GENERADOR DE OUTPUT
+   ================================================================
+   Recorre las secciones en el orden del formulario (el orden visual
+   ES el orden del output) y aplica las plantillas de cada campo.
+   Nada del texto está fijo en el código: todo sale del schema. */
+
+// Texto de un campo listo para el output, o null si se omite.
+function fieldOutputPart(field, inst) {
+  let raw;
+  if (field.type === "mirror") raw = inst.values[field.source];
+  else raw = inst.values[field.id];
+
+  if (field.type === "keywords") {
+    const arr = Array.isArray(raw) ? raw : [];
+    if (!arr.length) return null;
+    raw = arr.join(", ");
+  }
+  let value = String(raw == null ? "" : raw);
+  if (!value.trim()) {
+    if (field.emptyAs) value = field.emptyAs;
+    else return null;
+  }
+  if (field.omitValue && value.trim() === field.omitValue) return null;
+
+  const tpl = field.template || "{value}";
+  if (field.perLine) {
+    const lines = value.split("\n").map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return null;
+    return lines.map(l => tpl.replace("{value}", l));
+  }
+  return tpl.replace("{value}", value);
+}
+
+function buildOutput(inst) {
+  const form = getForm(inst.formId);
+  if (!form) return { full: "", summary: "" };
+  const blocks = [];
+  let summaryLine = "";
+
+  form.sections.forEach(sec => {
+    const lines = [];
+    if (sec.mode === "joined") {
+      // Todo en una sola línea, con separadores por campo
+      let line = "";
+      sec.fields.forEach(field => {
+        const part = fieldOutputPart(field, inst);
+        if (part == null) return;
+        const text = Array.isArray(part) ? part.join(" ") : part;
+        if (!line) {
+          line = text;
+        } else {
+          const sep = field.sep != null ? field.sep : (sec.sep != null ? sec.sep : " - ");
+          line += sep + text;
+        }
+      });
+      if (line) {
+        lines.push(line);
+        if (!summaryLine) summaryLine = line;
+      }
+    } else {
+      // Cada campo aporta su(s) línea(s)
+      sec.fields.forEach(field => {
+        const part = fieldOutputPart(field, inst);
+        if (part == null) return;
+        const arr = Array.isArray(part) ? part : [part];
+        if (field.joinPrev) {
+          // Continúa en la línea anterior; si no hay línea previa
+          // (p. ej. timestamp vacío) no se imprime suelto.
+          if (!lines.length) return;
+          const sep = field.sep != null ? field.sep : " ";
+          lines[lines.length - 1] += sep + arr[0];
+          arr.slice(1).forEach(l => lines.push(l));
+        } else {
+          arr.forEach(l => lines.push(l));
+        }
+      });
+      if (lines.length && sec.heading) lines.unshift(sec.heading);
+    }
+    if (lines.length) blocks.push({ lines, noGap: !!sec.noGap });
+  });
+
+  const out = [];
+  blocks.forEach((b, i) => {
+    out.push(...b.lines);
+    if (i < blocks.length - 1 && !b.noGap) out.push("");
+  });
+  return { full: out.join("\n"), summary: summaryLine };
 }
 
 function renderOutput() {
   const inst = getActiveInstance();
-  if (!inst) return;
-  let chunks;
-  if (inst.kind === "bug") chunks = buildBugOutput(inst);
-  else chunks = buildRegressionOutput(inst);
-  // If the user has NOT manually edited the output textarea,
-  // keep the live-generated text. If they HAVE edited, respect
-  // their version (the "Regenerate" button clears the override).
-  const ta = document.getElementById("outputTextarea");
-  if (inst.output === undefined || inst.output === null || inst.output === "" || !inst.outputEdited) {
+  if (!inst || !getForm(state.topTab)) return;
+  const chunks = buildOutput(inst);
+
+  // Si el tester editó el textarea a mano se respeta su versión;
+  // "Regenerar" vuelve a la versión automática.
+  const ta = $("outputTextarea");
+  if (!inst.output || !inst.outputEdited) {
     inst.output = chunks.full;
     inst.outputEdited = false;
   }
   ta.value = inst.output;
 
-  // Action buttons
-  const actions = document.getElementById("outputActions");
+  const actions = $("outputActions");
   actions.innerHTML = "";
-  if (inst.kind === "bug") {
-    addBtn(actions, "Copy summary", () => copyToClipboard(chunks.summary));
-    addBtn(actions, "Copy description", () => copyToClipboard(chunks.description));
-    addBtn(actions, "Copy full", () => copyToClipboard(chunks.full));
-    addBtn(actions, "Copy viewpos", () => copyToClipboard(chunks.viewpos));
-    addBtn(actions, "Copy media name", () => copyToClipboard(chunks.mediaName));
-  } else {
-    addBtn(actions, "Copy full", () => copyToClipboard(chunks.full));
+  addBtn(actions, "Copiar todo", () => copyToClipboard(inst.output), "primary");
+  if (chunks.summary) {
+    addBtn(actions, "Copiar resumen", () => copyToClipboard(chunks.summary));
   }
-  addBtn(actions, "Download .md", () => downloadFile(stripExt(inst.title) + ".md", inst.output));
-  addBtn(actions, "Download .txt", () => downloadFile(stripExt(inst.title) + ".txt", inst.output));
-  addBtn(actions, "Regenerate", () => {
+  addBtn(actions, "Descargar .txt", () => downloadFile(inst.title + ".txt", inst.output));
+  addBtn(actions, "Descargar .md", () => downloadFile(inst.title + ".md", inst.output));
+  addBtn(actions, "Regenerar", () => {
     inst.outputEdited = false;
+    inst.output = "";
     renderOutput();
     scheduleSave();
-  }, "primary");
-  addBtn(actions, "Clear instance", () => {
+  });
+  addBtn(actions, "Limpiar campos", () => {
     showConfirmModal({
-      title: "Clear instance",
-      body: `Clear all fields in "${inst.title}"? This cannot be undone.`,
-      confirmText: "Clear",
+      title: "Limpiar instancia",
+      body: `¿Vaciar todos los campos de "${escapeHtml(inst.title)}"? Esto no se puede deshacer.`,
+      confirmText: "Limpiar",
       confirmClass: "danger",
       onConfirm: () => {
-        const blank = inst.kind === "regression" ? makeEmptyRegressionInstance() : makeEmptyBugInstance();
-        inst.fields = blank.fields;
+        const blank = makeInstance(inst.formId);
+        inst.values = blank.values;
         inst.output = "";
         inst.outputEdited = false;
         markInstanceDirty(inst);
@@ -1980,323 +2565,753 @@ function addBtn(container, label, fn, cls) {
   container.appendChild(b);
 }
 
-function stripExt(s) { return s.replace(/\.[a-z0-9]+$/i, ""); }
+/* ================================================================
+   [12] PANEL DE MEDIA
+   ================================================================
+   Formato: Mediatype_key_platform_buildnumber_(1)
+   Usa los campos con id "platform", "client" y "cl" del formulario
+   activo (si existen). */
+const MEDIA_TYPES = ["Vid", "Pic", "ConsoleLog", "DxDiag"];
 
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text || "").then(() => {
-    flashBanner("Copied to clipboard.");
-  }).catch(() => {
-    // fallback
-    const ta = document.createElement("textarea");
-    ta.value = text || "";
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand("copy"); flashBanner("Copied to clipboard."); }
-    catch (e) { flashBanner("Copy failed. Select and copy manually.", true); }
-    document.body.removeChild(ta);
+function getPlatformForMedia(inst) {
+  const plat = String(inst.values.platform || "").trim();
+  const client = String(inst.values.client || "").trim();
+  if (!plat) return "";
+  if (plat.includes("(") || !client) return plat;
+  return `${plat}(${client})`;
+}
+
+function buildMediaName(mediaType, inst) {
+  if (!inst || !inst.mediaKeys) return "";
+  const key = (inst.mediaKeys[mediaType] || "").trim();
+  if (!key) return "";
+  const platform = getPlatformForMedia(inst);
+  if (!platform) return "";
+  const buildNumber = String(inst.values.cl || "").trim();
+  if (!buildNumber) return "";
+  return `${mediaType}_${key}_${platform}_${buildNumber}_(1)`;
+}
+
+function renderMediaPanel() {
+  const inst = getActiveInstance();
+  if (!inst) return;
+  if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
+  const preview = $("mediaPreview");
+  const lines = [];
+  MEDIA_TYPES.forEach(t => {
+    const row = document.querySelector(`[data-media="${t}"]`);
+    if (!row) return;
+    const input = row.querySelector(`[data-media-key="${t}"]`);
+    const btn = row.querySelector(`[data-media-copy="${t}"]`);
+    if (input && document.activeElement !== input) {
+      input.value = inst.mediaKeys[t] || "";
+    }
+    const name = buildMediaName(t, inst);
+    if (btn) {
+      btn.disabled = !name;
+      btn.title = name ? `Copiar "${name}"` : "Llena key, plataforma y CL primero";
+    }
+    if (name) lines.push(name);
+  });
+  if (preview) preview.textContent = lines.join("\n");
+}
+
+let _mediaPanelWired = false;
+function wireMediaPanel() {
+  if (_mediaPanelWired) return;
+  _mediaPanelWired = true;
+  MEDIA_TYPES.forEach(t => {
+    const row = document.querySelector(`[data-media="${t}"]`);
+    if (!row) return;
+    const input = row.querySelector(`[data-media-key="${t}"]`);
+    const btn = row.querySelector(`[data-media-copy="${t}"]`);
+    if (input) {
+      input.addEventListener("input", () => {
+        const inst = getActiveInstance();
+        if (!inst) return;
+        if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
+        inst.mediaKeys[t] = input.value;
+        markInstanceDirty(inst);
+        renderMediaPanel();
+      });
+      input.addEventListener("blur", () => {
+        saveAll();
+        setSaveIndicator("saved");
+      });
+    }
+    if (btn) {
+      btn.addEventListener("click", () => {
+        const inst = getActiveInstance();
+        const name = buildMediaName(t, inst);
+        if (!name) { flashBanner("Llena key, plataforma y CL primero.", true); return; }
+        copyToClipboard(name);
+      });
+    }
   });
 }
 
-function downloadFile(name, content) {
-  const blob = new Blob([content || ""], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = name;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+/* ================================================================
+   [13] PESTAÑA DATA
+   ================================================================
+   Edita config.data (listas, mapas, POIs, tiers, reglas). Los
+   cambios quedan en el DOM/localStorage al momento; para
+   compartirlos: exportar bug_data.csv o exportar la herramienta. */
+function dataCategories() {
+  const cats = Object.keys(config.data.lists).map(k =>
+    ({ id: "list:" + k, label: k, kind: "list", key: k }));
+  cats.push({ id: "maps",  label: "Mapas",        kind: "maps" });
+  cats.push({ id: "pois",  label: "POIs por mapa", kind: "pois" });
+  cats.push({ id: "tiers", label: "Tiers",         kind: "tiers" });
+  cats.push({ id: "rules", label: "Reglas",        kind: "rules" });
+  return cats;
 }
 
-/* ============================================================
-   DATA TAB
-   ============================================================ */
 function renderDataTab() {
+  const cats = dataCategories();
+  if (!cats.find(c => c.id === state.dataTab.selectedCategory)) {
+    state.dataTab.selectedCategory = cats[0].id;
+  }
   renderDataSidebar();
   renderDataTable();
 }
 
-function dataCategories() {
-  return [
-    { id: "list:regions",            label: "Regions",            cat: "list", key: "regions" },
-    { id: "list:platforms",          label: "Platforms",          cat: "list", key: "platforms" },
-    { id: "list:modes",              label: "Modes",              cat: "list", key: "modes" },
-    { id: "list:bugTypes",           label: "Bug types",          cat: "list", key: "bugTypes" },
-    { id: "list:regressionStatuses", label: "Regression statuses", cat: "list", key: "regressionStatuses" },
-    { id: "list:onlineOrLan",        label: "Online / LAN",       cat: "list", key: "onlineOrLan" },
-    { id: "list:severities",         label: "Severities",         cat: "list", key: "severities" },
-    { id: "list:priorities",         label: "Priorities",         cat: "list", key: "priorities" },
-    { id: "map",                     label: "Maps",               cat: "map",  key: "-" },
-    { id: "poi",                     label: "POIs by map",        cat: "poi",  key: null },
-    { id: "tier",                    label: "Tiers",              cat: "tier", key: null },
-    { id: "rule",                    label: "Rules",              cat: "rule", key: null }
-  ];
-}
-
 function renderDataSidebar() {
-  const sb = document.getElementById("dataSidebar");
+  const sb = $("dataSidebar");
   sb.innerHTML = "";
   dataCategories().forEach(c => {
     const el = document.createElement("div");
     el.className = "item" + (state.dataTab.selectedCategory === c.id ? " active" : "");
-    el.textContent = c.label;
-    el.addEventListener("click", () => {
+    el.style.display = "flex";
+    el.innerHTML = `<span style="flex:1">${escapeHtml(c.label)}</span>` +
+      (c.kind === "list" ? `<button class="row-del" data-dellist="${escapeHtml(c.key)}" title="Borrar esta lista">✕</button>` : "");
+    el.addEventListener("click", (e) => {
+      if (e.target.closest("[data-dellist]")) return;
       state.dataTab.selectedCategory = c.id;
       renderDataTab();
+      scheduleSave();
     });
     sb.appendChild(el);
+  });
+  sb.querySelectorAll("[data-dellist]").forEach(btn => {
+    btn.addEventListener("click", () => deleteList(btn.dataset.dellist));
+  });
+}
+
+function deleteList(key) {
+  // Avisar si algún campo usa esta lista como fuente
+  const users = [];
+  getForms().forEach(form => allFields(form).forEach(({ field }) => {
+    if (field.source === key) users.push(form.label + " → " + field.label);
+  }));
+  showConfirmModal({
+    title: "Borrar lista",
+    body: `¿Borrar definitivamente la lista «${escapeHtml(key)}» con todos sus valores?` +
+      (users.length ? `<br /><br /><strong>Ojo:</strong> la usan estos campos:<br />${users.map(escapeHtml).join("<br />")}` : ""),
+    confirmText: "Borrar",
+    confirmClass: "danger",
+    onConfirm: () => {
+      delete config.data.lists[key];
+      state.dataTab.selectedCategory = "";
+      renderDataTab();
+      scheduleSave();
+    }
   });
 }
 
 function renderDataTable() {
-  const wrap = document.getElementById("dataTableWrap");
+  const wrap = $("dataTableWrap");
   const sel = dataCategories().find(c => c.id === state.dataTab.selectedCategory);
   if (!sel) { wrap.innerHTML = ""; return; }
 
   let cols, rowsHtml;
-  if (sel.cat === "list") {
-    cols = ["#", "Value"];
-    const arr = state.data[sel.key] || [];
-    rowsHtml = arr.map((v, i) => `
-      <tr>
-        <td>${i+1}</td>
-        <td><input type="text" data-list-idx="${i}" data-list-key="${sel.key}" value="${escapeHtml(v)}" /></td>
-      </tr>
-    `).join("");
-  } else if (sel.cat === "map") {
-    cols = ["#", "Map name"];
-    rowsHtml = state.data.maps.map((m, i) => `
-      <tr>
-        <td>${i+1}</td>
-        <td><input type="text" data-map-idx="${i}" value="${escapeHtml(m)}" /></td>
-      </tr>
-    `).join("");
-  } else if (sel.cat === "poi") {
-    cols = ["#", "Map", "POI", ""];
+  const delBtn = (attr, val) =>
+    `<button class="row-del" ${attr}="${escapeHtml(val)}" title="Borrar fila">✕</button>`;
+
+  if (sel.kind === "list") {
+    cols = ["#", "Valor", ""];
+    const arr = config.data.lists[sel.key] || [];
+    rowsHtml = arr.map((v, i) => `<tr>
+      <td>${i + 1}</td>
+      <td><input type="text" data-list-idx="${i}" value="${escapeHtml(v)}" /></td>
+      <td>${delBtn("data-list-del", String(i))}</td>
+    </tr>`).join("");
+  } else if (sel.kind === "maps") {
+    cols = ["#", "Mapa", ""];
+    rowsHtml = config.data.maps.map((m, i) => `<tr>
+      <td>${i + 1}</td>
+      <td><input type="text" data-map-idx="${i}" value="${escapeHtml(m)}" /></td>
+      <td>${delBtn("data-map-del", String(i))}</td>
+    </tr>`).join("");
+  } else if (sel.kind === "pois") {
+    cols = ["#", "Mapa", "POI", ""];
     let i = 0;
-    rowsHtml = Object.entries(state.data.pois).map(([map, pois]) => {
-      return pois.map(p => {
-        const isOrphan = !state.data.maps.includes(map);
+    rowsHtml = Object.entries(config.data.pois).map(([map, pois]) => {
+      const isOrphan = !config.data.maps.includes(map);
+      return pois.map((p, j) => {
         i++;
-        return `<tr class="${isOrphan ? 'orphan' : ''}">
+        return `<tr>
           <td>${i}</td>
-          <td>${escapeHtml(map)}${isOrphan ? ' <span class="orphan">(orphan)</span>' : ''}</td>
-          <td>${escapeHtml(p)}</td>
-          <td><button class="danger" data-poi-del="${escapeHtml(map)}|${escapeHtml(p)}">Delete</button></td>
+          <td class="${isOrphan ? "orphan" : ""}">${escapeHtml(map)}${isOrphan ? " (huérfano)" : ""}</td>
+          <td><input type="text" data-poi-edit="${escapeHtml(map)}|${j}" value="${escapeHtml(p)}" /></td>
+          <td>${delBtn("data-poi-del", map + "|" + j)}</td>
         </tr>`;
       }).join("");
     }).join("");
-  } else if (sel.cat === "tier") {
-    cols = ["#", "Code", "Name"];
-    const tiers = Object.entries(state.data.tiers);
-    rowsHtml = tiers.map(([k, v], i) => `
-      <tr>
-        <td>${i+1}</td>
-        <td>${escapeHtml(k)}</td>
-        <td><input type="text" data-tier-key="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
-      </tr>
-    `).join("");
-  } else if (sel.cat === "rule") {
-    cols = ["#", "Key", "Value"];
-    const rules = Object.entries(state.data.rules);
-    rowsHtml = rules.map(([k, v], i) => `
-      <tr>
-        <td>${i+1}</td>
-        <td>${escapeHtml(k)}</td>
-        <td><input type="text" data-rule-key="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
-      </tr>
-    `).join("");
+  } else if (sel.kind === "tiers") {
+    cols = ["#", "Código", "Nombre", ""];
+    rowsHtml = Object.entries(config.data.tiers).map(([k, v], i) => `<tr>
+      <td>${i + 1}</td>
+      <td>${escapeHtml(k)}</td>
+      <td><input type="text" data-tier-key="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
+      <td>${delBtn("data-tier-del", k)}</td>
+    </tr>`).join("");
+  } else { // rules
+    cols = ["#", "Regla", "Valor", ""];
+    rowsHtml = Object.entries(config.data.rules).map(([k, v], i) => `<tr>
+      <td>${i + 1}</td>
+      <td>${escapeHtml(k)}</td>
+      <td><input type="text" data-rule-key="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
+      <td>${delBtn("data-rule-del", k)}</td>
+    </tr>`).join("");
   }
 
-  wrap.innerHTML = `
-    <table class="data-table">
-      <thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
-  `;
+  wrap.innerHTML = `<table class="data-table">
+    <thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>`;
 
-  // Wire up edits
+  // ---- Ediciones en vivo ----
   wrap.querySelectorAll("[data-list-idx]").forEach(inp => {
     inp.addEventListener("input", () => {
-      const i = +inp.dataset.listIdx;
-      const k = inp.dataset.listKey;
-      state.data[k][i] = inp.value;
+      config.data.lists[sel.key][+inp.dataset.listIdx] = inp.value;
+      scheduleSave();
     });
   });
   wrap.querySelectorAll("[data-map-idx]").forEach(inp => {
-    inp.addEventListener("input", () => {
+    inp.addEventListener("change", () => {
       const i = +inp.dataset.mapIdx;
-      const oldName = state.data.maps[i];
-      const newName = inp.value;
-      if (oldName !== newName) {
-        // Rename map and its POIs
-        if (state.data.pois[oldName]) {
-          state.data.pois[newName] = state.data.pois[oldName];
-          delete state.data.pois[oldName];
+      const oldName = config.data.maps[i];
+      const newName = inp.value.trim();
+      if (oldName !== newName && newName) {
+        if (config.data.pois[oldName]) {
+          config.data.pois[newName] = config.data.pois[oldName];
+          delete config.data.pois[oldName];
         }
-        state.data.maps[i] = newName;
+        config.data.maps[i] = newName;
+        renderDataTable();
         scheduleSave();
-        // re-render the form if relevant
-        refreshAll();
       }
     });
   });
-  wrap.querySelectorAll("[data-poi-del]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const [m, p] = btn.dataset.poiDel.split("|");
-      if (state.data.pois[m]) {
-        state.data.pois[m] = state.data.pois[m].filter(x => x !== p);
-      }
-      renderDataTable();
+  wrap.querySelectorAll("[data-poi-edit]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const [map, j] = inp.dataset.poiEdit.split("|");
+      config.data.pois[map][+j] = inp.value;
+      scheduleSave();
     });
   });
   wrap.querySelectorAll("[data-tier-key]").forEach(inp => {
     inp.addEventListener("input", () => {
-      const k = inp.dataset.tierKey;
-      state.data.tiers[k] = inp.value;
+      config.data.tiers[inp.dataset.tierKey] = inp.value;
+      scheduleSave();
     });
   });
   wrap.querySelectorAll("[data-rule-key]").forEach(inp => {
     inp.addEventListener("input", () => {
-      const k = inp.dataset.ruleKey;
-      state.data.rules[k] = inp.value;
+      config.data.rules[inp.dataset.ruleKey] = inp.value;
+      scheduleSave();
+    });
+  });
+
+  // ---- Borrado de filas (con confirmación) ----
+  const confirmRowDelete = (desc, doIt) => showConfirmModal({
+    title: "Borrar fila",
+    body: `¿Borrar definitivamente ${desc}?`,
+    confirmText: "Borrar",
+    confirmClass: "danger",
+    onConfirm: () => { doIt(); renderDataTable(); scheduleSave(); }
+  });
+  wrap.querySelectorAll("[data-list-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = +btn.dataset.listDel;
+      confirmRowDelete(`«${escapeHtml(config.data.lists[sel.key][i])}»`,
+        () => config.data.lists[sel.key].splice(i, 1));
+    });
+  });
+  wrap.querySelectorAll("[data-map-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = +btn.dataset.mapDel;
+      confirmRowDelete(`el mapa «${escapeHtml(config.data.maps[i])}» (sus POIs quedarán huérfanos)`,
+        () => config.data.maps.splice(i, 1));
+    });
+  });
+  wrap.querySelectorAll("[data-poi-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const [map, j] = btn.dataset.poiDel.split("|");
+      confirmRowDelete(`el POI «${escapeHtml(config.data.pois[map][+j])}» de ${escapeHtml(map)}`,
+        () => config.data.pois[map].splice(+j, 1));
+    });
+  });
+  wrap.querySelectorAll("[data-tier-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.tierDel;
+      confirmRowDelete(`el tier «${escapeHtml(k)}»`, () => delete config.data.tiers[k]);
+    });
+  });
+  wrap.querySelectorAll("[data-rule-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.ruleDel;
+      confirmRowDelete(`la regla «${escapeHtml(k)}» (revisa que ningún campo use @${escapeHtml(k)})`,
+        () => delete config.data.rules[k]);
     });
   });
 }
 
 function addDataRow() {
   const sel = dataCategories().find(c => c.id === state.dataTab.selectedCategory);
-  if (sel.cat === "list") {
-    state.data[sel.key] = state.data[sel.key] || [];
-    state.data[sel.key].push("new_value");
-  } else if (sel.cat === "map") {
-    state.data.maps.push("NewMap");
-    state.data.pois["NewMap"] = [];
-  } else if (sel.cat === "poi") {
-    const m = state.data.maps[0];
-    if (!m) { flashBanner("Add a map first.", true); return; }
-    state.data.pois[m] = state.data.pois[m] || [];
-    state.data.pois[m].push("NewPOI");
-  } else if (sel.cat === "tier") {
+  if (!sel) return;
+  if (sel.kind === "list") {
+    config.data.lists[sel.key] = config.data.lists[sel.key] || [];
+    config.data.lists[sel.key].push("nuevo_valor");
+  } else if (sel.kind === "maps") {
+    config.data.maps.push("NuevoMapa");
+    if (!config.data.pois["NuevoMapa"]) config.data.pois["NuevoMapa"] = [];
+  } else if (sel.kind === "pois") {
+    showPromptModal({
+      title: "Nuevo POI",
+      body: "¿A qué mapa pertenece? Mapas: " + config.data.maps.join(", "),
+      placeholder: "Nombre del mapa",
+      confirmText: "Agregar",
+      onConfirm: (m) => {
+        m = (m || "").trim();
+        if (!config.data.maps.includes(m)) { flashBanner("Ese mapa no existe.", true); return; }
+        config.data.pois[m] = config.data.pois[m] || [];
+        config.data.pois[m].push("NuevoPOI");
+        renderDataTable();
+        scheduleSave();
+      }
+    });
+    return;
+  } else if (sel.kind === "tiers") {
     let n = 1;
-    while (state.data.tiers["T" + n]) n++;
-    state.data.tiers["T" + n] = "New tier";
-  } else if (sel.cat === "rule") {
-    state.data.rules["new_rule"] = "";
+    while (config.data.tiers["T" + n]) n++;
+    config.data.tiers["T" + n] = "Nuevo tier";
+  } else if (sel.kind === "rules") {
+    showPromptModal({
+      title: "Nueva regla",
+      body: "Nombre de la regla (sin espacios). Los campos pueden usarla escribiendo @nombre.",
+      placeholder: "mi_regla",
+      confirmText: "Agregar",
+      onConfirm: (k) => {
+        k = (k || "").trim();
+        if (!k) return;
+        if (config.data.rules[k] != null) { flashBanner("Esa regla ya existe.", true); return; }
+        config.data.rules[k] = "";
+        renderDataTable();
+        scheduleSave();
+      }
+    });
+    return;
   }
   renderDataTable();
   scheduleSave();
 }
 
-function exportDataCsv() {
-  const rows = [["category", "key", "value"]];
-  for (const [k, arr] of Object.entries(state.data)) {
-    if (!Array.isArray(arr)) continue;
-    arr.forEach(v => rows.push(["list", k, v]));
-  }
-  state.data.maps.forEach(m => rows.push(["map", "-", m]));
-  Object.entries(state.data.pois).forEach(([m, pois]) => {
-    pois.forEach(p => rows.push(["poi", m, p]));
+function addNewList() {
+  showPromptModal({
+    title: "Nueva lista",
+    body: "Nombre de la lista (será la fuente que eligen los campos dropdown).",
+    placeholder: "p. ej. weapons",
+    confirmText: "Crear",
+    onConfirm: (name) => {
+      const key = slugify(name);
+      if (!key) return;
+      if (config.data.lists[key]) { flashBanner("Esa lista ya existe.", true); return; }
+      config.data.lists[key] = [];
+      state.dataTab.selectedCategory = "list:" + key;
+      renderDataTab();
+      scheduleSave();
+    }
   });
-  Object.entries(state.data.tiers).forEach(([k, v]) => rows.push(["tier", k, v]));
-  Object.entries(state.data.rules).forEach(([k, v]) => rows.push(["rule", k, v]));
-  const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n");
-  downloadFile("bug_data.csv", csv);
-  flashBanner("bug_data.csv downloaded. Drop it in the share folder to share with the team.");
+}
+
+/* ================================================================
+   [14] PESTAÑA RULES
+   ================================================================
+   Vista técnica y legible de TODAS las validaciones: por campo
+   (obligatorio, REGEX, mensaje, default) y las reglas globales de
+   DATA. Todo editable en vivo. */
+function renderRulesTab() {
+  const c = $("rulesContainer");
+  let fieldRows = "";
+  getForms().forEach(form => {
+    form.sections.forEach(sec => {
+      sec.fields.forEach(f => {
+        if (f.type === "mirror") return;
+        const key = form.id + "|" + f.id;
+        fieldRows += `<tr>
+          <td class="rules-form-cell">${escapeHtml(form.label)} · ${escapeHtml(sec.label)}</td>
+          <td>${escapeHtml(f.label)}</td>
+          <td style="text-align:center"><input type="checkbox" data-rr-req="${escapeHtml(key)}"${f.required ? " checked" : ""} /></td>
+          <td><input type="text" data-rr-rx="${escapeHtml(key)}" value="${escapeHtml(f.regex || "")}" placeholder="regex o @regla" /></td>
+          <td><input type="text" data-rr-msg="${escapeHtml(key)}" value="${escapeHtml(f.regexMsg || "")}" /></td>
+          <td><input type="text" data-rr-def="${escapeHtml(key)}" value="${escapeHtml(f.default || "")}" /></td>
+        </tr>`;
+      });
+    });
+  });
+
+  const globalRows = Object.entries(config.data.rules).map(([k, v]) => `<tr>
+    <td>@${escapeHtml(k)}</td>
+    <td><input type="text" data-rr-global="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
+  </tr>`).join("");
+
+  c.innerHTML = `
+    <div class="rules-block">
+      <h3>Validaciones por campo</h3>
+      <p class="rules-intro">
+        Cada campo puede ser <strong>obligatorio</strong> y/o validarse con una
+        <strong>REGEX</strong> (expresión regular de JavaScript). En la columna REGEX
+        puedes escribir la expresión directa (ej. <code>^\\d+$</code> para números) o
+        <code>@nombre</code> para usar una regla global de la tabla de abajo
+        (ej. <code>@coord_re</code>). El campo se marca en rojo cuando no cumple y
+        aparece un tile arriba del formulario.
+      </p>
+      <table class="data-table">
+        <thead><tr><th>Formulario · Sección</th><th>Campo</th><th>Oblig.</th><th>Regex</th><th>Mensaje de error</th><th>Default</th></tr></thead>
+        <tbody>${fieldRows}</tbody>
+      </table>
+    </div>
+    <div class="rules-block">
+      <h3>Reglas globales (viven en DATA → Reglas)</h3>
+      <p class="rules-intro">
+        Se comparten entre campos y se editan aquí o en la pestaña Data. Las
+        reglas especiales que usa la herramienta: <code>kw_count</code> (cantidad de
+        palabras clave), <code>default_tz</code> y <code>default_executable</code>
+        (valores por defecto via @).
+      </p>
+      <table class="data-table" style="max-width:760px">
+        <thead><tr><th>Regla</th><th>Valor</th></tr></thead>
+        <tbody>${globalRows}</tbody>
+      </table>
+    </div>
+    <div class="rules-future">
+      Próximamente en esta pestaña: condiciones entre campos (si el campo A vale X,
+      entonces el campo B debe...), conexión con los nombres de media y tiles
+      personalizados. La estructura ya lo soporta; se agregará sin romper tus datos.
+    </div>`;
+
+  const findTarget = (key) => {
+    const [formId, fieldId] = key.split("|");
+    const form = getForm(formId);
+    return form ? getField(form, fieldId) : null;
+  };
+  c.querySelectorAll("[data-rr-req]").forEach(el => el.addEventListener("change", () => {
+    const t = findTarget(el.dataset.rrReq);
+    if (!t) return;
+    if (el.checked) t.field.required = true; else delete t.field.required;
+    scheduleSave();
+  }));
+  c.querySelectorAll("[data-rr-rx]").forEach(el => {
+    el.addEventListener("input", () => {
+      const t = findTarget(el.dataset.rrRx);
+      if (!t) return;
+      if (el.value.trim()) t.field.regex = el.value.trim(); else delete t.field.regex;
+      scheduleSave();
+    });
+    el.addEventListener("blur", () => {
+      const v = el.value.trim();
+      if (!v) return;
+      try { new RegExp(resolveRef(v)); }
+      catch (e) { flashBanner("REGEX inválida: " + e.message, true); }
+    });
+  });
+  c.querySelectorAll("[data-rr-msg]").forEach(el => el.addEventListener("input", () => {
+    const t = findTarget(el.dataset.rrMsg);
+    if (!t) return;
+    if (el.value.trim()) t.field.regexMsg = el.value.trim(); else delete t.field.regexMsg;
+    scheduleSave();
+  }));
+  c.querySelectorAll("[data-rr-def]").forEach(el => el.addEventListener("input", () => {
+    const t = findTarget(el.dataset.rrDef);
+    if (!t) return;
+    if (el.value) t.field.default = el.value; else delete t.field.default;
+    scheduleSave();
+  }));
+  c.querySelectorAll("[data-rr-global]").forEach(el => el.addEventListener("input", () => {
+    config.data.rules[el.dataset.rrGlobal] = el.value;
+    scheduleSave();
+  }));
+}
+
+/* ================================================================
+   [15] CSV: bug_data.csv Y bug_fields.csv
+   ================================================================ */
+// Parser: soporta comillas dobles y comas dentro de comillas.
+// Lo escrito entre comillas NO se recorta (los separadores como
+// " - " importan en bug_fields.csv).
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "", inQ = false, wasQuoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQ) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') inQ = false;
+      else cur += ch;
+    } else {
+      if (ch === ",") { out.push(wasQuoted ? cur : cur.trim()); cur = ""; wasQuoted = false; }
+      else if (ch === '"') { inQ = true; wasQuoted = true; }
+      else cur += ch;
+    }
+  }
+  out.push(wasQuoted ? cur : cur.trim());
+  return out;
 }
 
 function csvEscape(v) {
   v = String(v == null ? "" : v);
-  if (/[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
+  if (/[",\n]/.test(v) || v !== v.trim()) return `"${v.replace(/"/g, '""')}"`;
   return v;
 }
 
-/* ============================================================
-   CSV LOADING
-   ============================================================ */
-function handleCsvFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      parseCsv(e.target.result);
-      state.dataLoaded = true;
-      state.dataLoadedFrom = file.name;
-      state.settings.lastCsvPath = file.name;
-      hideLoadBanner();
-      flashBanner(`Loaded ${file.name}. Dropdowns are now populated.`);
-      refreshAll();
-      scheduleSave();
-    } catch (err) {
-      flashBanner("CSV parse error: " + err.message, true);
-    }
-  };
-  reader.readAsText(file);
+function csvTruthy(v) {
+  return ["1", "true", "yes", "si", "sí", "x"].includes(String(v || "").trim().toLowerCase());
 }
 
-function parseCsv(text) {
+// ---- bug_data.csv (mismo formato de siempre: category,key,value) ----
+function exportDataCsv() {
+  const rows = [["category", "key", "value"]];
+  Object.entries(config.data.lists).forEach(([k, arr]) => {
+    arr.forEach(v => rows.push(["list", k, v]));
+  });
+  config.data.maps.forEach(m => rows.push(["map", "-", m]));
+  Object.entries(config.data.pois).forEach(([m, pois]) => {
+    pois.forEach(p => rows.push(["poi", m, p]));
+  });
+  Object.entries(config.data.tiers).forEach(([k, v]) => rows.push(["tier", k, v]));
+  Object.entries(config.data.rules).forEach(([k, v]) => rows.push(["rule", k, v]));
+  downloadFile("bug_data.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
+  flashBanner("bug_data.csv descargado. Ponlo en el sharefolder para compartirlo.");
+}
+
+function importDataCsv(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith("#"));
-  if (!lines.length) throw new Error("Empty file");
-  const header = parseCsvLine(lines[0]);
+  if (!lines.length) throw new Error("Archivo vacío");
+  const header = parseCsvLine(lines[0]).map(s => s.toLowerCase());
   if (header.join(",") !== "category,key,value") {
-    throw new Error("Header must be: category,key,value");
+    throw new Error("El encabezado debe ser: category,key,value");
   }
-  // Reset
-  state.data.maps = [];
-  state.data.pois = {};
-  state.data.tiers = {};
-  state.data.regions = []; state.data.platforms = [];
-  state.data.modes = []; state.data.bugTypes = [];
-  state.data.regressionStatuses = []; state.data.onlineOrLan = [];
-  state.data.severities = []; state.data.priorities = [];
-  // rules keep defaults but will be overwritten
-  const rules = Object.assign({}, state.data.rules);
+  const data = { lists: {}, maps: [], pois: {}, tiers: {}, rules: {} };
   for (let i = 1; i < lines.length; i++) {
     const row = parseCsvLine(lines[i]);
     if (row.length < 3) continue;
     const [cat, key, value] = row;
     if (cat === "list") {
-      if (state.data[key] && Array.isArray(state.data[key])) state.data[key].push(value);
+      data.lists[key] = data.lists[key] || [];
+      data.lists[key].push(value);
     } else if (cat === "map") {
-      state.data.maps.push(value);
+      data.maps.push(value);
     } else if (cat === "poi") {
-      state.data.pois[key] = state.data.pois[key] || [];
-      state.data.pois[key].push(value);
+      data.pois[key] = data.pois[key] || [];
+      data.pois[key].push(value);
     } else if (cat === "tier") {
-      state.data.tiers[key] = value;
+      data.tiers[key] = value;
     } else if (cat === "rule") {
-      rules[key] = value;
+      data.rules[key] = value;
     }
   }
-  state.data.rules = rules;
+  config.data = data;
+  refreshAll();
+  scheduleSave();
 }
 
-function parseCsvLine(line) {
-  const out = [];
-  let cur = "", inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (inQ) {
-      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
-      else if (c === '"') inQ = false;
-      else cur += c;
+// ---- bug_fields.csv (schema de formularios) ----
+const FIELDS_CSV_HEADER = [
+  "form", "section", "field", "label", "type", "source", "size", "template",
+  "sep", "joinprev", "perline", "rows", "required", "regex", "regexmsg",
+  "default", "emptyas", "omitvalue", "nogap", "help"
+];
+// En la columna sep, la palabra NONE significa "sin separador"
+// (pegar al campo anterior); vacío significa "usar el de la sección".
+const SEP_NONE = "NONE";
+
+function exportFieldsCsv() {
+  const rows = [FIELDS_CSV_HEADER.slice()];
+  const empty = () => new Array(FIELDS_CSV_HEADER.length).fill("");
+  const sepOut = (sep) => sep == null ? "" : (sep === "" ? SEP_NONE : sep);
+
+  getForms().forEach(form => {
+    const fr = empty();
+    fr[0] = form.id; fr[3] = form.label; fr[4] = "form";
+    rows.push(fr);
+    form.sections.forEach(sec => {
+      const sr = empty();
+      sr[0] = form.id; sr[1] = sec.id; sr[3] = sec.label; sr[4] = "section";
+      sr[5] = sec.mode || "lines";
+      sr[7] = sec.heading || "";
+      sr[8] = sepOut(sec.sep);
+      sr[18] = sec.noGap ? "yes" : "";
+      rows.push(sr);
+      sec.fields.forEach(f => {
+        rows.push([
+          form.id, sec.id, f.id, f.label, f.type || "text", f.source || "",
+          f.size || "", f.template || "", sepOut(f.sep),
+          f.joinPrev ? "yes" : "", f.perLine ? "yes" : "", f.rows || "",
+          f.required ? "yes" : "", f.regex || "", f.regexMsg || "",
+          f.default || "", f.emptyAs || "", f.omitValue || "", "", f.help || ""
+        ]);
+      });
+    });
+  });
+  downloadFile("bug_fields.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
+  flashBanner("bug_fields.csv descargado. Ponlo en el sharefolder para compartirlo.");
+}
+
+function importFieldsCsv(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith("#"));
+  if (!lines.length) throw new Error("Archivo vacío");
+  const header = parseCsvLine(lines[0]).map(s => s.toLowerCase());
+  if (header.join(",") !== FIELDS_CSV_HEADER.join(",")) {
+    throw new Error("El encabezado no coincide. Debe ser: " + FIELDS_CSV_HEADER.join(","));
+  }
+  const errors = [];
+  const forms = [];
+  const sepIn = (v) => v === "" ? null : (v === SEP_NONE ? "" : v);
+
+  for (let i = 1; i < lines.length; i++) {
+    const r = parseCsvLine(lines[i]);
+    while (r.length < FIELDS_CSV_HEADER.length) r.push("");
+    const [formId, secId, fieldId, label, type, source, size, template,
+           sep, joinprev, perline, rowsN, required, regex, regexmsg,
+           def, emptyas, omitvalue, nogap, help] = r;
+    const lineNo = i + 1;
+
+    if (type === "form") {
+      if (!formId) { errors.push(`Línea ${lineNo}: fila form sin id`); continue; }
+      if (forms.find(f => f.id === formId)) { errors.push(`Línea ${lineNo}: formulario «${formId}» repetido`); continue; }
+      forms.push({ id: formId, label: label || formId, sections: [] });
+    } else if (type === "section") {
+      const form = forms.find(f => f.id === formId);
+      if (!form) { errors.push(`Línea ${lineNo}: sección sin formulario «${formId}» previo`); continue; }
+      if (!secId) { errors.push(`Línea ${lineNo}: sección sin id`); continue; }
+      if (form.sections.find(s => s.id === secId)) { errors.push(`Línea ${lineNo}: sección «${secId}» repetida`); continue; }
+      const sec = { id: secId, label: label || secId, mode: source === "joined" ? "joined" : "lines", fields: [] };
+      if (template) sec.heading = template;
+      const s = sepIn(sep);
+      if (s != null) sec.sep = s;
+      if (csvTruthy(nogap)) sec.noGap = true;
+      form.sections.push(sec);
     } else {
-      if (c === ',') { out.push(cur); cur = ""; }
-      else if (c === '"') inQ = true;
-      else cur += c;
+      // fila de campo
+      const form = forms.find(f => f.id === formId);
+      if (!form) { errors.push(`Línea ${lineNo}: campo sin formulario «${formId}»`); continue; }
+      const sec = form.sections.find(s => s.id === secId);
+      if (!sec) { errors.push(`Línea ${lineNo}: campo sin sección «${secId}»`); continue; }
+      const knownTypes = FIELD_TYPES.map(t => t.id);
+      if (!knownTypes.includes(type)) { errors.push(`Línea ${lineNo}: tipo desconocido «${type}»`); continue; }
+      const id = fieldId || slugify(label);
+      if (form.sections.some(s => s.fields.some(f => f.id === id))) {
+        errors.push(`Línea ${lineNo}: campo «${id}» repetido en «${formId}»`);
+        continue;
+      }
+      const f = { id, label: label || id, type };
+      if (source) f.source = source;
+      if (size && size !== "full") f.size = size;
+      if (template && template !== "{value}") f.template = template;
+      const s = sepIn(sep);
+      if (s != null) f.sep = s;
+      if (csvTruthy(joinprev)) f.joinPrev = true;
+      if (csvTruthy(perline)) f.perLine = true;
+      const rn = parseInt(rowsN, 10);
+      if (rn && rn !== 3) f.rows = rn;
+      if (csvTruthy(required)) f.required = true;
+      if (regex) {
+        try { new RegExp(regex.startsWith("@") ? ".*" : regex); f.regex = regex; }
+        catch (e) { errors.push(`Línea ${lineNo}: regex inválida (${e.message})`); }
+      }
+      if (regexmsg) f.regexMsg = regexmsg;
+      if (def) f.default = def;
+      if (emptyas) f.emptyAs = emptyas;
+      if (omitvalue) f.omitValue = omitvalue;
+      if (help) f.help = help;
+      sec.fields.push(f);
     }
   }
-  out.push(cur);
-  return out.map(s => s.trim());
+
+  if (!forms.length || !forms.some(f => f.sections.length)) {
+    errors.push("El archivo no define ningún formulario con secciones.");
+  }
+  if (errors.length) {
+    showConfirmModal({
+      title: "Errores en bug_fields.csv",
+      body: "No se aplicó nada. Corrige y vuelve a cargar:<br /><br />" +
+            errors.slice(0, 15).map(escapeHtml).join("<br />") +
+            (errors.length > 15 ? `<br />(+${errors.length - 15} más)` : ""),
+      confirmText: "Entendido",
+      onConfirm: () => {}
+    });
+    return;
+  }
+
+  showConfirmModal({
+    title: "Reemplazar formularios",
+    body: `Esto reemplaza TODOS los formularios actuales por los del CSV (${forms.map(f => escapeHtml(f.label)).join(", ")}). Lo escrito en las instancias abiertas se conserva donde los ids coincidan. ¿Continuar?`,
+    confirmText: "Reemplazar",
+    confirmClass: "danger",
+    onConfirm: () => {
+      config.schema.forms = forms;
+      state.instances = state.instances.filter(i => forms.some(f => f.id === i.formId));
+      state.instances.forEach(ensureInstanceFields);
+      if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
+        state.topTab = forms[0].id;
+      }
+      if (getForm(state.topTab) && !state.instances.some(i => i.formId === state.topTab)) {
+        const inst = makeInstance(state.topTab);
+        state.instances.push(inst);
+        state.activeInstanceId = inst.id;
+      }
+      refreshAll();
+      scheduleSave();
+      flashBanner("Formularios actualizados desde bug_fields.csv.");
+    }
+  });
 }
 
-/* ============================================================
-   SESSION JSON
-   ============================================================ */
+/* ================================================================
+   [16] EXPORTAR HERRAMIENTA (HTML AUTOCONTENIDO)
+   ================================================================
+   Toma la copia prístina del archivo y reemplaza el bloque
+   #vanillaConfig por la config actual (campos + datos + reglas).
+   El archivo descargado se pone en el sharefolder y listo: quien lo
+   abra tendrá todo integrado, sin cargar ningún CSV. */
+function exportToolHtml() {
+  // JSON.stringify nunca genera la secuencia <\/script porque
+  // escapamos "</" — así el bloque no rompe el HTML.
+  const json = JSON.stringify(config, null, 2).replace(/<\//g, "<\\/");
+  const marker = 'id="vanillaConfig">';
+  const start = PRISTINE_HTML.indexOf(marker);
+  if (start < 0) { flashBanner("No se encontró el bloque de config. Archivo dañado.", true); return; }
+  const end = PRISTINE_HTML.indexOf(SCRIPT_END, start);
+  const out = PRISTINE_HTML.slice(0, start + marker.length)
+            + "\n" + json + "\n"
+            + PRISTINE_HTML.slice(end);
+  downloadFile("bug_tool.html", out);
+  // Lo exportado pasa a ser la nueva "vanilla": ya no hay diferencia
+  vanilla = deepClone(config);
+  updateConfigChip();
+  flashBanner("bug_tool.html descargado con tu config integrada. Muévelo al sharefolder para distribuirlo.");
+}
+
+/* ================================================================
+   [17] SESIÓN, MODALES, BANNER Y MENÚS
+   ================================================================ */
 function saveSessionToFile() {
   const snap = {
     exportedAt: new Date().toISOString(),
-    state: {
-      topKind: state.topKind,
+    config: config,
+    session: {
+      topTab: state.topTab,
       instances: state.instances,
       activeInstanceId: state.activeInstanceId
     }
@@ -2309,22 +3324,29 @@ function loadSessionFromFile(file) {
   reader.onload = (e) => {
     try {
       const snap = JSON.parse(e.target.result);
-      if (!snap.state) throw new Error("Missing 'state' in session file");
+      if (!snap.session) throw new Error("El archivo no tiene 'session'");
       const apply = () => {
-        state.instances = snap.state.instances || [];
-        state.activeInstanceId = snap.state.activeInstanceId
+        if (snap.config && snap.config.schema && snap.config.data) config = snap.config;
+        state.instances = snap.session.instances || [];
+        state.activeInstanceId = snap.session.activeInstanceId
           || (state.instances[0] ? state.instances[0].id : null);
-        state.topKind = snap.state.topKind || "bug";
+        state.topTab = snap.session.topTab || (getForms()[0] && getForms()[0].id);
+        state.instances = state.instances.filter(i => getForm(i.formId));
+        state.instances.forEach(ensureInstanceFields);
+        if (getForm(state.topTab) && !state.instances.some(i => i.formId === state.topTab)) {
+          const inst = makeInstance(state.topTab);
+          state.instances.push(inst);
+          state.activeInstanceId = inst.id;
+        }
         refreshAll();
         scheduleSave();
-        flashBanner("Session loaded.");
+        flashBanner("Sesión cargada.");
       };
-      const anyDirty = state.instances.some(i => i.dirty);
-      if (anyDirty) {
+      if (state.instances.some(i => i.dirty)) {
         showConfirmModal({
-          title: "Load session?",
-          body: "Loading a session will replace the current instances. You have unsaved changes in some tabs.",
-          confirmText: "Replace",
+          title: "¿Cargar sesión?",
+          body: "Cargar una sesión reemplaza las instancias abiertas y tienes cambios sin guardar.",
+          confirmText: "Reemplazar",
           confirmClass: "danger",
           onConfirm: apply
         });
@@ -2332,35 +3354,28 @@ function loadSessionFromFile(file) {
         apply();
       }
     } catch (err) {
-      flashBanner("Session load error: " + err.message, true);
+      flashBanner("Error al cargar la sesión: " + err.message, true);
     }
   };
   reader.readAsText(file);
 }
 
-function isoStamp() {
-  const d = new Date();
-  return d.toISOString().replace(/[:.]/g, "-").slice(0, 19);
-}
-
-/* ============================================================
-   MODAL
-   ============================================================ */
+// ---- Modales ----
 function showConfirmModal({ title, body, confirmText, cancelText, confirmClass, showDontAsk, onConfirm }) {
-  const m = document.getElementById("modal");
-  document.getElementById("modalTitle").textContent = title || "Confirm";
-  document.getElementById("modalBody").innerHTML = body || "";
-  const actions = document.getElementById("modalActions");
+  $("modalBox").classList.remove("wide");
+  $("modalTitle").textContent = title || "Confirmar";
+  $("modalBody").innerHTML = body || "";
+  const actions = $("modalActions");
   actions.innerHTML = "";
   if (showDontAsk) {
     const lbl = document.createElement("label");
     lbl.className = "checkbox";
     lbl.style.marginRight = "auto";
-    lbl.innerHTML = `<input type="checkbox" id="modalDontAsk" /> Don't ask again`;
+    lbl.innerHTML = `<input type="checkbox" id="modalDontAsk" /> No volver a preguntar`;
     actions.appendChild(lbl);
   }
   const cancel = document.createElement("button");
-  cancel.textContent = cancelText || "Cancel";
+  cancel.textContent = cancelText || "Cancelar";
   cancel.addEventListener("click", closeModal);
   actions.appendChild(cancel);
   const ok = document.createElement("button");
@@ -2372,228 +3387,265 @@ function showConfirmModal({ title, body, confirmText, cancelText, confirmClass, 
     onConfirm(dontAsk ? dontAsk.checked : false);
   });
   actions.appendChild(ok);
-  m.classList.add("open");
+  $("modal").classList.add("open");
 }
 
 function showPromptModal({ title, body, placeholder, confirmText, onConfirm }) {
-  const m = document.getElementById("modal");
-  document.getElementById("modalTitle").textContent = title || "Input required";
-  document.getElementById("modalBody").innerHTML =
+  $("modalBox").classList.remove("wide");
+  $("modalTitle").textContent = title || "Escribe un valor";
+  $("modalBody").innerHTML =
     (body ? `<div style="margin-bottom:8px;">${escapeHtml(body)}</div>` : "")
-    + `<input type="text" id="modalPromptInput" placeholder="${escapeHtml(placeholder||"")}" style="width:100%;padding:6px;border:1px solid #c7ccd1;border-radius:3px;" />`;
-  const actions = document.getElementById("modalActions");
+    + `<input type="text" id="modalPromptInput" placeholder="${escapeHtml(placeholder || "")}" />`;
+  const actions = $("modalActions");
   actions.innerHTML = "";
   const cancel = document.createElement("button");
-  cancel.textContent = "Cancel";
+  cancel.textContent = "Cancelar";
   cancel.addEventListener("click", closeModal);
   actions.appendChild(cancel);
   const ok = document.createElement("button");
   ok.textContent = confirmText || "OK";
   ok.classList.add("primary");
-  ok.addEventListener("click", () => {
-    const v = document.getElementById("modalPromptInput").value;
+  const submit = () => {
+    const v = $("modalPromptInput").value;
     closeModal();
     onConfirm(v);
+  };
+  ok.addEventListener("click", submit);
+  actions.appendChild(ok);
+  $("modal").classList.add("open");
+  setTimeout(() => {
+    const inp = $("modalPromptInput");
+    inp.focus();
+    inp.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+  }, 50);
+}
+
+// Modal genérico para los editores de sección/campo.
+// onConfirm devuelve false para mantener el modal abierto (error).
+function showEditorModal({ title, bodyHtml, wide, onOpen, onConfirm }) {
+  $("modalBox").classList.toggle("wide", !!wide);
+  $("modalTitle").textContent = title || "";
+  $("modalBody").innerHTML = bodyHtml || "";
+  const actions = $("modalActions");
+  actions.innerHTML = "";
+  const cancel = document.createElement("button");
+  cancel.textContent = "Cancelar";
+  cancel.addEventListener("click", closeModal);
+  actions.appendChild(cancel);
+  const ok = document.createElement("button");
+  ok.textContent = "Guardar";
+  ok.classList.add("primary");
+  ok.addEventListener("click", () => {
+    if (onConfirm() !== false) closeModal();
   });
   actions.appendChild(ok);
-  m.classList.add("open");
-  setTimeout(() => document.getElementById("modalPromptInput").focus(), 50);
+  $("modal").classList.add("open");
+  if (onOpen) onOpen();
 }
 
 function closeModal() {
-  document.getElementById("modal").classList.remove("open");
+  $("modal").classList.remove("open");
+  $("modalBox").classList.remove("wide");
 }
 
-document.getElementById("modal").addEventListener("click", (e) => {
-  if (e.target.id === "modal") closeModal();
-});
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeModal();
-});
-
-/* ============================================================
-   BANNER
-   ============================================================ */
+// ---- Banner ----
 let bannerTimer = null;
 function flashBanner(text, isError) {
-  const b = document.getElementById("banner");
-  document.getElementById("bannerText").textContent = text;
-  document.getElementById("bannerAction").style.display = "none";
-  document.getElementById("bannerDismiss").style.display = isError ? "inline-block" : "none";
+  const b = $("banner");
+  $("bannerText").textContent = text;
+  $("bannerDismiss").style.display = isError ? "inline-block" : "none";
   b.classList.remove("hidden", "error");
   if (isError) b.classList.add("error");
   if (bannerTimer) clearTimeout(bannerTimer);
-  bannerTimer = setTimeout(() => b.classList.add("hidden"), isError ? 5000 : 3000);
+  bannerTimer = setTimeout(() => b.classList.add("hidden"), isError ? 6000 : 3000);
 }
 
-function showLoadBanner() {
-  const b = document.getElementById("banner");
-  document.getElementById("bannerText").textContent =
-    "No CSV loaded. Click 'Load' to pick bug_data.csv and populate dropdowns.";
-  document.getElementById("bannerAction").style.display = "inline-block";
-  document.getElementById("bannerDismiss").style.display = "inline-block";
-  b.classList.remove("hidden", "error");
-}
-
-function hideLoadBanner() {
-  const b = document.getElementById("banner");
-  // Only hide the persistent load-banner state. The dismiss button
-  // and the dismiss flash messages also use the banner element,
-  // so we only hide if it isn't currently showing a flash.
-  if (bannerTimer) return; // a flash is active
-  b.classList.add("hidden");
-}
-
-document.getElementById("bannerDismiss").addEventListener("click", () => {
-  document.getElementById("banner").classList.add("hidden");
-});
-
-/* ============================================================
-   TOP-LEVEL WIRE
-   ============================================================ */
-function refreshAll() {
-  renderTopTabs();
-  refreshSubTabs();
-  if (state.topKind === "data") {
-    renderDataTab();
-  } else {
-    renderForm();
-  }
-  renderOutput();
-  // The media panel is shared across all instances; its values are
-  // synced in renderMediaPanel() based on the active instance.
-  renderMediaPanel();
-  wireMediaPanel();
-}
-
-document.querySelectorAll(".top-tab").forEach(el => {
-  el.addEventListener("click", () => {
-    state.topKind = el.dataset.kind;
-    // Make sure there's an active instance of this kind
-    const has = state.instances.some(i => i.kind === state.topKind);
-    if (!has) addInstance();
-    else {
-      const inst = state.instances.find(i => i.kind === state.topKind);
-      if (inst) state.activeInstanceId = inst.id;
-    }
-    refreshAll();
-    scheduleSave();
-  });
-});
-
-document.getElementById("loadCsvBtn").addEventListener("click", () => {
-  document.getElementById("csvFileInput").click();
-});
-document.getElementById("csvFileInput").addEventListener("change", (e) => {
-  handleCsvFile(e.target.files[0]);
-  e.target.value = "";
-});
-
-document.getElementById("bannerAction").addEventListener("click", () => {
-  document.getElementById("csvFileInput").click();
-});
-
-document.getElementById("saveSessionBtn").addEventListener("click", saveSessionToFile);
-document.getElementById("loadSessionBtn").addEventListener("click", () => {
-  document.getElementById("sessionFileInput").click();
-});
-document.getElementById("sessionFileInput").addEventListener("change", (e) => {
-  loadSessionFromFile(e.target.files[0]);
-  e.target.value = "";
-});
-
-document.getElementById("clearLocalBtn").addEventListener("click", () => {
-  showPromptModal({
-    title: "Clear all local state",
-    body: "This will wipe localStorage (form data, dropdowns loaded from CSV) and reset to defaults. Type CLEAR to confirm.",
-    placeholder: "Type CLEAR",
-    confirmText: "Wipe",
-    onConfirm: (v) => {
-      if (v !== "CLEAR") { flashBanner("Cancelled.", true); return; }
-      localStorage.removeItem(STATE_KEY);
-      localStorage.removeItem(SETTINGS_KEY);
-      location.reload();
-    }
-  });
-});
-
-// Data tab buttons
-document.getElementById("addRowBtn").addEventListener("click", addDataRow);
-document.getElementById("deleteRowBtn").addEventListener("click", () => {
-  flashBanner("Use the per-row Delete button on POIs. For lists/maps, clear the cell value.", false);
-});
-document.getElementById("revertBtn").addEventListener("click", () => {
-  flashBanner("Re-read bug_data.csv to revert data tab edits.");
-  // For now: prompt to reload CSV
-  document.getElementById("csvFileInput").click();
-});
-document.getElementById("saveDataBtn").addEventListener("click", exportDataCsv);
-
-// Output textarea: live edit. The textarea itself is the source of
-// truth for the user's tweaks, so we update the model and the dirty
-// flag on every keystroke — but we don't save until blur, tab change,
-// or beforeunload.
-document.getElementById("outputTextarea").addEventListener("input", (e) => {
-  const inst = getActiveInstance();
-  if (!inst) return;
-  inst.output = e.target.value;
-  inst.outputEdited = true;
-  markInstanceDirty(inst);
-});
-document.getElementById("outputTextarea").addEventListener("blur", () => {
-  saveState();
-  setSaveIndicator("saved");
-});
-
-/* ============================================================
-   BOOT
-   ============================================================ */
-// Save synchronously when the user closes the window / tab.
-// The keystroke handler doesn't save on every char, so this is
-// the last chance to persist the in-progress work.
-window.addEventListener("beforeunload", () => {
-  saveState();
-});
-// Also save when the page goes into the background (mobile / tab switch)
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") saveState();
-});
-
-function boot() {
-  const restored = loadState();
-  if (!restored || !state.instances.length) {
-    state.instances = defaultInstances();
-    state.activeInstanceId = state.instances[0].id;
-  }
-  // Ensure at least one instance of each kind isn't required — only the current kind
-  if (state.topKind === "data") {
-    // data tab doesn't need instances
-  } else {
-    const has = state.instances.some(i => i.kind === state.topKind);
-    if (!has) addInstance();
-  }
-  refreshAll();
-  if (!state.dataLoaded) {
-    showLoadBanner();
-  }
-  // Try auto-loading bug_data.csv next to the HTML
-  tryAutoLoadCsv();
-}
-
-async function tryAutoLoadCsv() {
-  try {
-    const r = await fetch("bug_data.csv");
-    if (r.ok) {
-      const text = await r.text();
-      parseCsv(text);
-      state.dataLoaded = true;
-      state.dataLoadedFrom = "bug_data.csv (auto)";
-      hideLoadBanner();
-      flashBanner("Loaded bug_data.csv (auto-detected next to the HTML).");
+/* ================================================================
+   [18] BOOT Y CONEXIÓN DE CONTROLES FIJOS
+   ================================================================ */
+function wireStaticControls() {
+  // Pestañas fijas Data / Rules
+  document.querySelectorAll("#topTabs [data-tab]").forEach(el => {
+    el.addEventListener("click", () => {
+      state.topTab = el.dataset.tab;
       refreshAll();
       scheduleSave();
+    });
+  });
+
+  // Menús desplegables
+  document.querySelectorAll(".menu-wrap").forEach(wrap => {
+    const trigger = wrap.querySelector(":scope > button");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const wasOpen = wrap.classList.contains("open");
+      document.querySelectorAll(".menu-wrap.open").forEach(w => w.classList.remove("open"));
+      if (!wasOpen) wrap.classList.add("open");
+    });
+    wrap.querySelectorAll(".menu-pop button").forEach(b =>
+      b.addEventListener("click", () => wrap.classList.remove("open")));
+  });
+  document.addEventListener("mousedown", (e) => {
+    if (!e.target.closest(".menu-wrap")) {
+      document.querySelectorAll(".menu-wrap.open").forEach(w => w.classList.remove("open"));
     }
-  } catch (e) { /* not allowed by browser, user will pick manually */ }
+    if (!e.target.closest(".autocomplete")) {
+      document.querySelectorAll(".autocomplete.open").forEach(el => el.classList.remove("open"));
+    }
+  });
+
+  // Botón de modo edición
+  $("editToggle").addEventListener("click", () => {
+    state.editMode = !state.editMode;
+    renderForm();
+  });
+
+  // Exportar herramienta / CSVs / sesión
+  $("exportToolBtn").addEventListener("click", exportToolHtml);
+  $("exportDataBtn").addEventListener("click", exportDataCsv);
+  $("exportFieldsBtn").addEventListener("click", exportFieldsCsv);
+  $("dataExportBtn").addEventListener("click", exportDataCsv);
+  $("importDataBtn").addEventListener("click", () => $("dataCsvInput").click());
+  $("dataImportBtn").addEventListener("click", () => $("dataCsvInput").click());
+  $("importFieldsBtn").addEventListener("click", () => $("fieldsCsvInput").click());
+  $("saveSessionBtn").addEventListener("click", saveSessionToFile);
+  $("loadSessionBtn").addEventListener("click", () => $("sessionFileInput").click());
+
+  $("dataCsvInput").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        importDataCsv(ev.target.result);
+        flashBanner(`${file.name} cargado. Datos actualizados.`);
+      } catch (err) {
+        flashBanner("Error en el CSV de datos: " + err.message, true);
+      }
+    };
+    reader.readAsText(file);
+  });
+  $("fieldsCsvInput").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try { importFieldsCsv(ev.target.result); }
+      catch (err) { flashBanner("Error en el CSV de campos: " + err.message, true); }
+    };
+    reader.readAsText(file);
+  });
+  $("sessionFileInput").addEventListener("change", (e) => {
+    if (e.target.files[0]) loadSessionFromFile(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  // Restaurar vanilla / borrar todo
+  $("resetVanillaBtn").addEventListener("click", () => {
+    showConfirmModal({
+      title: "Restaurar configuración del archivo",
+      body: "Descarta tus cambios locales de campos, datos y reglas, y vuelve a lo que trae este bug_tool.html. Lo escrito en las instancias se conserva donde se pueda.",
+      confirmText: "Restaurar",
+      confirmClass: "danger",
+      onConfirm: () => {
+        config = deepClone(vanilla);
+        state.instances = state.instances.filter(i => getForm(i.formId));
+        state.instances.forEach(ensureInstanceFields);
+        if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
+          state.topTab = getForms()[0].id;
+        }
+        refreshAll();
+        scheduleSave();
+      }
+    });
+  });
+  $("clearLocalBtn").addEventListener("click", () => {
+    showPromptModal({
+      title: "Borrar todo lo local",
+      body: "Borra el progreso y la configuración guardados en este navegador y vuelve al archivo original. Escribe BORRAR para confirmar.",
+      placeholder: "Escribe BORRAR",
+      confirmText: "Borrar todo",
+      onConfirm: (v) => {
+        if (v !== "BORRAR") { flashBanner("Cancelado.", true); return; }
+        // Evitar que el guardado de beforeunload re-escriba lo borrado
+        suppressSave = true;
+        if (saveTimer) clearTimeout(saveTimer);
+        localStorage.removeItem(CONFIG_KEY);
+        localStorage.removeItem(SESSION_KEY);
+        location.reload();
+      }
+    });
+  });
+
+  // Toolbar de la pestaña DATA
+  $("addRowBtn").addEventListener("click", addDataRow);
+  $("addListBtn").addEventListener("click", addNewList);
+
+  // Output editable a mano
+  $("outputTextarea").addEventListener("input", (e) => {
+    const inst = getActiveInstance();
+    if (!inst) return;
+    inst.output = e.target.value;
+    inst.outputEdited = true;
+    markInstanceDirty(inst);
+  });
+  $("outputTextarea").addEventListener("blur", () => {
+    saveAll();
+    setSaveIndicator("saved");
+  });
+
+  // Modal: click fuera o Escape para cerrar
+  $("modal").addEventListener("click", (e) => {
+    if (e.target.id === "modal") closeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+  $("bannerDismiss").addEventListener("click", () => $("banner").classList.add("hidden"));
+
+  // Última oportunidad de guardar al cerrar la ventana
+  window.addEventListener("beforeunload", () => saveAll());
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") saveAll();
+  });
+}
+
+function boot() {
+  try {
+    loadVanillaConfig();
+  } catch (e) {
+    document.body.innerHTML = `<div style="padding:40px;font-family:sans-serif;">
+      <h2>Config dañada</h2>
+      <p>El bloque JSON #vanillaConfig no se pudo leer: ${escapeHtml(e.message)}</p>
+      <p>Recupera una copia buena del sharefolder o revisa el JSON con un editor de texto.</p>
+    </div>`;
+    return;
+  }
+  loadConfig();
+  loadSession();
+
+  // Sanear la sesión restaurada contra el schema actual
+  state.instances = state.instances.filter(i => getForm(i.formId));
+  state.instances.forEach(ensureInstanceFields);
+  if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
+    state.topTab = getForms()[0].id;
+  }
+  if (getForm(state.topTab)) {
+    const mine = state.instances.filter(i => i.formId === state.topTab);
+    if (!mine.length) {
+      const inst = makeInstance(state.topTab);
+      state.instances.push(inst);
+      state.activeInstanceId = inst.id;
+    } else if (!mine.some(i => i.id === state.activeInstanceId)) {
+      state.activeInstanceId = mine[0].id;
+    }
+  }
+
+  wireStaticControls();
+  wireMediaPanel();
+  refreshAll();
 }
 
 boot();
