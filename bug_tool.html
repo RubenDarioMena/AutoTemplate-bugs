@@ -459,7 +459,10 @@
 
     /* ---------- Controles del modo edición ---------- */
     /* Ocultos por defecto; body.editing los muestra. */
-    .sec-tools, .fld-tools, .add-section-btn, .mirror-field { display: none; }
+    .sec-tools, .fld-tools, .add-section-btn, .mirror-field,
+    #addSectionTopBtn { display: none; }
+    body.editing #addSectionTopBtn { display: inline-block; margin-left: auto; }
+    body.editing .form-toolbar .edit-toggle { margin-left: 0; }
     body.editing .sec-tools { display: inline-flex; gap: 2px; margin-left: auto; }
     body.editing .fld-tools { display: inline-flex; gap: 2px; margin-left: auto; }
     body.editing .add-section-btn { display: block; width: 100%; margin-top: 8px; }
@@ -483,6 +486,21 @@
       border: 1px dashed #d1d5db;
       border-radius: 3px;
     }
+    /* Etiqueta junto al label cuando una condición oculta/bloquea el campo */
+    .hidden-tag {
+      color: #9ca3af;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 10px;
+    }
+    /* Tabla de condiciones entre campos (pestaña RULES) */
+    .cond-table select, .cond-table input[type="text"] {
+      font-size: 11px;
+      padding: 3px 4px;
+    }
+    .cond-table td { white-space: nowrap; }
+    .cond-then { color: #1d4ed8; font-weight: 700; font-size: 10px; text-transform: uppercase; }
 
     /* ---------- Autocomplete ---------- */
     .autocomplete { position: relative; }
@@ -876,6 +894,7 @@
       <div class="form-col">
         <div class="form-toolbar">
           <h3 id="formTitle">Formulario</h3>
+          <button id="addSectionTopBtn" title="Agrega una sección nueva al final del formulario">+ Sección</button>
           <button class="edit-toggle" id="editToggle" title="Activa el modo edición para agregar, mover o borrar secciones y campos">✎ Editar formulario</button>
         </div>
         <div class="form-panel" id="formPanel"></div>
@@ -891,29 +910,17 @@
         <div class="media-panel" id="mediaPanel">
           <div class="media-panel-header">
             <h4>Nombres de media</h4>
-            <span class="hint">Formato: Mediatype_key_platform_buildnumber_(1)</span>
+            <span class="hint" id="mediaFmtHint"></span>
           </div>
-          <div class="media-row" data-media="Vid">
-            <span class="media-type">Vid</span>
-            <input type="text" data-media-key="Vid" placeholder="key" />
-            <button data-media-copy="Vid">Copiar</button>
+          <!-- Key del ticket: la escribe el tester al crear el issue.
+               Los nombres de abajo se generan solos con esta key y los
+               campos del formulario, según la regla media_fmt. -->
+          <div class="media-row">
+            <span class="media-type">Key</span>
+            <input type="text" id="mediaTicketKey" placeholder="clave del ticket (p. ej. ABC-1234)" />
+            <span></span>
           </div>
-          <div class="media-row" data-media="Pic">
-            <span class="media-type">Pic</span>
-            <input type="text" data-media-key="Pic" placeholder="key" />
-            <button data-media-copy="Pic">Copiar</button>
-          </div>
-          <div class="media-row" data-media="ConsoleLog">
-            <span class="media-type">ConsoleLog</span>
-            <input type="text" data-media-key="ConsoleLog" placeholder="key" />
-            <button data-media-copy="ConsoleLog">Copiar</button>
-          </div>
-          <div class="media-row" data-media="DxDiag">
-            <span class="media-type">DxDiag</span>
-            <input type="text" data-media-key="DxDiag" placeholder="key" />
-            <button data-media-copy="DxDiag">Copiar</button>
-          </div>
-          <div class="media-preview" id="mediaPreview"></div>
+          <div id="mediaRows"></div>
         </div>
       </div>
     </div>
@@ -972,6 +979,7 @@
       "bugTypes": ["Visual", "Logic", "Audio", "Crash", "Performance", "Network", "HUD", "Animation", "UI", "AI", "Physics", "Collision", "Texture"],
       "regressionStatuses": ["Verificado Corregido", "Regresado", "No Reproducible", "Aún Presente", "No Encontrado", "Fix Parcial"],
       "onlineOrLan": ["Online", "LAN", "Offline", "Split-Screen"],
+      "mediaTypes": ["Vid", "Pic", "ConsoleLog", "DxDiag"],
       "severities": ["S0", "S1", "S2", "S3"],
       "priorities": ["P0", "P1", "P2", "P3"]
     },
@@ -994,6 +1002,7 @@
     },
     "rules": {
       "kw_count": "5",
+      "media_fmt": "{type}_{key}_{platform}_{cl}_(1)",
       "coord_fmt": "(X, Y, Z) (X, Y, Z)",
       "coord_re": "^\\(\\d+,\\s*\\d+,\\s*\\d+\\)\\s*\\(\\d+,\\s*\\d+,\\s*\\d+\\)$",
       "repro_re": "^\\d+/\\d+$",
@@ -1103,9 +1112,13 @@
             "label": "Palabras clave",
             "mode": "lines",
             "fields": [
-              { "id": "keywords", "label": "Palabras clave", "type": "keywords", "template": "+Palabras_clave:+ {value}", "help": "Cantidad exacta según la regla kw_count; únicas y sin aparecer en el cuerpo del bug" }
+              { "id": "keywords", "label": "Palabras clave", "type": "keywords", "template": "+Palabras_clave:+ {value}", "kwCount": "@kw_count", "kwOverlap": true, "help": "Cantidad exacta según la regla kw_count; únicas y sin aparecer en el cuerpo del bug" }
             ]
           }
+        ],
+        "rules": [
+          { "when": { "field": "bspCl", "op": "equalsField", "value": "cl" },
+            "then": { "action": "error", "field": "bspCl", "value": "BSP CL debe ser distinto de CL" } }
         ]
       },
       {
@@ -1246,6 +1259,14 @@ function resolveRef(v) {
   return v == null ? "" : v;
 }
 
+// En plantillas, separadores y encabezados se puede escribir \n o
+// <br> para forzar un salto de línea en el output.
+function unescapeNl(s) {
+  return String(s == null ? "" : s)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/\\n/g, "\n");
+}
+
 function isoStamp() {
   const d = new Date();
   return d.toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -1296,10 +1317,25 @@ function loadConfig() {
     const raw = localStorage.getItem(CONFIG_KEY);
     if (raw) {
       const c = JSON.parse(raw);
-      if (c && c.schema && c.data) { config = c; return; }
+      if (c && c.schema && c.data) {
+        config = c;
+        migrateConfig();
+        return;
+      }
     }
   } catch (e) { console.error("loadConfig", e); }
   config = deepClone(vanilla);
+}
+
+// Si esta versión del archivo trae listas/reglas nuevas que la config
+// guardada en el navegador no conoce, se completan sin pisar nada.
+function migrateConfig() {
+  Object.entries(vanilla.data.lists).forEach(([k, v]) => {
+    if (!config.data.lists[k]) config.data.lists[k] = deepClone(v);
+  });
+  Object.entries(vanilla.data.rules).forEach(([k, v]) => {
+    if (config.data.rules[k] === undefined) config.data.rules[k] = v;
+  });
 }
 
 function configIsDirty() {
@@ -1368,7 +1404,7 @@ function optionsForField(field, inst) {
 const state = {
   topTab: "",            // id de formulario, "data" o "rules"
   editMode: false,
-  instances: [],         // { id, formId, title, values, mediaKeys, output, outputEdited, errors, dirty }
+  instances: [],         // { id, formId, title, values, ticketKey, output, outputEdited, errors, dirty }
   activeInstanceId: null,
   dataTab: { selectedCategory: "" },
   prefs: { dontAskOnClose: false }
@@ -1387,7 +1423,7 @@ function makeInstance(formId) {
     formId: formId,
     title: form.label + " 1",
     values: values,
-    mediaKeys: { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" },
+    ticketKey: "",
     output: "",
     outputEdited: false,
     errors: {},
@@ -1409,7 +1445,7 @@ function ensureInstanceFields(inst) {
       inst.values[field.id] = [];
     }
   });
-  if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
+  if (inst.ticketKey === undefined) inst.ticketKey = "";
   if (!inst.errors) inst.errors = {};
 }
 
@@ -1619,14 +1655,26 @@ function renderForm() {
   toggle.textContent = state.editMode ? "✓ Terminar edición" : "✎ Editar formulario";
   document.body.classList.toggle("editing", state.editMode);
 
-  panel.innerHTML = form.sections.map(sec => sectionHtml(sec, inst)).join("")
+  // Estado de las condiciones entre campos (ocultar/bloquear/default)
+  const fx = evalFieldRules(form, inst);
+  lastFxJson = JSON.stringify(fx);
+
+  panel.innerHTML = form.sections.map(sec => sectionHtml(sec, inst, fx)).join("")
     + `<button class="add-section-btn" id="addSectionBtn">+ Agregar sección</button>`;
   wireFormEvents(inst, form);
   revalidate(inst);
   renderOutput();
 }
 
-function sectionHtml(sec, inst) {
+// Última foto del estado de condiciones que está pintado en pantalla;
+// si al validar cambia (ej. escribieron "LOD"), se re-pinta el form.
+let lastFxJson = "";
+function rerenderIfRulesChanged(form, inst) {
+  const fxNow = JSON.stringify(evalFieldRules(form, inst));
+  if (fxNow !== lastFxJson) renderForm();
+}
+
+function sectionHtml(sec, inst, fx) {
   const tools = `
     <span class="sec-tools">
       <button class="tool-btn" data-sec-add="${sec.id}" title="Agregar campo a esta sección">+ campo</button>
@@ -1635,10 +1683,14 @@ function sectionHtml(sec, inst) {
       <button class="tool-btn" data-sec-edit="${sec.id}" title="Editar sección">✎</button>
       <button class="tool-btn del" data-sec-del="${sec.id}" title="Borrar sección">✕</button>
     </span>`;
+  // Los campos ocultos por condición no se pintan (en modo edición sí,
+  // marcados, para poder seguir editándolos).
+  const visibleFields = sec.fields.filter(f =>
+    state.editMode || !(fx[f.id] && fx[f.id].hidden));
   // Agrupar campos consecutivos del mismo tamaño en filas de 2 o 3
   const rows = [];
   let group = null;
-  sec.fields.forEach(f => {
+  visibleFields.forEach(f => {
     const size = f.size === "half" ? 2 : f.size === "third" ? 3 : 1;
     if (group && group.size === size && size > 1 && group.items.length < size) {
       group.items.push(f);
@@ -1648,7 +1700,7 @@ function sectionHtml(sec, inst) {
     }
   });
   const body = rows.map(g => {
-    const cells = g.items.map(f => fieldHtml(f, inst)).join("");
+    const cells = g.items.map(f => fieldHtml(f, inst, fx)).join("");
     if (g.size === 2) return `<div class="row-2">${cells}</div>`;
     if (g.size === 3) return `<div class="row-3">${cells}</div>`;
     return cells;
@@ -1659,9 +1711,11 @@ function sectionHtml(sec, inst) {
   </div>`;
 }
 
-function fieldHtml(field, inst) {
+function fieldHtml(field, inst, fx) {
   const err = inst.errors[field.id] || "";
   const invalid = err ? " invalid" : "";
+  const st = (fx && fx[field.id]) || { hidden: false, disabled: false };
+  const dis = st.disabled ? " disabled" : "";
   const tools = `
     <span class="fld-tools">
       <button class="tool-btn" data-fld-up="${field.id}" title="Subir campo (sube en el output)">▲</button>
@@ -1669,7 +1723,9 @@ function fieldHtml(field, inst) {
       <button class="tool-btn" data-fld-edit="${field.id}" title="Editar campo">✎</button>
       <button class="tool-btn del" data-fld-del="${field.id}" title="Borrar campo definitivamente">✕</button>
     </span>`;
-  const labelHtml = `<label>${escapeHtml(field.label)}${field.required ? '<span class="req">*</span>' : ""}${tools}</label>`;
+  const stateTag = st.hidden ? '<span class="hidden-tag">(oculto)</span>'
+                 : st.disabled ? '<span class="hidden-tag">(bloqueado)</span>' : "";
+  const labelHtml = `<label>${escapeHtml(field.label)}${field.required ? '<span class="req">*</span>' : ""}${stateTag}${tools}</label>`;
   const helpHtml = field.help ? `<div class="field-help">${escapeHtml(field.help)}</div>` : "";
   const errHtml = `<div class="field-error">${escapeHtml(err)}</div>`;
   const val = field.type === "mirror" ? "" : (inst.values[field.id] != null ? inst.values[field.id] : "");
@@ -1684,7 +1740,7 @@ function fieldHtml(field, inst) {
   if (field.type === "textarea") {
     return `<div class="field${invalid}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
-      <textarea data-bind="${escapeHtml(field.id)}" rows="${field.rows || 3}">${escapeHtml(val)}</textarea>
+      <textarea data-bind="${escapeHtml(field.id)}" rows="${field.rows || 3}"${dis}>${escapeHtml(val)}</textarea>
       ${errHtml}${helpHtml}
     </div>`;
   }
@@ -1692,7 +1748,7 @@ function fieldHtml(field, inst) {
     return `<div class="field autocomplete${invalid}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="autocomplete-input-wrap">
-        <input type="text" data-bind="${escapeHtml(field.id)}" data-ac="${escapeHtml(field.id)}" value="${escapeHtml(val)}" />
+        <input type="text" data-bind="${escapeHtml(field.id)}" data-ac="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
         <span class="autocomplete-arrow" data-ac-toggle title="Ver todas las opciones">▼</span>
       </div>
       <div class="autocomplete-list"></div>
@@ -1705,7 +1761,7 @@ function fieldHtml(field, inst) {
       ${labelHtml}
       <div class="chips${err ? " invalid" : ""}" data-kw-chips="${escapeHtml(field.id)}">
         ${kws.map(k => `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`).join("")}
-        <input type="text" data-kw-input="${escapeHtml(field.id)}" placeholder="Escribe y presiona Enter..." />
+        <input type="text" data-kw-input="${escapeHtml(field.id)}" placeholder="Escribe y presiona Enter..."${dis} />
       </div>
       ${err ? `<div class="chips-error">${escapeHtml(err)}</div>` : ""}
       ${helpHtml}
@@ -1714,7 +1770,7 @@ function fieldHtml(field, inst) {
   // text (default)
   return `<div class="field${invalid}" data-field="${escapeHtml(field.id)}">
     ${labelHtml}
-    <input type="text" data-bind="${escapeHtml(field.id)}" value="${escapeHtml(val)}" />
+    <input type="text" data-bind="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
     ${errHtml}${helpHtml}
   </div>`;
 }
@@ -1737,6 +1793,9 @@ function wireFormEvents(inst, form) {
       renderMediaPanel();
       saveAll();
       setSaveIndicator("saved");
+      // Si alguna condición mostró/ocultó/bloqueó campos, re-pintar.
+      // Va al final: el usuario ya salió del campo, no roba el foco.
+      rerenderIfRulesChanged(form, inst);
     });
     el.addEventListener("change", () => {
       inst.values[name] = el.value;
@@ -1747,6 +1806,7 @@ function wireFormEvents(inst, form) {
       markInstanceDirty(inst);
       saveAll();
       setSaveIndicator("saved");
+      rerenderIfRulesChanged(form, inst);
     });
   });
 
@@ -2224,7 +2284,10 @@ function showFieldEditor(form, sec, field) {
       </div>
 
       <div class="fe-sep">Validación</div>
-      <label class="checkbox fe-full"><input type="checkbox" id="fe_required"${f.required ? " checked" : ""} /> Obligatorio</label>
+      <div class="fe-full" style="display:flex;gap:16px;">
+        <label class="checkbox"><input type="checkbox" id="fe_required"${f.required ? " checked" : ""} /> Obligatorio</label>
+        <label class="checkbox"><input type="checkbox" id="fe_hidden"${f.hidden ? " checked" : ""} /> Oculto por defecto (aparece solo por una condición de RULES)</label>
+      </div>
       <div>
         <label>REGEX</label>
         <input type="text" id="fe_regex" value="${escapeHtml(f.regex || "")}" />
@@ -2233,6 +2296,14 @@ function showFieldEditor(form, sec, field) {
       <div>
         <label>Mensaje si no cumple</label>
         <input type="text" id="fe_regexMsg" value="${escapeHtml(f.regexMsg || "")}" />
+      </div>
+      <div>
+        <label>Chips: cantidad exacta</label>
+        <input type="text" id="fe_kwCount" value="${escapeHtml(f.kwCount || "")}" />
+        <div class="field-help">Solo palabras clave. Número o @regla (ej. @kw_count). Vacío = sin límite.</div>
+      </div>
+      <div style="display:flex;align-items:end;">
+        <label class="checkbox"><input type="checkbox" id="fe_kwOverlap"${f.kwOverlap ? " checked" : ""} /> Chips: prohibir que aparezcan en el cuerpo del bug</label>
       </div>
     </div>`;
 
@@ -2292,8 +2363,12 @@ function showFieldEditor(form, sec, field) {
       if ($("fe_joinPrev").checked) target.joinPrev = true; else delete target.joinPrev;
       if ($("fe_perLine").checked) target.perLine = true; else delete target.perLine;
       if ($("fe_required").checked) target.required = true; else delete target.required;
+      if ($("fe_hidden").checked) target.hidden = true; else delete target.hidden;
       setOrDel("regex", regexTxt, "");
       setOrDel("regexMsg", $("fe_regexMsg").value.trim(), "");
+      setOrDel("kwCount", $("fe_kwCount").value.trim(), "");
+      if ($("fe_kwOverlap").checked) target.kwOverlap = true; else delete target.kwOverlap;
+      if (target.type !== "keywords") { delete target.kwCount; delete target.kwOverlap; }
       if (target.type === "mirror") { delete target.required; delete target.regex; }
       if (isNew) sec.fields.push(target);
       state.instances.forEach(ensureInstanceFields);
@@ -2305,18 +2380,80 @@ function showFieldEditor(form, sec, field) {
 }
 
 /* ================================================================
-   [10] VALIDACIÓN Y TILES DE ESTADO
+   [10] VALIDACIÓN, CONDICIONES ENTRE CAMPOS Y TILES DE ESTADO
    ================================================================
-   Reglas por campo (desde el schema, editables en RULES):
+   Validaciones por campo (editables en RULES):
      - required: no puede quedar vacío
      - regex: expresión regular literal o @regla de DATA
-   Las palabras clave validan cantidad (regla kw_count), unicidad y
-   que no aparezcan en el cuerpo del bug (como en Jira, sin
-   distinguir mayúsculas). */
+   Palabras clave (por campo): cantidad exacta (kwCount, acepta
+   @regla), unicidad, y opcionalmente que no aparezcan en el cuerpo
+   del bug (kwOverlap).
+
+   CONDICIONES ENTRE CAMPOS (form.rules, editables en RULES):
+     { when: { field, op, value }, then: { action, field, value } }
+     op:     empty | notEmpty | equals | notEquals | matches (regex/@regla)
+     action: show | hide | disable | setDefault
+   Ejemplos: si map está vacío o es "global" → ocultar/bloquear POI;
+   si shortDescription cumple la regex LOD → mostrar el campo
+   "LOD number" (creado con "Oculto por defecto") en Notas. */
+function getFormRules(form) {
+  return form.rules || [];
+}
+
+function evalCondition(when, inst) {
+  const v = String(inst.values[when.field] == null ? "" : inst.values[when.field]).trim();
+  const target = String(when.value == null ? "" : when.value).trim();
+  switch (when.op) {
+    case "empty":     return !v;
+    case "notEmpty":  return !!v;
+    case "equals":    return v.toLowerCase() === target.toLowerCase();
+    case "notEquals": return v.toLowerCase() !== target.toLowerCase();
+    case "matches":
+      try { return new RegExp(resolveRef(target), "i").test(v); }
+      catch (e) { return false; }
+    // target = id de otro campo; solo cuenta si ambos tienen valor
+    case "equalsField": {
+      const other = String(inst.values[target] == null ? "" : inst.values[target]).trim();
+      return !!v && !!other && v.toLowerCase() === other.toLowerCase();
+    }
+    case "notEqualsField": {
+      const other = String(inst.values[target] == null ? "" : inst.values[target]).trim();
+      return !!v && !!other && v.toLowerCase() !== other.toLowerCase();
+    }
+    default: return false;
+  }
+}
+
+// Estado efectivo de cada campo según las condiciones del formulario.
+// Devuelve { fieldId: { hidden, disabled } }. La acción setDefault
+// rellena el campo destino solo si está vacío.
+function evalFieldRules(form, inst) {
+  const fx = {};
+  allFields(form).forEach(({ field }) => {
+    fx[field.id] = { hidden: !!field.hidden, disabled: false };
+  });
+  getFormRules(form).forEach(r => {
+    if (!r.when || !r.then || !fx[r.then.field]) return;
+    if (!evalCondition(r.when, inst)) return;
+    const t = fx[r.then.field];
+    if (r.then.action === "show") t.hidden = false;
+    else if (r.then.action === "hide") t.hidden = true;
+    else if (r.then.action === "disable") t.disabled = true;
+    else if (r.then.action === "setDefault") {
+      const cur = inst.values[r.then.field];
+      if (!String(cur == null ? "" : cur).trim()) {
+        inst.values[r.then.field] = resolveRef(r.then.value || "");
+      }
+    }
+  });
+  return fx;
+}
+
 function revalidate(inst) {
   inst.errors = {};
   const form = getForm(inst.formId);
   if (!form) return;
+  const fx = evalFieldRules(form, inst);
 
   // Cuerpo del bug: todos los campos de texto, para el chequeo de keywords
   const bodyText = allFields(form)
@@ -2327,15 +2464,17 @@ function revalidate(inst) {
 
   allFields(form).forEach(({ field }) => {
     if (field.type === "mirror") return;
+    // Un campo oculto o bloqueado por condición no puede exigirse
+    if (fx[field.id].hidden || fx[field.id].disabled) return;
 
     if (field.type === "keywords") {
       const arr = inst.values[field.id] || [];
-      const want = parseInt(config.data.rules.kw_count, 10) || 5;
-      if (arr.length !== want) {
-        inst.errors[field.id] = `Se necesitan exactamente ${want} palabras clave (hay ${arr.length})`;
+      const want = parseInt(resolveRef(field.kwCount || ""), 10) || 0;
+      if (want && arr.length !== want) {
+        inst.errors[field.id] = `Se necesitan exactamente ${want} (hay ${arr.length})`;
       } else if (new Set(arr.map(k => k.toLowerCase())).size !== arr.length) {
-        inst.errors[field.id] = "Las palabras clave deben ser únicas";
-      } else {
+        inst.errors[field.id] = "Los valores deben ser únicos";
+      } else if (field.kwOverlap) {
         const conflict = arr.find(k => bodyText.includes(k.toLowerCase()));
         if (conflict) inst.errors[field.id] = `«${conflict}» aparece en el cuerpo del bug`;
       }
@@ -2354,6 +2493,17 @@ function revalidate(inst) {
           inst.errors[field.id] = field.regexMsg || "Formato inválido";
         }
       } catch (e) { /* regex rota: se ignora, se corrige en RULES */ }
+    }
+  });
+
+  // Condiciones con acción "marcar error" (ej. BSP CL igual a CL).
+  // No aplican sobre campos ocultos o bloqueados.
+  getFormRules(form).forEach(r => {
+    if (!r.when || !r.then || r.then.action !== "error") return;
+    const st = fx[r.then.field];
+    if (!st || st.hidden || st.disabled) return;
+    if (evalCondition(r.when, inst)) {
+      inst.errors[r.then.field] = r.then.value || "Valor inválido";
     }
   });
 
@@ -2445,7 +2595,8 @@ function fieldOutputPart(field, inst) {
   }
   if (field.omitValue && value.trim() === field.omitValue) return null;
 
-  const tpl = field.template || "{value}";
+  // \n y <br> en la plantilla se convierten en saltos de línea reales
+  const tpl = unescapeNl(field.template || "{value}");
   if (field.perLine) {
     const lines = value.split("\n").map(l => l.trim()).filter(Boolean);
     if (!lines.length) return null;
@@ -2459,6 +2610,8 @@ function buildOutput(inst) {
   if (!form) return { full: "", summary: "" };
   const blocks = [];
   let summaryLine = "";
+  // Campos ocultos por condición: fuera del output
+  const fx = evalFieldRules(form, inst);
 
   form.sections.forEach(sec => {
     const lines = [];
@@ -2466,13 +2619,14 @@ function buildOutput(inst) {
       // Todo en una sola línea, con separadores por campo
       let line = "";
       sec.fields.forEach(field => {
+        if (fx[field.id] && fx[field.id].hidden) return;
         const part = fieldOutputPart(field, inst);
         if (part == null) return;
         const text = Array.isArray(part) ? part.join(" ") : part;
         if (!line) {
           line = text;
         } else {
-          const sep = field.sep != null ? field.sep : (sec.sep != null ? sec.sep : " - ");
+          const sep = unescapeNl(field.sep != null ? field.sep : (sec.sep != null ? sec.sep : " - "));
           line += sep + text;
         }
       });
@@ -2483,6 +2637,7 @@ function buildOutput(inst) {
     } else {
       // Cada campo aporta su(s) línea(s)
       sec.fields.forEach(field => {
+        if (fx[field.id] && fx[field.id].hidden) return;
         const part = fieldOutputPart(field, inst);
         if (part == null) return;
         const arr = Array.isArray(part) ? part : [part];
@@ -2490,14 +2645,14 @@ function buildOutput(inst) {
           // Continúa en la línea anterior; si no hay línea previa
           // (p. ej. timestamp vacío) no se imprime suelto.
           if (!lines.length) return;
-          const sep = field.sep != null ? field.sep : " ";
+          const sep = unescapeNl(field.sep != null ? field.sep : " ");
           lines[lines.length - 1] += sep + arr[0];
           arr.slice(1).forEach(l => lines.push(l));
         } else {
           arr.forEach(l => lines.push(l));
         }
       });
-      if (lines.length && sec.heading) lines.unshift(sec.heading);
+      if (lines.length && sec.heading) lines.unshift(unescapeNl(sec.heading));
     }
     if (lines.length) blocks.push({ lines, noGap: !!sec.noGap });
   });
@@ -2507,7 +2662,25 @@ function buildOutput(inst) {
     out.push(...b.lines);
     if (i < blocks.length - 1 && !b.noGap) out.push("");
   });
-  return { full: out.join("\n"), summary: summaryLine };
+
+  // Chunks para los botones de copia:
+  //   summary     = la línea de la PRIMERA sección (la unida por guiones)
+  //   description = todas las demás secciones
+  const isSummaryFirst = blocks.length > 0 && !!summaryLine
+                      && blocks[0].lines.length === 1
+                      && blocks[0].lines[0] === summaryLine;
+  const rest = [];
+  blocks.forEach((b, i) => {
+    if (isSummaryFirst && i === 0) return;
+    rest.push(...b.lines);
+    if (i < blocks.length - 1 && !b.noGap) rest.push("");
+  });
+  while (rest.length && rest[rest.length - 1] === "") rest.pop();
+  return {
+    full: out.join("\n"),
+    summary: isSummaryFirst ? summaryLine : "",
+    description: rest.join("\n")
+  };
 }
 
 function renderOutput() {
@@ -2528,10 +2701,11 @@ function renderOutput() {
   actions.innerHTML = "";
   addBtn(actions, "Copiar todo", () => copyToClipboard(inst.output), "primary");
   if (chunks.summary) {
-    addBtn(actions, "Copiar resumen", () => copyToClipboard(chunks.summary));
+    addBtn(actions, "Copiar summary", () => copyToClipboard(chunks.summary));
   }
-  addBtn(actions, "Descargar .txt", () => downloadFile(inst.title + ".txt", inst.output));
-  addBtn(actions, "Descargar .md", () => downloadFile(inst.title + ".md", inst.output));
+  if (chunks.description) {
+    addBtn(actions, "Copiar description", () => copyToClipboard(chunks.description));
+  }
   addBtn(actions, "Regenerar", () => {
     inst.outputEdited = false;
     inst.output = "";
@@ -2547,11 +2721,13 @@ function renderOutput() {
       onConfirm: () => {
         const blank = makeInstance(inst.formId);
         inst.values = blank.values;
+        inst.ticketKey = "";
         inst.output = "";
         inst.outputEdited = false;
         markInstanceDirty(inst);
         scheduleSave();
         renderForm();
+        renderMediaPanel();
       }
     });
   }, "danger");
@@ -2568,10 +2744,23 @@ function addBtn(container, label, fn, cls) {
 /* ================================================================
    [12] PANEL DE MEDIA
    ================================================================
-   Formato: Mediatype_key_platform_buildnumber_(1)
-   Usa los campos con id "platform", "client" y "cl" del formulario
-   activo (si existen). */
-const MEDIA_TYPES = ["Vid", "Pic", "ConsoleLog", "DxDiag"];
+   Los nombres se generan SOLOS a partir de la regla `media_fmt`
+   (editable en DATA/RULES — cada cliente puede tener su formato):
+
+     {type}     → el tipo de media de la fila (lista mediaTypes)
+     {key}      → la Key del ticket (el textbox de arriba)
+     {platform} → plataforma(cliente) combinados, sin duplicar parens
+     {loQueSea} → el valor de cualquier campo del formulario por id
+                  (ej. {cl}, {map}, {bugType})
+
+   Los tipos de fila salen de la lista `mediaTypes` en DATA. */
+function mediaTypes() {
+  return config.data.lists.mediaTypes || ["Vid", "Pic", "ConsoleLog", "DxDiag"];
+}
+
+function mediaFormat() {
+  return config.data.rules.media_fmt || "{type}_{key}_{platform}_{cl}_(1)";
+}
 
 function getPlatformForMedia(inst) {
   const plat = String(inst.values.platform || "").trim();
@@ -2581,72 +2770,67 @@ function getPlatformForMedia(inst) {
   return `${plat}(${client})`;
 }
 
+// Devuelve { name, missing: [placeholders sin valor] }
 function buildMediaName(mediaType, inst) {
-  if (!inst || !inst.mediaKeys) return "";
-  const key = (inst.mediaKeys[mediaType] || "").trim();
-  if (!key) return "";
-  const platform = getPlatformForMedia(inst);
-  if (!platform) return "";
-  const buildNumber = String(inst.values.cl || "").trim();
-  if (!buildNumber) return "";
-  return `${mediaType}_${key}_${platform}_${buildNumber}_(1)`;
+  const missing = [];
+  const name = mediaFormat().replace(/\{([A-Za-z0-9_]+)\}/g, (m, ph) => {
+    let v = "";
+    if (ph === "type") v = mediaType;
+    else if (ph === "key") v = String(inst.ticketKey || "").trim();
+    else if (ph === "platform") v = getPlatformForMedia(inst);
+    else v = String(inst.values[ph] == null ? "" : inst.values[ph]).trim();
+    if (!v) missing.push(ph);
+    return v;
+  });
+  return { name, missing };
 }
 
 function renderMediaPanel() {
   const inst = getActiveInstance();
   if (!inst) return;
-  if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
-  const preview = $("mediaPreview");
-  const lines = [];
-  MEDIA_TYPES.forEach(t => {
-    const row = document.querySelector(`[data-media="${t}"]`);
-    if (!row) return;
-    const input = row.querySelector(`[data-media-key="${t}"]`);
-    const btn = row.querySelector(`[data-media-copy="${t}"]`);
-    if (input && document.activeElement !== input) {
-      input.value = inst.mediaKeys[t] || "";
-    }
-    const name = buildMediaName(t, inst);
-    if (btn) {
-      btn.disabled = !name;
-      btn.title = name ? `Copiar "${name}"` : "Llena key, plataforma y CL primero";
-    }
-    if (name) lines.push(name);
+  if (inst.ticketKey === undefined) inst.ticketKey = "";
+  $("mediaFmtHint").textContent = "Formato (regla media_fmt): " + mediaFormat();
+  const keyInput = $("mediaTicketKey");
+  if (document.activeElement !== keyInput) keyInput.value = inst.ticketKey;
+
+  // Filas generadas desde la lista mediaTypes (solo lectura + copiar)
+  const rows = $("mediaRows");
+  rows.innerHTML = mediaTypes().map(t => {
+    const { name, missing } = buildMediaName(t, inst);
+    const ok = !missing.length;
+    return `<div class="media-row">
+      <span class="media-type">${escapeHtml(t)}</span>
+      <input type="text" readonly value="${ok ? escapeHtml(name) : ""}"
+        placeholder="${ok ? "" : "falta: " + escapeHtml(missing.join(", "))}" />
+      <button data-media-copy="${escapeHtml(t)}"${ok ? "" : " disabled"}
+        title="${ok ? "Copiar " + escapeHtml(name) : "Faltan datos: " + escapeHtml(missing.join(", "))}">Copiar</button>
+    </div>`;
+  }).join("");
+  rows.querySelectorAll("[data-media-copy]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const { name, missing } = buildMediaName(btn.dataset.mediaCopy, getActiveInstance());
+      if (missing.length) { flashBanner("Faltan datos: " + missing.join(", "), true); return; }
+      copyToClipboard(name);
+    });
   });
-  if (preview) preview.textContent = lines.join("\n");
 }
 
 let _mediaPanelWired = false;
 function wireMediaPanel() {
   if (_mediaPanelWired) return;
   _mediaPanelWired = true;
-  MEDIA_TYPES.forEach(t => {
-    const row = document.querySelector(`[data-media="${t}"]`);
-    if (!row) return;
-    const input = row.querySelector(`[data-media-key="${t}"]`);
-    const btn = row.querySelector(`[data-media-copy="${t}"]`);
-    if (input) {
-      input.addEventListener("input", () => {
-        const inst = getActiveInstance();
-        if (!inst) return;
-        if (!inst.mediaKeys) inst.mediaKeys = { Vid: "", Pic: "", ConsoleLog: "", DxDiag: "" };
-        inst.mediaKeys[t] = input.value;
-        markInstanceDirty(inst);
-        renderMediaPanel();
-      });
-      input.addEventListener("blur", () => {
-        saveAll();
-        setSaveIndicator("saved");
-      });
-    }
-    if (btn) {
-      btn.addEventListener("click", () => {
-        const inst = getActiveInstance();
-        const name = buildMediaName(t, inst);
-        if (!name) { flashBanner("Llena key, plataforma y CL primero.", true); return; }
-        copyToClipboard(name);
-      });
-    }
+  const keyInput = $("mediaTicketKey");
+  keyInput.addEventListener("input", () => {
+    const inst = getActiveInstance();
+    if (!inst) return;
+    inst.ticketKey = keyInput.value;
+    markInstanceDirty(inst);
+    // Solo refrescar las filas generadas, sin pisar el input activo
+    renderMediaPanel();
+  });
+  keyInput.addEventListener("blur", () => {
+    saveAll();
+    setSaveIndicator("saved");
   });
 }
 
@@ -2941,6 +3125,26 @@ function addNewList() {
    Vista técnica y legible de TODAS las validaciones: por campo
    (obligatorio, REGEX, mensaje, default) y las reglas globales de
    DATA. Todo editable en vivo. */
+// Operadores y acciones de las condiciones entre campos
+const COND_OPS = [
+  ["empty",          "está vacío"],
+  ["notEmpty",       "no está vacío"],
+  ["equals",         "es igual a"],
+  ["notEquals",      "no es igual a"],
+  ["matches",        "cumple REGEX"],
+  // Comparan contra el VALOR de otro campo (el valor es el id del campo).
+  // Solo aplican cuando ambos campos tienen algo escrito.
+  ["equalsField",    "es igual al campo (id)"],
+  ["notEqualsField", "es distinto del campo (id)"]
+];
+const COND_ACTIONS = [
+  ["show",       "mostrar el campo"],
+  ["hide",       "ocultar el campo"],
+  ["disable",    "bloquear el campo"],
+  ["setDefault", "poner default si está vacío"],
+  ["error",      "marcar error (mensaje)"]
+];
+
 function renderRulesTab() {
   const c = $("rulesContainer");
   let fieldRows = "";
@@ -2965,6 +3169,45 @@ function renderRulesTab() {
     <td>@${escapeHtml(k)}</td>
     <td><input type="text" data-rr-global="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
   </tr>`).join("");
+
+  // ---- Condiciones entre campos ----
+  const condsHtml = getForms().map(form => {
+    const fieldOpts = (sel) => allFields(form)
+      .filter(x => x.field.type !== "mirror")
+      .map(x => `<option value="${escapeHtml(x.field.id)}"${sel === x.field.id ? " selected" : ""}>${escapeHtml(x.field.label)}</option>`)
+      .join("");
+    const rows = getFormRules(form).map((r, i) => {
+      const opOpts = COND_OPS.map(([v, l]) =>
+        `<option value="${v}"${r.when.op === v ? " selected" : ""}>${l}</option>`).join("");
+      const actOpts = COND_ACTIONS.map(([v, l]) =>
+        `<option value="${v}"${r.then.action === v ? " selected" : ""}>${l}</option>`).join("");
+      const needsWhenVal = !["empty", "notEmpty"].includes(r.when.op);
+      const whenPh = ["equalsField", "notEqualsField"].includes(r.when.op)
+        ? "id del otro campo (ej. cl)"
+        : r.when.op === "matches" ? "regex o @regla" : "valor";
+      const needsThenVal = ["setDefault", "error"].includes(r.then.action);
+      const thenPh = r.then.action === "error" ? "mensaje de error" : "valor o @regla";
+      const k = form.id + "|" + i;
+      return `<tr>
+        <td class="cond-then">Si</td>
+        <td><select data-cr="${k}|when.field">${fieldOpts(r.when.field)}</select></td>
+        <td><select data-cr="${k}|when.op">${opOpts}</select></td>
+        <td><input type="text" data-cr="${k}|when.value" value="${escapeHtml(r.when.value || "")}"
+             placeholder="${needsWhenVal ? whenPh : "(no aplica)"}"${needsWhenVal ? "" : " disabled"} /></td>
+        <td class="cond-then">entonces</td>
+        <td><select data-cr="${k}|then.action">${actOpts}</select></td>
+        <td><select data-cr="${k}|then.field">${fieldOpts(r.then.field)}</select></td>
+        <td><input type="text" data-cr="${k}|then.value" value="${escapeHtml(r.then.value || "")}"
+             placeholder="${needsThenVal ? thenPh : "(no aplica)"}"${needsThenVal ? "" : " disabled"} /></td>
+        <td><button class="row-del" data-cr-del="${k}" title="Borrar condición">✕</button></td>
+      </tr>`;
+    }).join("");
+    return `<h4 style="margin:10px 0 4px;font-size:12px;">${escapeHtml(form.label)}</h4>
+      <table class="data-table cond-table">
+        <tbody>${rows || `<tr><td style="color:#9ca3af;font-style:italic;">Sin condiciones todavía.</td></tr>`}</tbody>
+      </table>
+      <button data-cr-add="${escapeHtml(form.id)}" style="margin-top:6px;">+ Agregar condición a ${escapeHtml(form.label)}</button>`;
+  }).join("");
 
   c.innerHTML = `
     <div class="rules-block">
@@ -2995,10 +3238,26 @@ function renderRulesTab() {
         <tbody>${globalRows}</tbody>
       </table>
     </div>
+    <div class="rules-block">
+      <h3>Condiciones entre campos</h3>
+      <p class="rules-intro">
+        Reglas del tipo <em>si el campo A ... entonces el campo B ...</em>. Con
+        "cumple REGEX" el valor acepta una expresión o <code>@regla</code>.
+        Para campos exclusivos de un tipo de issue (ej. "LOD number"): crea el
+        campo con <strong>"Oculto por defecto"</strong> y agrega aquí una condición
+        que lo muestre (ej. si Descripción corta cumple REGEX <code>LOD</code> →
+        mostrar LOD number). "Poner default si está vacío" rellena el campo
+        destino sin pisar lo ya escrito. Las condiciones se aplican al salir de
+        cada campo.
+      </p>
+      ${condsHtml}
+    </div>
     <div class="rules-future">
-      Próximamente en esta pestaña: condiciones entre campos (si el campo A vale X,
-      entonces el campo B debe...), conexión con los nombres de media y tiles
-      personalizados. La estructura ya lo soporta; se agregará sin romper tus datos.
+      Próximamente: tiles personalizados definidos por el usuario y más acciones
+      para los nombres de media. La estructura ya lo soporta; se agregará sin
+      romper tus datos. El formato de media ya es editable: regla
+      <code>media_fmt</code> (placeholders {type}, {key}, {platform} y cualquier
+      id de campo) y la lista <code>mediaTypes</code> en Data.
     </div>`;
 
   const findTarget = (key) => {
@@ -3042,6 +3301,53 @@ function renderRulesTab() {
     config.data.rules[el.dataset.rrGlobal] = el.value;
     scheduleSave();
   }));
+
+  // ---- Wiring de las condiciones entre campos ----
+  c.querySelectorAll("[data-cr]").forEach(el => {
+    el.addEventListener("change", () => {
+      const [formId, idx, path] = el.dataset.cr.split("|");
+      const form = getForm(formId);
+      const rule = form && getFormRules(form)[+idx];
+      if (!rule) return;
+      const [part, prop] = path.split(".");
+      rule[part][prop] = el.value;
+      scheduleSave();
+      // Cambiar el operador/acción habilita o deshabilita los inputs de valor
+      if (prop === "op" || prop === "action") renderRulesTab();
+    });
+  });
+  c.querySelectorAll("[data-cr-add]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const form = getForm(btn.dataset.crAdd);
+      if (!form) return;
+      const first = allFields(form).find(x => x.field.type !== "mirror");
+      if (!first) { flashBanner("El formulario no tiene campos.", true); return; }
+      form.rules = form.rules || [];
+      form.rules.push({
+        when: { field: first.field.id, op: "equals", value: "" },
+        then: { action: "hide", field: first.field.id, value: "" }
+      });
+      renderRulesTab();
+      scheduleSave();
+    });
+  });
+  c.querySelectorAll("[data-cr-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const [formId, idx] = btn.dataset.crDel.split("|");
+      showConfirmModal({
+        title: "Borrar condición",
+        body: "¿Borrar definitivamente esta condición?",
+        confirmText: "Borrar",
+        confirmClass: "danger",
+        onConfirm: () => {
+          const form = getForm(formId);
+          if (form && form.rules) form.rules.splice(+idx, 1);
+          renderRulesTab();
+          scheduleSave();
+        }
+      });
+    });
+  });
 }
 
 /* ================================================================
@@ -3130,11 +3436,16 @@ function importDataCsv(text) {
 const FIELDS_CSV_HEADER = [
   "form", "section", "field", "label", "type", "source", "size", "template",
   "sep", "joinprev", "perline", "rows", "required", "regex", "regexmsg",
-  "default", "emptyas", "omitvalue", "nogap", "help"
+  "default", "emptyas", "omitvalue", "nogap", "help",
+  "hidden", "kwcount", "kwoverlap"
 ];
 // En la columna sep, la palabra NONE significa "sin separador"
 // (pegar al campo anterior); vacío significa "usar el de la sección".
 const SEP_NONE = "NONE";
+// Las condiciones entre campos viajan como filas type="cond" con este
+// mapeo de columnas (documentado en bug_fields.README.md):
+//   source=campo condición · template=operador · default=valor condición
+//   regex=acción · regexmsg=campo destino · emptyas=valor de la acción
 
 function exportFieldsCsv() {
   const rows = [FIELDS_CSV_HEADER.slice()];
@@ -3159,9 +3470,18 @@ function exportFieldsCsv() {
           f.size || "", f.template || "", sepOut(f.sep),
           f.joinPrev ? "yes" : "", f.perLine ? "yes" : "", f.rows || "",
           f.required ? "yes" : "", f.regex || "", f.regexMsg || "",
-          f.default || "", f.emptyAs || "", f.omitValue || "", "", f.help || ""
+          f.default || "", f.emptyAs || "", f.omitValue || "", "", f.help || "",
+          f.hidden ? "yes" : "", f.kwCount || "", f.kwOverlap ? "yes" : ""
         ]);
       });
+    });
+    // Condiciones entre campos del formulario (type="cond")
+    getFormRules(form).forEach(r => {
+      const cr = empty();
+      cr[0] = form.id; cr[4] = "cond";
+      cr[5] = r.when.field; cr[7] = r.when.op; cr[15] = r.when.value || "";
+      cr[13] = r.then.action; cr[14] = r.then.field; cr[16] = r.then.value || "";
+      rows.push(cr);
     });
   });
   downloadFile("bug_fields.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
@@ -3184,13 +3504,30 @@ function importFieldsCsv(text) {
     while (r.length < FIELDS_CSV_HEADER.length) r.push("");
     const [formId, secId, fieldId, label, type, source, size, template,
            sep, joinprev, perline, rowsN, required, regex, regexmsg,
-           def, emptyas, omitvalue, nogap, help] = r;
+           def, emptyas, omitvalue, nogap, help,
+           hidden, kwcount, kwoverlap] = r;
     const lineNo = i + 1;
 
     if (type === "form") {
       if (!formId) { errors.push(`Línea ${lineNo}: fila form sin id`); continue; }
       if (forms.find(f => f.id === formId)) { errors.push(`Línea ${lineNo}: formulario «${formId}» repetido`); continue; }
       forms.push({ id: formId, label: label || formId, sections: [] });
+    } else if (type === "cond") {
+      // Condición entre campos: source=campo, template=op, default=valor,
+      // regex=acción, regexmsg=campo destino, emptyas=valor de la acción
+      const form = forms.find(f => f.id === formId);
+      if (!form) { errors.push(`Línea ${lineNo}: condición sin formulario «${formId}» previo`); continue; }
+      if (!COND_OPS.some(([v]) => v === template)) {
+        errors.push(`Línea ${lineNo}: operador desconocido «${template}»`); continue;
+      }
+      if (!COND_ACTIONS.some(([v]) => v === regex)) {
+        errors.push(`Línea ${lineNo}: acción desconocida «${regex}»`); continue;
+      }
+      form.rules = form.rules || [];
+      form.rules.push({
+        when: { field: source, op: template, value: def || "" },
+        then: { action: regex, field: regexmsg, value: emptyas || "" }
+      });
     } else if (type === "section") {
       const form = forms.find(f => f.id === formId);
       if (!form) { errors.push(`Línea ${lineNo}: sección sin formulario «${formId}» previo`); continue; }
@@ -3235,9 +3572,23 @@ function importFieldsCsv(text) {
       if (emptyas) f.emptyAs = emptyas;
       if (omitvalue) f.omitValue = omitvalue;
       if (help) f.help = help;
+      if (csvTruthy(hidden)) f.hidden = true;
+      if (type === "keywords") {
+        if (kwcount) f.kwCount = kwcount;
+        if (csvTruthy(kwoverlap)) f.kwOverlap = true;
+      }
       sec.fields.push(f);
     }
   }
+
+  // Las condiciones deben apuntar a campos que existan en su formulario
+  forms.forEach(form => {
+    getFormRules(form).forEach((r, i) => {
+      const has = (id) => form.sections.some(s => s.fields.some(f => f.id === id));
+      if (!has(r.when.field)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo «${r.when.field}» no existe`);
+      if (!has(r.then.field)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo destino «${r.then.field}» no existe`);
+    });
+  });
 
   if (!forms.length || !forms.some(f => f.sections.length)) {
     errors.push("El archivo no define ningún formulario con secciones.");
@@ -3498,6 +3849,10 @@ function wireStaticControls() {
   $("editToggle").addEventListener("click", () => {
     state.editMode = !state.editMode;
     renderForm();
+  });
+  $("addSectionTopBtn").addEventListener("click", () => {
+    const form = getForm(state.topTab);
+    if (form) showSectionEditor(form, null);
   });
 
   // Exportar herramienta / CSVs / sesión

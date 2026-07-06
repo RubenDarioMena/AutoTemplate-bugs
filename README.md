@@ -64,6 +64,21 @@ Dos maneras, las dos válidas:
   - **Data** — edita listas, mapas, POIs, tiers y reglas globales.
   - **Rules** — vista técnica de TODAS las validaciones: obligatorio,
     REGEX (directa o `@regla`), mensaje de error y default por campo.
+    Además, **condiciones entre campos**: si el campo A está vacío /
+    es igual a X / cumple una REGEX / coincide con otro campo →
+    mostrar, ocultar o bloquear el campo B, ponerle un default, o
+    marcar un error (ej. "BSP CL debe ser distinto de CL"). Para
+    campos exclusivos de un tipo de issue (ej. LOD number), se crea
+    el campo como "oculto por defecto" y una condición lo muestra.
+
+## Nombres de media
+
+El textbox **Key** (la clave del ticket) se llena una vez y los
+nombres de Vid/Pic/ConsoleLog/DxDiag se generan solos con los datos
+del formulario. El formato es editable por cliente: regla
+`media_fmt` en Data → Reglas, con placeholders `{type}`, `{key}`,
+`{platform}` y cualquier id de campo (ej. `{cl}`). Los tipos de
+media son la lista `mediaTypes` en Data.
 
 ## Seguridad
 

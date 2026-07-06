@@ -22,11 +22,12 @@ en las pestañas abiertas se conserva donde los ids coincidan.
 
 ## Estructura
 
-Tres tipos de fila, identificados por la columna `type`:
+Cuatro tipos de fila, identificados por la columna `type`:
 
   1. `type=form`    → declara un formulario (una pestaña superior).
   2. `type=section` → declara una sección dentro del último form.
-  3. cualquier otro `type` → un campo dentro de esa sección.
+  3. `type=cond`    → una condición entre campos (ver abajo).
+  4. cualquier otro `type` → un campo dentro de esa sección.
 
 **El orden de las filas es el orden en pantalla y en el output.**
 
@@ -54,6 +55,12 @@ Tres tipos de fila, identificados por la columna `type`:
 | omitvalue | si el valor es exactamente esto, NO imprimir la línea (ej. `N/A` en BSP CL) | (vacío)      |
 | nogap     | (vacío)                                                   | `yes` = sin línea en blanco después de la sección |
 | help      | texto de ayuda bajo el campo                              | (vacío)                        |
+| hidden    | `yes` = oculto por defecto (aparece solo por una condición) | (vacío)                     |
+| kwcount   | solo chips: cantidad exacta, número o `@regla` (vacío = sin límite) | (vacío)             |
+| kwoverlap | solo chips: `yes` = prohibir que aparezcan en el cuerpo del bug | (vacío)                 |
+
+En `template`, `sep` y el encabezado de sección se puede escribir
+`\n` o `<br>` para forzar un salto de línea en el output.
 
 ## Tipos de campo
 
@@ -62,12 +69,37 @@ Tres tipos de fila, identificados por la columna `type`:
   - `autocomplete` — texto + dropdown autocompletable. La lista sale
                      de `source`. El dropdown tiene "+ Agregar..." al
                      final y una ✕ por opción para borrarla.
-  - `keywords`     — chips de palabras clave. Valida cantidad
-                     (regla `kw_count`), unicidad y que no aparezcan
-                     en el cuerpo del bug.
+  - `keywords`     — chips (etiquetas). La validación es POR CAMPO:
+                     `kwcount` = cantidad exacta (vacío = libre) y
+                     `kwoverlap` = prohibir que aparezcan en el
+                     cuerpo del bug. Un campo chips nuevo sin esas
+                     columnas no exige nada.
   - `mirror`       — no se llena: copia el valor de otro campo
                      (columna `source`) para repetirlo en el output
                      (ej. el CCS en el bloque de Notas).
+
+## Filas `type=cond` — condiciones entre campos
+
+Reglas del tipo *si el campo A ... entonces el campo B ...*. Lo
+normal es editarlas en la pestaña **Rules** de la herramienta; en el
+CSV viajan con este mapeo de columnas (el resto quedan vacías):
+
+  | columna  | contiene                                                    |
+  |----------|-------------------------------------------------------------|
+  | form     | id del formulario                                           |
+  | source   | campo de la condición (el "si")                             |
+  | template | operador: empty / notEmpty / equals / notEquals / matches / equalsField / notEqualsField |
+  | default  | valor de la condición (regex con matches; id de otro campo con *Field) |
+  | regex    | acción: show / hide / disable / setDefault / error          |
+  | regexmsg | campo destino (el "entonces")                               |
+  | emptyas  | valor de la acción (default a poner, o mensaje de error)    |
+
+Ejemplos reales:
+  - *BSP CL igual a CL → error*: `bug,,,,cond,bspCl,,equalsField,,,,,,error,bspCl,cl,BSP CL debe ser distinto de CL,...`
+  - *Descripción corta contiene "LOD" → mostrar LOD number*: campo
+    `lodNumber` creado con `hidden=yes`, y una fila cond con
+    `source=shortDescription`, `template=matches`, `default=LOD`,
+    `regex=show`, `regexmsg=lodNumber`.
 
 ## Valores de `source` para autocomplete
 

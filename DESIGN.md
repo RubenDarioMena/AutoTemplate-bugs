@@ -669,11 +669,34 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     = sin separador (campo pegado al anterior).
   * Ambos con import/export desde el menú "Datos CSV".
 
+## Iteración 2 (2026-07-05): condiciones, media editable, chips por campo
+
+  * **Condiciones entre campos** (`form.rules`, editables en RULES y
+    en `bug_fields.csv` como filas `type=cond`):
+    `{ when: {field, op, value}, then: {action, field, value} }`.
+    Ops: empty/notEmpty/equals/notEquals/matches(regex|@regla)/
+    equalsField/notEqualsField (comparan contra otro campo, ambos
+    no vacíos). Acciones: show/hide/disable/setDefault(si vacío)/
+    error(mensaje). Campos con `hidden: true` solo aparecen si una
+    condición los muestra (caso "LOD number"). Ocultos/bloqueados no
+    validan ni salen al output. Se evalúan al salir de cada campo
+    (re-render solo si cambió el estado). La validación v1
+    cl != bspCl volvió como condición vanilla con acción error.
+  * **Media editable**: textbox Key (clave del ticket, por instancia)
+    + filas generadas solas desde la lista `mediaTypes` (DATA) con la
+    regla `media_fmt` — placeholders {type}, {key}, {platform} y
+    cualquier id de campo. Ya no hay keys manuales por tipo de media.
+  * **Chips por campo**: `kwCount` (número o @regla; vacío = libre) y
+    `kwOverlap` (prohibir aparición en el cuerpo). Un chips nuevo ya
+    no exige 5 por default.
+  * `\n` y `<br>` en template/sep/heading = salto de línea real.
+  * Botones de output: Copiar todo / summary (1.ª sección unida) /
+    description (el resto). CSV de campos: 23 columnas
+    (+hidden, +kwcount, +kwoverlap) y filas cond.
+
 ## Pendiente (siguientes iteraciones)
 
-  * Condiciones entre campos (if A entonces B), p. ej. cl != bspCl
-    (la única validación v1 que no se migró por ser cross-field).
-  * Tiles personalizados definidos por el usuario y conexión con
-    los nombres de media desde la pestaña Rules.
-  * Ids de media configurables (hoy usa los campos `platform`,
-    `client` y `cl` si existen).
+  * Tiles personalizados definidos por el usuario (los tiles de
+    validación ya existen; falta que el usuario defina los suyos).
+  * Más conexiones media↔Rules (el formato ya es la regla media_fmt;
+    Rubén detallará qué más necesita).
