@@ -17,6 +17,7 @@ dependencias.
   - **`bug_data.README.md`** — guía del CSV de datos.
   - **`bug_fields.README.md`** — guía del CSV de campos.
   - **`DESIGN.md`** — documento de diseño (referencia técnica).
+  - **`ROADMAP.md`** — features pendientes, a grandes rasgos.
 
 ## Flujo para testers
 

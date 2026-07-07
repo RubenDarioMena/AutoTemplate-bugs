@@ -75,6 +75,12 @@
       letter-spacing: 0.3px;
     }
     label .req { color: #dc2626; font-size: 10px; font-weight: 700; }
+    /* Cabecera del campo: el label y las herramientas de edición van
+       como HERMANOS, no anidados. Si los botones ▲▼✎✕ estuvieran dentro
+       del <label>, un clic en el label los activaría (el label reenvía
+       el clic a su primer control), reordenando el campo sin querer. */
+    .field-head { display: flex; align-items: center; }
+    .field-head > label { flex: 1; }
     .field { margin-bottom: 8px; position: relative; }
     .field.invalid input,
     .field.invalid textarea,
@@ -82,24 +88,17 @@
       border-color: #dc2626;
       box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);
     }
+    /* El error va debajo del campo (no a la derecha) para que nunca
+       quede tapado por el output ni recortado por el scroll del panel. */
     .field-error {
       display: none;
-      position: absolute;
-      left: 100%;
-      top: 0;
-      margin-left: 6px;
-      background: #1d2129;
-      color: #fff;
-      padding: 4px 8px;
-      border-radius: 3px;
-      font-size: 11px;
-      max-width: 240px;
-      white-space: normal;
-      z-index: 100;
-      pointer-events: none;
+      color: #dc2626;
+      font-size: 10px;
+      font-weight: 600;
+      margin-top: 2px;
+      line-height: 1.3;
     }
-    .field.invalid:hover .field-error,
-    .field.invalid:focus-within .field-error { display: block; }
+    .field.invalid .field-error { display: block; }
     .field-help {
       font-size: 10px;
       color: #9ca3af;
@@ -227,8 +226,29 @@
       background: #ecfdf5; color: #065f46; border-color: #a7f3d0;
       cursor: default;
     }
-    .tile.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+    .tile.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; position: relative; }
     .tile.err:hover { background: #fee2e2; }
+    /* Tooltip propio con el mensaje de error (aparece al pasar el mouse) */
+    .tile.err::after {
+      content: attr(data-msg);
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      background: #1d2129;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 400;
+      white-space: normal;
+      width: max-content;
+      max-width: 260px;
+      z-index: 500;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.22);
+      pointer-events: none;
+    }
+    .tile.err:hover::after { display: block; }
     .tile.more { background: #f3f4f6; color: #4b5563; border-color: #d1d5db; cursor: default; }
 
     /* ---------- Sub-pestañas (instancias) ---------- */
@@ -405,7 +425,7 @@
     }
     .media-row {
       display: grid;
-      grid-template-columns: 90px 1fr auto;
+      grid-template-columns: 120px 1fr auto;
       gap: 6px;
       align-items: center;
       margin-bottom: 4px;
@@ -423,7 +443,23 @@
       font-size: 11px;
       padding: 3px 6px;
     }
+    /* El selector de tipo (text+dropdown vía datalist): no monospace */
+    .media-row input.media-type-input {
+      font-family: inherit;
+      font-weight: 600;
+      color: #1d4ed8;
+    }
     .media-row button { font-size: 11px; padding: 2px 8px; }
+    .media-row-actions { display: flex; gap: 4px; align-items: center; }
+    .media-row-actions .row-del {
+      border: none;
+      background: none;
+      color: #9ca3af;
+      font-size: 13px;
+      padding: 0 6px;
+    }
+    .media-row-actions .row-del:hover { background: #fee2e2; color: #b91c1c; }
+    .add-media-btn { margin-top: 8px; font-size: 11px; padding: 3px 10px; }
     .media-preview {
       margin-top: 6px;
       padding: 4px 6px;
@@ -825,19 +861,43 @@
     }
 
     /* ---------- Banner ---------- */
+    /* Toast flotante: no ocupa espacio en el layout (position:fixed),
+       aparece abajo a la derecha y se desvanece solo. */
     .banner {
-      padding: 8px 16px;
-      background: #fef3c7;
-      border-bottom: 1px solid #f59e0b;
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 2000;
+      max-width: 340px;
+      padding: 10px 14px;
+      background: #1f2937;
+      color: #f9fafb;
+      border: 1px solid #374151;
+      border-left: 3px solid #10b981;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.28);
       font-size: 12px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex: 0 0 auto;
+      gap: 10px;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.18s ease, transform 0.18s ease;
     }
-    .banner.error { background: #fee2e2; border-bottom-color: #dc2626; }
-    .banner.hidden { display: none; }
-    .banner button { font-size: 11px; padding: 2px 8px; }
+    .banner.error { border-left-color: #ef4444; }
+    .banner.hidden {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+    .banner button {
+      font-size: 11px;
+      padding: 2px 8px;
+      background: #374151;
+      color: #f9fafb;
+      border-color: #4b5563;
+    }
+    .banner button:hover { background: #4b5563; }
   </style>
 </head>
 <body>
@@ -933,6 +993,7 @@
       <div class="data-toolbar">
         <button id="addRowBtn">+ Agregar fila</button>
         <button id="addListBtn">+ Nueva lista</button>
+        <button id="addLinkBtn" title="Crea un par correlacionado padre → hijo, como Mapa → POI">+ Lista correlacionada</button>
         <span style="flex:1"></span>
         <button id="dataImportBtn">Cargar bug_data.csv…</button>
         <button id="dataExportBtn" class="primary">Exportar bug_data.csv</button>
@@ -962,7 +1023,7 @@
      CONFIG VANILLA (fuente de verdad embebida)
      ================================================================
      Este bloque JSON contiene los formularios (schema), los datos
-     (listas, mapas, POIs, tiers, reglas) tal como se distribuyen.
+     (listas, mapas, POIs, reglas) tal como se distribuyen.
      La herramienta lo lee al abrir. "Exportar herramienta" descarga
      un bug_tool.html nuevo con este bloque actualizado.
      El equipo de Database puede editarlo aquí a mano si lo prefiere,
@@ -979,7 +1040,7 @@
       "bugTypes": ["Visual", "Logic", "Audio", "Crash", "Performance", "Network", "HUD", "Animation", "UI", "AI", "Physics", "Collision", "Texture"],
       "regressionStatuses": ["Verificado Corregido", "Regresado", "No Reproducible", "Aún Presente", "No Encontrado", "Fix Parcial"],
       "onlineOrLan": ["Online", "LAN", "Offline", "Split-Screen"],
-      "mediaTypes": ["Vid", "Pic", "ConsoleLog", "DxDiag"],
+      "mediaTypes": ["Vid", "Pic", "ConsoleLog", "DxDiag", "TestLogs", "DemoLogs"],
       "severities": ["S0", "S1", "S2", "S3"],
       "priorities": ["P0", "P1", "P2", "P3"]
     },
@@ -995,10 +1056,6 @@
       "Nuketown": ["House Yellow", "House Green", "Backyard", "Bus"],
       "ExampleMap_01": ["POI A", "POI B", "POI C"],
       "ExampleMap_02": ["POI X", "POI Y", "POI Z"]
-    },
-    "tiers": {
-      "T1": "Gameplay", "T2": "Multiplayer", "T3": "Campaign", "T4": "Engine",
-      "T5": "UI/UX", "T6": "Audio", "T7": "Netcode"
     },
     "rules": {
       "kw_count": "5",
@@ -1029,8 +1086,8 @@
               { "id": "platform", "label": "Plataforma", "type": "autocomplete", "source": "platforms", "size": "third", "required": true },
               { "id": "client", "label": "Cliente", "type": "text", "size": "third", "template": "({value})", "sep": "", "help": "Déjalo vacío si la plataforma ya lo incluye, p. ej. PC(MSS)" },
               { "id": "mode", "label": "Modo", "type": "autocomplete", "source": "modes", "size": "third", "required": true },
-              { "id": "map", "label": "Mapa", "type": "autocomplete", "source": "maps", "size": "third", "required": true },
-              { "id": "poi", "label": "POI", "type": "autocomplete", "source": "pois:map", "size": "third", "required": true },
+              { "id": "map", "label": "Mapa", "type": "autocomplete", "source": "parent:map", "size": "third", "required": true },
+              { "id": "poi", "label": "POI", "type": "autocomplete", "source": "child:map:map", "size": "third", "required": true },
               { "id": "bugType", "label": "Tipo de bug", "type": "autocomplete", "source": "bugTypes", "size": "half", "required": true },
               { "id": "shortDescription", "label": "Descripción corta", "type": "text", "size": "half", "required": true },
               { "id": "narrativeCondition", "label": "Condición narrativa (1-3 frases)", "type": "textarea", "rows": 2, "required": true, "template": "Cuando {value}" },
@@ -1338,6 +1395,26 @@ function migrateConfig() {
   });
 }
 
+// Garantiza el contenedor de listas correlacionadas definidas por el
+// usuario (el par Mapa/POI es built-in y vive en data.maps/data.pois).
+function ensureLinksData(cfg) {
+  if (!cfg.data.linkedLists) cfg.data.linkedLists = {};
+}
+
+// Normaliza fuentes viejas al formato nuevo:
+//   "maps"      -> "parent:map"        (lista padre de un par correlacionado)
+//   "pois:<f>"  -> "child:map:<f>"     (lista hija según el campo <f>)
+function migrateLinkSources(cfg) {
+  (cfg.schema.forms || []).forEach(form =>
+    (form.sections || []).forEach(sec =>
+      (sec.fields || []).forEach(f => {
+        if (f.source === "maps") f.source = "parent:map";
+        else if (typeof f.source === "string" && f.source.startsWith("pois:")) {
+          f.source = "child:map:" + f.source.slice(5);
+        }
+      })));
+}
+
 function configIsDirty() {
   return JSON.stringify(config) !== JSON.stringify(vanilla);
 }
@@ -1373,14 +1450,45 @@ function allFields(form) {
   return out;
 }
 
-// Opciones disponibles para la columna "source" de un autocomplete:
-// nombres de lista, "maps", o "pois:<campo de mapa>".
+// ---- Listas correlacionadas (padre -> hijo, tipo Mapa -> POI) ----
+// Vista unificada: el par Mapa/POI es built-in (usa data.maps/data.pois
+// por referencia) y los definidos por el usuario viven en data.linkedLists.
+// Cada link: { id, parentLabel, childLabel, parents:[...], children:{pv:[...]}, builtin }.
+function getLinks() {
+  const links = {
+    map: {
+      id: "map", parentLabel: "Mapa", childLabel: "POI",
+      parents: config.data.maps, children: config.data.pois, builtin: true
+    }
+  };
+  const ll = config.data.linkedLists || {};
+  Object.keys(ll).forEach(id => {
+    if (id === "map") return; // no chocar con el built-in
+    const l = ll[id];
+    l.parents = l.parents || [];
+    l.children = l.children || {};
+    links[id] = {
+      id, parentLabel: l.parentLabel || id, childLabel: l.childLabel || (id + " hijo"),
+      parents: l.parents, children: l.children, builtin: false
+    };
+  });
+  return links;
+}
+
+// Opciones para la columna "source" de un autocomplete. Devuelve objetos
+// { value, label }. Ya NO genera un "pois:" por cada campo: solo el padre
+// de cada link y, por cada campo que ES padre de un link, su hijo.
 function sourceOptions(form) {
-  const opts = Object.keys(config.data.lists).slice();
-  opts.push("maps");
+  const opts = Object.keys(config.data.lists).map(k => ({ value: k, label: "Lista: " + k }));
+  const links = getLinks();
+  Object.values(links).forEach(L => {
+    opts.push({ value: "parent:" + L.id, label: L.parentLabel + " (lista correlacionada)" });
+  });
   allFields(form).forEach(({ field }) => {
-    if (field.type === "text" || field.type === "autocomplete") {
-      opts.push("pois:" + field.id);
+    const m = /^parent:(.+)$/.exec(field.source || "");
+    if (m && links[m[1]]) {
+      const L = links[m[1]];
+      opts.push({ value: "child:" + L.id + ":" + field.id, label: L.childLabel + " de «" + field.label + "»" });
     }
   });
   return opts;
@@ -1389,10 +1497,21 @@ function sourceOptions(form) {
 // Devuelve las opciones actuales de un campo autocomplete.
 function optionsForField(field, inst) {
   const src = field.source || "";
+  const links = getLinks();
+  let m;
+  if ((m = /^parent:(.+)$/.exec(src))) {
+    return links[m[1]] ? links[m[1]].parents : [];
+  }
+  if ((m = /^child:([^:]+):(.+)$/.exec(src))) {
+    const L = links[m[1]];
+    if (!L) return [];
+    const pv = inst ? String(inst.values[m[2]] || "") : "";
+    return (pv && L.children[pv]) ? L.children[pv] : [];
+  }
+  // Compatibilidad con fuentes viejas por si entran vía CSV sin migrar
   if (src === "maps") return config.data.maps;
   if (src.startsWith("pois:")) {
-    const mapField = src.slice(5);
-    const mapVal = inst ? String(inst.values[mapField] || "") : "";
+    const mapVal = inst ? String(inst.values[src.slice(5)] || "") : "";
     return (mapVal && config.data.pois[mapVal]) ? config.data.pois[mapVal] : [];
   }
   return config.data.lists[src] || [];
@@ -1424,6 +1543,7 @@ function makeInstance(formId) {
     title: form.label + " 1",
     values: values,
     ticketKey: "",
+    media: [defaultMediaType()],
     output: "",
     outputEdited: false,
     errors: {},
@@ -1446,6 +1566,7 @@ function ensureInstanceFields(inst) {
     }
   });
   if (inst.ticketKey === undefined) inst.ticketKey = "";
+  if (!Array.isArray(inst.media)) inst.media = [defaultMediaType()];
   if (!inst.errors) inst.errors = {};
 }
 
@@ -1725,7 +1846,7 @@ function fieldHtml(field, inst, fx) {
     </span>`;
   const stateTag = st.hidden ? '<span class="hidden-tag">(oculto)</span>'
                  : st.disabled ? '<span class="hidden-tag">(bloqueado)</span>' : "";
-  const labelHtml = `<label>${escapeHtml(field.label)}${field.required ? '<span class="req">*</span>' : ""}${stateTag}${tools}</label>`;
+  const labelHtml = `<div class="field-head"><label>${escapeHtml(field.label)}${field.required ? '<span class="req">*</span>' : ""}${stateTag}</label>${tools}</div>`;
   const helpHtml = field.help ? `<div class="field-help">${escapeHtml(field.help)}</div>` : "";
   const errHtml = `<div class="field-error">${escapeHtml(err)}</div>`;
   const val = field.type === "mirror" ? "" : (inst.values[field.id] != null ? inst.values[field.id] : "");
@@ -1849,7 +1970,10 @@ function wireFormEvents(inst, form) {
 // se limpian los dependientes sin re-pintar el formulario completo.
 function clearDependents(form, name, inst, panel) {
   allFields(form).forEach(({ field }) => {
-    if (field.source === "pois:" + name) {
+    const src = field.source || "";
+    const cm = /^child:[^:]+:(.+)$/.exec(src);
+    const dependsOnName = (cm && cm[1] === name) || src === "pois:" + name;
+    if (dependsOnName) {
       inst.values[field.id] = "";
       const el = panel.querySelector(`[data-bind="${field.id}"]`);
       if (el) el.value = "";
@@ -1968,44 +2092,63 @@ function wireAutocomplete(input, inst, form, field) {
   });
 }
 
-// Agrega un valor a la fuente del campo (lista, mapas o POIs del mapa activo).
+// Interpreta la fuente de un campo: { kind, link?, parentField? }.
+// kind: "parent" (lista padre), "child" (lista hija), "list" (lista simple).
+function parseSource(src) {
+  src = src || "";
+  let m;
+  if ((m = /^parent:(.+)$/.exec(src))) return { kind: "parent", link: m[1] };
+  if ((m = /^child:([^:]+):(.+)$/.exec(src))) return { kind: "child", link: m[1], parentField: m[2] };
+  if (src === "maps") return { kind: "parent", link: "map" };
+  if (src.startsWith("pois:")) return { kind: "child", link: "map", parentField: src.slice(5) };
+  return { kind: "list", list: src };
+}
+
+// Agrega un valor a la fuente del campo (lista simple, padre o hijo del par).
 function addOptionToSource(field, inst, value) {
-  const src = field.source || "";
-  if (src === "maps") {
-    config.data.maps.push(value);
-    if (!config.data.pois[value]) config.data.pois[value] = [];
-  } else if (src.startsWith("pois:")) {
-    const mapVal = String(inst.values[src.slice(5)] || "");
-    if (!mapVal) { flashBanner("Primero elige un mapa.", true); return; }
-    config.data.pois[mapVal] = config.data.pois[mapVal] || [];
-    config.data.pois[mapVal].push(value);
+  const s = parseSource(field.source);
+  const links = getLinks();
+  if (s.kind === "parent" && links[s.link]) {
+    const L = links[s.link];
+    L.parents.push(value);
+    if (!L.children[value]) L.children[value] = [];
+  } else if (s.kind === "child" && links[s.link]) {
+    const L = links[s.link];
+    const pv = String(inst.values[s.parentField] || "");
+    if (!pv) { flashBanner(`Primero elige ${L.parentLabel.toLowerCase()}.`, true); return; }
+    L.children[pv] = L.children[pv] || [];
+    L.children[pv].push(value);
   } else {
-    config.data.lists[src] = config.data.lists[src] || [];
-    config.data.lists[src].push(value);
+    config.data.lists[s.list] = config.data.lists[s.list] || [];
+    config.data.lists[s.list].push(value);
   }
   scheduleSave();
   flashBanner(`«${value}» agregado. Recuerda exportar los datos o la herramienta para compartirlo.`);
 }
 
 function confirmDeleteOption(field, inst, value, after) {
-  const src = field.source || "";
-  const listName = src === "maps" ? "mapas" : src.startsWith("pois:") ? "POIs" : src;
+  const s = parseSource(field.source);
+  const links = getLinks();
+  const listName = s.kind === "parent" ? (links[s.link] ? links[s.link].parentLabel : s.link)
+                 : s.kind === "child" ? (links[s.link] ? links[s.link].childLabel : s.link)
+                 : s.list;
   showConfirmModal({
     title: "Borrar opción",
     body: `¿Borrar definitivamente «${escapeHtml(value)}» de la lista de ${escapeHtml(listName)}? Afecta a todos los formularios que usan esta lista.`,
     confirmText: "Borrar",
     confirmClass: "danger",
     onConfirm: () => {
-      if (src === "maps") {
-        config.data.maps = config.data.maps.filter(v => v !== value);
-        // Los POIs del mapa quedan huérfanos y visibles en DATA (a propósito).
-      } else if (src.startsWith("pois:")) {
-        const mapVal = String(inst.values[src.slice(5)] || "");
-        if (config.data.pois[mapVal]) {
-          config.data.pois[mapVal] = config.data.pois[mapVal].filter(v => v !== value);
-        }
-      } else if (config.data.lists[src]) {
-        config.data.lists[src] = config.data.lists[src].filter(v => v !== value);
+      if (s.kind === "parent" && links[s.link]) {
+        const L = links[s.link];
+        const i = L.parents.indexOf(value);
+        if (i >= 0) L.parents.splice(i, 1);
+        // Los hijos de ese padre quedan huérfanos y visibles en DATA (a propósito).
+      } else if (s.kind === "child" && links[s.link]) {
+        const pv = String(inst.values[s.parentField] || "");
+        const L = links[s.link];
+        if (L.children[pv]) L.children[pv] = L.children[pv].filter(v => v !== value);
+      } else if (config.data.lists[s.list]) {
+        config.data.lists[s.list] = config.data.lists[s.list].filter(v => v !== value);
       }
       scheduleSave();
       if (after) after();
@@ -2213,7 +2356,7 @@ function showFieldEditor(form, sec, field) {
   const isNew = !field;
   const f = field || {
     label: "", type: "text", size: "full", source: "", template: "{value}",
-    sep: "", rows: 3, required: false, regex: "", regexMsg: "",
+    sep: null, rows: 3, required: false, regex: "", regexMsg: "",
     default: "", emptyAs: "", omitValue: "", help: "",
     joinPrev: false, perLine: false
   };
@@ -2321,11 +2464,11 @@ function showFieldEditor(form, sec, field) {
         if (t === "autocomplete") opts = sourceOptions(form);
         else if (t === "mirror") {
           opts = allFields(form).filter(x => x.field.type !== "mirror" && x.field.id !== f.id)
-                                 .map(x => x.field.id);
+                                 .map(x => ({ value: x.field.id, label: x.field.label }));
         }
         srcSel.disabled = !opts.length;
         srcSel.innerHTML = opts.length
-          ? opts.map(o => `<option value="${escapeHtml(o)}"${f.source === o ? " selected" : ""}>${escapeHtml(o)}</option>`).join("")
+          ? opts.map(o => `<option value="${escapeHtml(o.value)}"${f.source === o.value ? " selected" : ""}>${escapeHtml(o.label)}</option>`).join("")
           : `<option value="">(no aplica)</option>`;
       };
       typeSel.addEventListener("change", fillSources);
@@ -2555,7 +2698,7 @@ function renderTiles(inst) {
   bar.innerHTML = errs.slice(0, MAX_TILES).map(([id, msg]) => {
     const found = getField(form, id);
     const label = found ? found.field.label : id;
-    return `<span class="tile err" data-tile="${escapeHtml(id)}" title="${escapeHtml(msg)}">${escapeHtml(label)}</span>`;
+    return `<span class="tile err" data-tile="${escapeHtml(id)}" data-msg="${escapeHtml(msg)}">${escapeHtml(label)}</span>`;
   }).join("") + (errs.length > MAX_TILES
     ? `<span class="tile more">+${errs.length - MAX_TILES} más</span>` : "");
   bar.querySelectorAll("[data-tile]").forEach(t => {
@@ -2758,6 +2901,12 @@ function mediaTypes() {
   return config.data.lists.mediaTypes || ["Vid", "Pic", "ConsoleLog", "DxDiag"];
 }
 
+// Tipo con el que nace una fila de media nueva (el primero de la lista).
+function defaultMediaType() {
+  const t = mediaTypes();
+  return t.length ? t[0] : "Pic";
+}
+
 function mediaFormat() {
   return config.data.rules.media_fmt || "{type}_{key}_{platform}_{cl}_(1)";
 }
@@ -2789,29 +2938,83 @@ function renderMediaPanel() {
   const inst = getActiveInstance();
   if (!inst) return;
   if (inst.ticketKey === undefined) inst.ticketKey = "";
+  if (!Array.isArray(inst.media)) inst.media = [defaultMediaType()];
   $("mediaFmtHint").textContent = "Formato (regla media_fmt): " + mediaFormat();
   const keyInput = $("mediaTicketKey");
   if (document.activeElement !== keyInput) keyInput.value = inst.ticketKey;
 
-  // Filas generadas desde la lista mediaTypes (solo lectura + copiar)
+  // Una fila por cada media que el tester quiera. Cada fila tiene un
+  // selector de tipo (text+dropdown vía datalist) y el nombre generado
+  // al lado (solo lectura + copiar). Se pueden agregar y borrar.
+  const types = mediaTypes();
+  const datalist = `<datalist id="mediaTypeList">${types.map(t =>
+    `<option value="${escapeHtml(t)}"></option>`).join("")}</datalist>`;
   const rows = $("mediaRows");
-  rows.innerHTML = mediaTypes().map(t => {
-    const { name, missing } = buildMediaName(t, inst);
+  rows.innerHTML = inst.media.map((type, i) => {
+    const { name, missing } = buildMediaName(type, inst);
     const ok = !missing.length;
-    return `<div class="media-row">
-      <span class="media-type">${escapeHtml(t)}</span>
-      <input type="text" readonly value="${ok ? escapeHtml(name) : ""}"
+    return `<div class="media-row" data-media-i="${i}">
+      <input type="text" class="media-type-input" list="mediaTypeList" data-media-type="${i}"
+        value="${escapeHtml(type)}" placeholder="tipo (pic, vid...)" />
+      <input type="text" readonly data-media-name="${i}" value="${ok ? escapeHtml(name) : ""}"
         placeholder="${ok ? "" : "falta: " + escapeHtml(missing.join(", "))}" />
-      <button data-media-copy="${escapeHtml(t)}"${ok ? "" : " disabled"}
-        title="${ok ? "Copiar " + escapeHtml(name) : "Faltan datos: " + escapeHtml(missing.join(", "))}">Copiar</button>
+      <span class="media-row-actions">
+        <button data-media-copy="${i}"${ok ? "" : " disabled"}
+          title="${ok ? "Copiar " + escapeHtml(name) : "Faltan datos: " + escapeHtml(missing.join(", "))}">Copiar</button>
+        <button class="row-del" data-media-del="${i}" title="Quitar esta media">✕</button>
+      </span>
     </div>`;
-  }).join("");
+  }).join("")
+    + datalist
+    + `<button id="addMediaBtn" class="add-media-btn" title="Agrega otra media">+ Agregar media</button>`;
+
+  // Actualiza solo el nombre generado de una fila (sin re-render: así el
+  // selector de tipo no pierde el foco mientras el tester escribe).
+  const refreshRowName = (i) => {
+    const { name, missing } = buildMediaName(inst.media[i], inst);
+    const ok = !missing.length;
+    const nameInp = rows.querySelector(`[data-media-name="${i}"]`);
+    const copyBtn = rows.querySelector(`[data-media-copy="${i}"]`);
+    if (nameInp) {
+      nameInp.value = ok ? name : "";
+      nameInp.placeholder = ok ? "" : "falta: " + missing.join(", ");
+    }
+    if (copyBtn) {
+      copyBtn.disabled = !ok;
+      copyBtn.title = ok ? "Copiar " + name : "Faltan datos: " + missing.join(", ");
+    }
+  };
+
+  rows.querySelectorAll("[data-media-type]").forEach(inp => {
+    const i = +inp.dataset.mediaType;
+    inp.addEventListener("input", () => {
+      inst.media[i] = inp.value;
+      markInstanceDirty(inst);
+      refreshRowName(i);
+    });
+    inp.addEventListener("blur", () => { saveAll(); setSaveIndicator("saved"); });
+  });
   rows.querySelectorAll("[data-media-copy]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const { name, missing } = buildMediaName(btn.dataset.mediaCopy, getActiveInstance());
+      const i = +btn.dataset.mediaCopy;
+      const { name, missing } = buildMediaName(inst.media[i], inst);
       if (missing.length) { flashBanner("Faltan datos: " + missing.join(", "), true); return; }
       copyToClipboard(name);
     });
+  });
+  rows.querySelectorAll("[data-media-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      inst.media.splice(+btn.dataset.mediaDel, 1);
+      markInstanceDirty(inst);
+      renderMediaPanel();
+      saveAll();
+    });
+  });
+  $("addMediaBtn").addEventListener("click", () => {
+    inst.media.push(defaultMediaType());
+    markInstanceDirty(inst);
+    renderMediaPanel();
+    saveAll();
   });
 }
 
@@ -2837,16 +3040,18 @@ function wireMediaPanel() {
 /* ================================================================
    [13] PESTAÑA DATA
    ================================================================
-   Edita config.data (listas, mapas, POIs, tiers, reglas). Los
+   Edita config.data (listas, mapas, POIs, reglas). Los
    cambios quedan en el DOM/localStorage al momento; para
    compartirlos: exportar bug_data.csv o exportar la herramienta. */
 function dataCategories() {
   const cats = Object.keys(config.data.lists).map(k =>
     ({ id: "list:" + k, label: k, kind: "list", key: k }));
-  cats.push({ id: "maps",  label: "Mapas",        kind: "maps" });
-  cats.push({ id: "pois",  label: "POIs por mapa", kind: "pois" });
-  cats.push({ id: "tiers", label: "Tiers",         kind: "tiers" });
-  cats.push({ id: "rules", label: "Reglas",        kind: "rules" });
+  // Cada lista correlacionada aporta dos categorías: padres e hijos.
+  Object.values(getLinks()).forEach(L => {
+    cats.push({ id: "linkP:" + L.id, label: L.parentLabel, kind: "linkParent", link: L.id, builtin: L.builtin });
+    cats.push({ id: "linkC:" + L.id, label: L.childLabel + " por " + L.parentLabel, kind: "linkChild", link: L.id, builtin: L.builtin });
+  });
+  cats.push({ id: "rules", label: "Reglas", kind: "rules" });
   return cats;
 }
 
@@ -2867,9 +3072,10 @@ function renderDataSidebar() {
     el.className = "item" + (state.dataTab.selectedCategory === c.id ? " active" : "");
     el.style.display = "flex";
     el.innerHTML = `<span style="flex:1">${escapeHtml(c.label)}</span>` +
-      (c.kind === "list" ? `<button class="row-del" data-dellist="${escapeHtml(c.key)}" title="Borrar esta lista">✕</button>` : "");
+      (c.kind === "list" ? `<button class="row-del" data-dellist="${escapeHtml(c.key)}" title="Borrar esta lista">✕</button>` : "") +
+      (c.kind === "linkParent" && !c.builtin ? `<button class="row-del" data-dellink="${escapeHtml(c.link)}" title="Borrar esta lista correlacionada">✕</button>` : "");
     el.addEventListener("click", (e) => {
-      if (e.target.closest("[data-dellist]")) return;
+      if (e.target.closest("[data-dellist]") || e.target.closest("[data-dellink]")) return;
       state.dataTab.selectedCategory = c.id;
       renderDataTab();
       scheduleSave();
@@ -2878,6 +3084,35 @@ function renderDataSidebar() {
   });
   sb.querySelectorAll("[data-dellist]").forEach(btn => {
     btn.addEventListener("click", () => deleteList(btn.dataset.dellist));
+  });
+  sb.querySelectorAll("[data-dellink]").forEach(btn => {
+    btn.addEventListener("click", () => deleteLink(btn.dataset.dellink));
+  });
+}
+
+// Borra una lista correlacionada definida por el usuario (padres + hijos).
+function deleteLink(linkId) {
+  const L = getLinks()[linkId];
+  if (!L || L.builtin) return;
+  const users = [];
+  getForms().forEach(form => allFields(form).forEach(({ field }) => {
+    const s = parseSource(field.source);
+    if ((s.kind === "parent" || s.kind === "child") && s.link === linkId) {
+      users.push(form.label + " → " + field.label);
+    }
+  }));
+  showConfirmModal({
+    title: "Borrar lista correlacionada",
+    body: `¿Borrar definitivamente «${escapeHtml(L.parentLabel)} → ${escapeHtml(L.childLabel)}» con todos sus valores?` +
+      (users.length ? `<br /><br /><strong>Ojo:</strong> la usan estos campos:<br />${users.map(escapeHtml).join("<br />")}` : ""),
+    confirmText: "Borrar",
+    confirmClass: "danger",
+    onConfirm: () => {
+      delete config.data.linkedLists[linkId];
+      state.dataTab.selectedCategory = "";
+      renderDataTab();
+      scheduleSave();
+    }
   });
 }
 
@@ -2919,36 +3154,30 @@ function renderDataTable() {
       <td><input type="text" data-list-idx="${i}" value="${escapeHtml(v)}" /></td>
       <td>${delBtn("data-list-del", String(i))}</td>
     </tr>`).join("");
-  } else if (sel.kind === "maps") {
-    cols = ["#", "Mapa", ""];
-    rowsHtml = config.data.maps.map((m, i) => `<tr>
+  } else if (sel.kind === "linkParent") {
+    const L = getLinks()[sel.link];
+    cols = ["#", L.parentLabel, ""];
+    rowsHtml = L.parents.map((m, i) => `<tr>
       <td>${i + 1}</td>
-      <td><input type="text" data-map-idx="${i}" value="${escapeHtml(m)}" /></td>
-      <td>${delBtn("data-map-del", String(i))}</td>
+      <td><input type="text" data-linkp-idx="${i}" value="${escapeHtml(m)}" /></td>
+      <td>${delBtn("data-linkp-del", String(i))}</td>
     </tr>`).join("");
-  } else if (sel.kind === "pois") {
-    cols = ["#", "Mapa", "POI", ""];
+  } else if (sel.kind === "linkChild") {
+    const L = getLinks()[sel.link];
+    cols = ["#", L.parentLabel, L.childLabel, ""];
     let i = 0;
-    rowsHtml = Object.entries(config.data.pois).map(([map, pois]) => {
-      const isOrphan = !config.data.maps.includes(map);
-      return pois.map((p, j) => {
+    rowsHtml = Object.entries(L.children).map(([par, kids]) => {
+      const isOrphan = !L.parents.includes(par);
+      return kids.map((p, j) => {
         i++;
         return `<tr>
           <td>${i}</td>
-          <td class="${isOrphan ? "orphan" : ""}">${escapeHtml(map)}${isOrphan ? " (huérfano)" : ""}</td>
-          <td><input type="text" data-poi-edit="${escapeHtml(map)}|${j}" value="${escapeHtml(p)}" /></td>
-          <td>${delBtn("data-poi-del", map + "|" + j)}</td>
+          <td class="${isOrphan ? "orphan" : ""}">${escapeHtml(par)}${isOrphan ? " (huérfano)" : ""}</td>
+          <td><input type="text" data-linkc-edit="${escapeHtml(par)}|${j}" value="${escapeHtml(p)}" /></td>
+          <td>${delBtn("data-linkc-del", par + "|" + j)}</td>
         </tr>`;
       }).join("");
     }).join("");
-  } else if (sel.kind === "tiers") {
-    cols = ["#", "Código", "Nombre", ""];
-    rowsHtml = Object.entries(config.data.tiers).map(([k, v], i) => `<tr>
-      <td>${i + 1}</td>
-      <td>${escapeHtml(k)}</td>
-      <td><input type="text" data-tier-key="${escapeHtml(k)}" value="${escapeHtml(v)}" /></td>
-      <td>${delBtn("data-tier-del", k)}</td>
-    </tr>`).join("");
   } else { // rules
     cols = ["#", "Regla", "Valor", ""];
     rowsHtml = Object.entries(config.data.rules).map(([k, v], i) => `<tr>
@@ -2971,32 +3200,29 @@ function renderDataTable() {
       scheduleSave();
     });
   });
-  wrap.querySelectorAll("[data-map-idx]").forEach(inp => {
+  wrap.querySelectorAll("[data-linkp-idx]").forEach(inp => {
     inp.addEventListener("change", () => {
-      const i = +inp.dataset.mapIdx;
-      const oldName = config.data.maps[i];
+      const L = getLinks()[sel.link];
+      const i = +inp.dataset.linkpIdx;
+      const oldName = L.parents[i];
       const newName = inp.value.trim();
       if (oldName !== newName && newName) {
-        if (config.data.pois[oldName]) {
-          config.data.pois[newName] = config.data.pois[oldName];
-          delete config.data.pois[oldName];
+        // Renombrar el padre arrastra su lista de hijos a la nueva clave.
+        if (L.children[oldName]) {
+          L.children[newName] = L.children[oldName];
+          delete L.children[oldName];
         }
-        config.data.maps[i] = newName;
+        L.parents[i] = newName;
         renderDataTable();
         scheduleSave();
       }
     });
   });
-  wrap.querySelectorAll("[data-poi-edit]").forEach(inp => {
+  wrap.querySelectorAll("[data-linkc-edit]").forEach(inp => {
     inp.addEventListener("input", () => {
-      const [map, j] = inp.dataset.poiEdit.split("|");
-      config.data.pois[map][+j] = inp.value;
-      scheduleSave();
-    });
-  });
-  wrap.querySelectorAll("[data-tier-key]").forEach(inp => {
-    inp.addEventListener("input", () => {
-      config.data.tiers[inp.dataset.tierKey] = inp.value;
+      const L = getLinks()[sel.link];
+      const [par, j] = inp.dataset.linkcEdit.split("|");
+      L.children[par][+j] = inp.value;
       scheduleSave();
     });
   });
@@ -3022,24 +3248,20 @@ function renderDataTable() {
         () => config.data.lists[sel.key].splice(i, 1));
     });
   });
-  wrap.querySelectorAll("[data-map-del]").forEach(btn => {
+  wrap.querySelectorAll("[data-linkp-del]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const i = +btn.dataset.mapDel;
-      confirmRowDelete(`el mapa «${escapeHtml(config.data.maps[i])}» (sus POIs quedarán huérfanos)`,
-        () => config.data.maps.splice(i, 1));
+      const L = getLinks()[sel.link];
+      const i = +btn.dataset.linkpDel;
+      confirmRowDelete(`«${escapeHtml(L.parents[i])}» (sus ${escapeHtml(L.childLabel)} quedarán huérfanos)`,
+        () => L.parents.splice(i, 1));
     });
   });
-  wrap.querySelectorAll("[data-poi-del]").forEach(btn => {
+  wrap.querySelectorAll("[data-linkc-del]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const [map, j] = btn.dataset.poiDel.split("|");
-      confirmRowDelete(`el POI «${escapeHtml(config.data.pois[map][+j])}» de ${escapeHtml(map)}`,
-        () => config.data.pois[map].splice(+j, 1));
-    });
-  });
-  wrap.querySelectorAll("[data-tier-del]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const k = btn.dataset.tierDel;
-      confirmRowDelete(`el tier «${escapeHtml(k)}»`, () => delete config.data.tiers[k]);
+      const L = getLinks()[sel.link];
+      const [par, j] = btn.dataset.linkcDel.split("|");
+      confirmRowDelete(`«${escapeHtml(L.children[par][+j])}» de ${escapeHtml(par)}`,
+        () => L.children[par].splice(+j, 1));
     });
   });
   wrap.querySelectorAll("[data-rule-del]").forEach(btn => {
@@ -3057,29 +3279,28 @@ function addDataRow() {
   if (sel.kind === "list") {
     config.data.lists[sel.key] = config.data.lists[sel.key] || [];
     config.data.lists[sel.key].push("nuevo_valor");
-  } else if (sel.kind === "maps") {
-    config.data.maps.push("NuevoMapa");
-    if (!config.data.pois["NuevoMapa"]) config.data.pois["NuevoMapa"] = [];
-  } else if (sel.kind === "pois") {
+  } else if (sel.kind === "linkParent") {
+    const L = getLinks()[sel.link];
+    const base = "Nuevo" + L.parentLabel.replace(/\s+/g, "");
+    L.parents.push(base);
+    if (!L.children[base]) L.children[base] = [];
+  } else if (sel.kind === "linkChild") {
+    const L = getLinks()[sel.link];
     showPromptModal({
-      title: "Nuevo POI",
-      body: "¿A qué mapa pertenece? Mapas: " + config.data.maps.join(", "),
-      placeholder: "Nombre del mapa",
+      title: "Nuevo " + L.childLabel,
+      body: `¿A qué ${L.parentLabel.toLowerCase()} pertenece? Opciones: ` + L.parents.join(", "),
+      placeholder: L.parentLabel,
       confirmText: "Agregar",
       onConfirm: (m) => {
         m = (m || "").trim();
-        if (!config.data.maps.includes(m)) { flashBanner("Ese mapa no existe.", true); return; }
-        config.data.pois[m] = config.data.pois[m] || [];
-        config.data.pois[m].push("NuevoPOI");
+        if (!L.parents.includes(m)) { flashBanner(`Ese ${L.parentLabel.toLowerCase()} no existe.`, true); return; }
+        L.children[m] = L.children[m] || [];
+        L.children[m].push("Nuevo" + L.childLabel.replace(/\s+/g, ""));
         renderDataTable();
         scheduleSave();
       }
     });
     return;
-  } else if (sel.kind === "tiers") {
-    let n = 1;
-    while (config.data.tiers["T" + n]) n++;
-    config.data.tiers["T" + n] = "Nuevo tier";
   } else if (sel.kind === "rules") {
     showPromptModal({
       title: "Nueva regla",
@@ -3115,6 +3336,47 @@ function addNewList() {
       state.dataTab.selectedCategory = "list:" + key;
       renderDataTab();
       scheduleSave();
+    }
+  });
+}
+
+function uniqueLinkId(base) {
+  base = base || "link";
+  if (base === "map") base = "map2"; // "map" es el built-in
+  let id = base, n = 2;
+  const exists = (x) => !!getLinks()[x];
+  while (exists(id)) { id = base + n; n++; }
+  return id;
+}
+
+// Crea un par correlacionado nuevo (padre -> hijo) tipo Mapa/POI. Pide
+// ambos nombres y deja seleccionada la categoría de padres para llenarla.
+function addLink() {
+  showPromptModal({
+    title: "Nueva lista correlacionada",
+    body: "Nombre del nivel PADRE (como «Mapa»). Ejemplo: «Arma».",
+    placeholder: "p. ej. Arma",
+    confirmText: "Siguiente",
+    onConfirm: (parentLabel) => {
+      parentLabel = (parentLabel || "").trim();
+      if (!parentLabel) return;
+      showPromptModal({
+        title: "Nueva lista correlacionada",
+        body: `Nombre del nivel HIJO que depende de «${parentLabel}» (como «POI»). Ejemplo: «Accesorio».`,
+        placeholder: "p. ej. Accesorio",
+        confirmText: "Crear",
+        onConfirm: (childLabel) => {
+          childLabel = (childLabel || "").trim();
+          if (!childLabel) return;
+          const id = uniqueLinkId(slugify(parentLabel));
+          config.data.linkedLists = config.data.linkedLists || {};
+          config.data.linkedLists[id] = { parentLabel, childLabel, parents: [], children: {} };
+          state.dataTab.selectedCategory = "linkP:" + id;
+          renderDataTab();
+          scheduleSave();
+          flashBanner(`Lista correlacionada «${parentLabel} → ${childLabel}» creada. Agrega valores y úsala como fuente de un campo dropdown.`);
+        }
+      });
     }
   });
 }
@@ -3260,6 +3522,14 @@ function renderRulesTab() {
       id de campo) y la lista <code>mediaTypes</code> en Data.
     </div>`;
 
+  // Evita que el navegador autocomplete un input con el valor de otro
+  // (p. ej. el mensaje de error del BSP colándose en una regla nueva):
+  // sin `name` Chrome agrupa inputs iguales; con name único + off, no.
+  c.querySelectorAll("input[type='text']").forEach((inp, i) => {
+    inp.setAttribute("autocomplete", "off");
+    inp.setAttribute("name", "rr_" + i);
+  });
+
   const findTarget = (key) => {
     const [formId, fieldId] = key.split("|");
     const form = getForm(formId);
@@ -3395,7 +3665,16 @@ function exportDataCsv() {
   Object.entries(config.data.pois).forEach(([m, pois]) => {
     pois.forEach(p => rows.push(["poi", m, p]));
   });
-  Object.entries(config.data.tiers).forEach(([k, v]) => rows.push(["tier", k, v]));
+  // Listas correlacionadas definidas por el usuario (el par Mapa/POI ya
+  // viaja como map/poi). Se separan etiquetas y valores con " :: ".
+  Object.values(getLinks()).forEach(L => {
+    if (L.builtin) return;
+    rows.push(["link", L.id, L.parentLabel + " :: " + L.childLabel]);
+    L.parents.forEach(p => rows.push(["linkparent", L.id, p]));
+    Object.entries(L.children).forEach(([par, kids]) => {
+      kids.forEach(k => rows.push(["linkchild", L.id, par + " :: " + k]));
+    });
+  });
   Object.entries(config.data.rules).forEach(([k, v]) => rows.push(["rule", k, v]));
   downloadFile("bug_data.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
   flashBanner("bug_data.csv descargado. Ponlo en el sharefolder para compartirlo.");
@@ -3408,7 +3687,12 @@ function importDataCsv(text) {
   if (header.join(",") !== "category,key,value") {
     throw new Error("El encabezado debe ser: category,key,value");
   }
-  const data = { lists: {}, maps: [], pois: {}, tiers: {}, rules: {} };
+  const data = { lists: {}, maps: [], pois: {}, rules: {}, linkedLists: {} };
+  const ensureLink = (id) => {
+    data.linkedLists[id] = data.linkedLists[id] ||
+      { parentLabel: id, childLabel: id + " hijo", parents: [], children: {} };
+    return data.linkedLists[id];
+  };
   for (let i = 1; i < lines.length; i++) {
     const row = parseCsvLine(lines[i]);
     if (row.length < 3) continue;
@@ -3421,8 +3705,20 @@ function importDataCsv(text) {
     } else if (cat === "poi") {
       data.pois[key] = data.pois[key] || [];
       data.pois[key].push(value);
-    } else if (cat === "tier") {
-      data.tiers[key] = value;
+    } else if (cat === "link") {
+      const parts = String(value).split(" :: ");
+      const L = ensureLink(key);
+      if (parts[0]) L.parentLabel = parts[0];
+      if (parts[1]) L.childLabel = parts[1];
+    } else if (cat === "linkparent") {
+      ensureLink(key).parents.push(value);
+    } else if (cat === "linkchild") {
+      const L = ensureLink(key);
+      const idx = String(value).indexOf(" :: ");
+      const par = idx >= 0 ? value.slice(0, idx) : value;
+      const child = idx >= 0 ? value.slice(idx + 4) : "";
+      L.children[par] = L.children[par] || [];
+      if (child) L.children[par].push(child);
     } else if (cat === "rule") {
       data.rules[key] = value;
     }
@@ -3612,6 +3908,7 @@ function importFieldsCsv(text) {
     confirmClass: "danger",
     onConfirm: () => {
       config.schema.forms = forms;
+      migrateLinkSources(config); // normaliza fuentes viejas (maps/pois:) del CSV
       state.instances = state.instances.filter(i => forms.some(f => f.id === i.formId));
       state.instances.forEach(ensureInstanceFields);
       if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
@@ -3937,6 +4234,7 @@ function wireStaticControls() {
   // Toolbar de la pestaña DATA
   $("addRowBtn").addEventListener("click", addDataRow);
   $("addListBtn").addEventListener("click", addNewList);
+  $("addLinkBtn").addEventListener("click", addLink);
 
   // Output editable a mano
   $("outputTextarea").addEventListener("input", (e) => {
@@ -3978,7 +4276,11 @@ function boot() {
     </div>`;
     return;
   }
+  ensureLinksData(vanilla);
+  migrateLinkSources(vanilla);
   loadConfig();
+  ensureLinksData(config);
+  migrateLinkSources(config);
   loadSession();
 
   // Sanear la sesión restaurada contra el schema actual
