@@ -774,11 +774,55 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     `linkparent`/`linkchild`) se sigue leyendo al importar (se migra) y
     se reescribe al exportar. Ver bug_data.README.md.
 
+## Iteración 5 (2026-07-07): tiles personalizados
+
+  * **Modelo.** Nueva capa `form.tiles = [ { text, whenExpr, color,
+    group, severity, field } ]`, paralela a `form.rules` y por
+    formulario. Los tiles automáticos por campo (uno por error) se
+    conservan sin cambios; los personalizados se suman. Un tile es
+    **independiente de los campos**: aparece cuando su `whenExpr` es
+    verdadera (o siempre, si está vacía), reutilizando el motor de
+    expresiones de la iteración 3 (`parseExpr`/`evalAst`).
+    - `text` admite `{idCampo}` → intercala el valor actual
+      (`interpolateTileText`).
+    - `severity`: `error` bloquea el estado "listo para copiar"
+      (`hasBlockingState` = errores de campo **o** algún tile error
+      activo); `warn`/`info` solo informan.
+    - `color`: paleta de 15 colores con nombre (`TILE_COLORS`, fuente
+      única; se aplica como estilo en línea, sin clases CSS por color).
+    - `group`: etiqueta; los tiles del mismo grupo se dibujan juntos.
+    - `field`: campo al que salta el click (vacío = 1er campo que
+      menciona la condición, vía `tileFieldRefs`).
+  * **Barra (`renderTiles`).** Grupos apilados: "Errores de campo"
+    (automáticos) + un grupo por etiqueta de tile. Si nada bloquea, se
+    muestra el tile verde "Listo para copiar" junto a los avisos/info.
+    La barra (`.tiles-wrap`) se limita a ~3 líneas con scroll y se
+    **colapsa a una línea** con la "llave" (`#tilesToggle`, chevron que
+    rota); el estado vive en `state.prefs.tilesCollapsed`. La "llave" es
+    un patrón pensado para reutilizarse luego en las secciones del form.
+  * **Resaltado cruzado campo→tile** (`wireTileInteractions`, delegado
+    una vez sobre `#formPanel` y `#tilesBar`, sobrevive a los re-render):
+    al pasar el mouse o enfocar un campo, todos los tiles que lo "tocan"
+    (`data-fields`, derivado de `exprFieldRefs` + `field`) se marcan
+    (`.tile-hot`, anillo con el color propio) y el resto se atenúa
+    (`.tiles-focus`). Complementa el click-tile→campo ya existente.
+  * **Edición** en la pestaña Rules: bloque "Tiles personalizados" con
+    una tabla por formulario (reusa el estilo `cond-table`/`cond-expr`
+    con validación en vivo de la expresión). El `<select>` de color se
+    tiñe con su propio color. Migración/normalización `ensureTiles` +
+    `normalizeTiles` en boot (vanilla y config) y tras importar CSV.
+  * **CSV**: filas `type=tile` en `bug_fields.csv` reusando columnas
+    (label=texto, source=whenExpr, regex=severidad, regexmsg=campo
+    destino, default=color, emptyas=grupo) — el encabezado de 23
+    columnas NO cambia, así que los CSV viejos siguen importando. Ver
+    bug_fields.README.md. Verificado en navegador: agrupación, colores,
+    interpolación, colapso, resaltado, bloqueo por severidad y
+    round-trip CSV (export→import).
+
 ## Pendiente (siguientes iteraciones)
 
-  * Tiles personalizados definidos por el usuario (los tiles de
-    validación ya existen; falta que el usuario defina los suyos).
-    Reutilizarán el mismo motor de expresiones (ROADMAP §1).
+  * Reordenar tiles y grupos con flechas; color por grupo (hoy el color
+    es por tile). Ver ROADMAP §1.
   * Más conexiones media↔Rules: el formato por sección ya existe; falta
     lo que detalle Rubén (condiciones sobre media —p. ej. exigir
     ConsoleLog si el bug es Crash— y validar la Key con regex).

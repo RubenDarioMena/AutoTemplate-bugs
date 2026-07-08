@@ -3,17 +3,20 @@
 Cosas anunciadas en las notas grises de la herramienta o conversadas,
 aún no implementadas. Sin fechas: se van tomando por iteración.
 
-## 1. Tiles personalizados
+## 1. Tiles personalizados — HECHO (iteración 5)
 
-Hoy los tiles de arriba son automáticos (uno por campo con error).
-La idea: que el usuario defina los suyos en la pestaña Rules, p. ej.:
+Implementado: en la pestaña **Rules** hay una tabla de tiles por
+formulario (`form.tiles`) con texto (admite `{idCampo}`), condición
+propia (mismo motor de expresiones; vacía = siempre visible), color de
+una paleta con nombre (15 colores), grupo y severidad (error bloquea el
+"listo para copiar"; aviso/info solo informan). Los tiles automáticos
+por campo se conservan. La barra agrupa los tiles, se colapsa a una
+línea con la "llave" (▾) y, al pasar el mouse por un campo, resalta los
+tiles que lo mencionan y atenúa el resto. Viajan en `bug_fields.csv`
+como filas `type=tile`. Ver ADDENDUM de DESIGN.md (iteración 5).
 
-  - Tile "REVISAR ORTOGRAFÍA" si algún campo cumple cierta REGEX.
-  - Tile informativo con un texto fijo según el mapa/modo elegido.
-  - Colores propios (no solo rojo/verde) y orden configurable.
-
-En resumen: una tabla tipo "condición → tile (texto, color)" que
-reutiliza el mismo motor de condiciones que ya existe.
+Ideas menores que quedan sueltas: reordenar tiles/grupos con flechas y
+color por grupo (hoy el color es por tile).
 
 ## 2. Más conexiones media ↔ Rules
 

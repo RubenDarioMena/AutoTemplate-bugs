@@ -22,12 +22,13 @@ en las pestañas abiertas se conserva donde los ids coincidan.
 
 ## Estructura
 
-Cuatro tipos de fila, identificados por la columna `type`:
+Cinco tipos de fila, identificados por la columna `type`:
 
   1. `type=form`    → declara un formulario (una pestaña superior).
   2. `type=section` → declara una sección dentro del último form.
   3. `type=cond`    → una condición entre campos (ver abajo).
-  4. cualquier otro `type` → un campo dentro de esa sección.
+  4. `type=tile`    → un tile personalizado del formulario (ver abajo).
+  5. cualquier otro `type` → un campo dentro de esa sección.
 
 **El orden de las filas es el orden en pantalla y en el output.**
 
@@ -116,6 +117,37 @@ Ejemplos reales:
 > `template` y el valor en `default` (formato campo/op/valor); se
 > siguen leyendo al importar y se reescriben como expresión al
 > exportar. No hay que migrar nada a mano.
+
+## Filas `type=tile` — tiles personalizados
+
+Tiles propios que aparecen en la barra de arriba del formulario,
+independientes de los campos. Se editan en la pestaña **Rules**; en el
+CSV viajan con este mapeo de columnas (el resto quedan vacías):
+
+  | columna  | contiene                                                        |
+  |----------|-----------------------------------------------------------------|
+  | form     | id del formulario                                               |
+  | label    | TEXTO del tile; admite `{idCampo}` (intercala el valor)         |
+  | source   | EXPRESIÓN que decide cuándo se muestra (misma sintaxis que cond); vacío = siempre visible |
+  | regex    | tipo/severidad: `error` (bloquea "listo") / `warn` / `info`     |
+  | regexmsg | campo al que salta el click (vacío = 1er campo de la condición) |
+  | default  | color: red, orange, amber, yellow, lime, green, emerald, teal, cyan, blue, indigo, violet, pink, slate, stone |
+  | emptyas  | grupo (los tiles con el mismo grupo se dibujan juntos)          |
+
+Al pasar el mouse por un campo, se resaltan los tiles cuya condición lo
+mencionan (o cuyo "salta a" es ese campo) y los demás se atenúan. La
+barra se puede colapsar a una línea con la "llave" (▾) de la esquina.
+
+Ejemplos:
+  - *Falta ConsoleLog si es Crash* (bloquea):
+    `bug,,,Falta ConsoleLog,tile,bugType = Crash,,,,,,,,error,bugType,red,Bloqueos,...`
+  - *Info fija con el mapa elegido*:
+    `bug,,,Mapa: {map},tile,map notEmpty,,,,,,,,info,map,blue,Contexto,...`
+
+> Compatibilidad: un CSV viejo (sin filas `tile`) se importa igual; los
+> formularios quedan sin tiles. Un CSV con filas `tile` NO lo entiende
+> una versión antigua de la herramienta, así que reparte el HTML nuevo
+> junto con el CSV.
 
 ## Valores de `source` para autocomplete
 

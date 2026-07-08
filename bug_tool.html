@@ -203,17 +203,76 @@
     .menu-pop button.danger:hover { background: #fee2e2; }
     .menu-pop .sep { border-top: 1px solid #e5e7eb; margin: 4px 0; }
 
-    /* ---------- Tiles de estado (validación) ---------- */
+    /* ---------- Tiles de estado (validación + personalizados) ---------- */
+    /* La barra es el contenedor posicionado; .tiles-wrap hace el flex-wrap y
+       se colapsa a 1 línea con la "llave" (▾). Expandida: máx. ~3 líneas con
+       scroll. La llave es un patrón reutilizable (luego, en las secciones). */
     .tiles-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      padding: 4px 8px;
+      position: relative;
+      padding: 4px 26px 4px 8px;   /* margen derecho para la llave */
       background: #f9fafb;
       border-bottom: 1px solid #e5e7eb;
       flex: 0 0 auto;
     }
     .tiles-bar.hidden { display: none; }
+    /* Cada grupo es una fila que envuelve sus tiles; los grupos se apilan
+       en columna. La altura total se limita a ~3 líneas con scroll. */
+    .tiles-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 78px;            /* ~3 líneas de tiles */
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .tile-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+    .tile-group-label {
+      font-size: 9.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #9ca3af;
+      margin-right: 2px;
+    }
+    /* Colapsada: los grupos se aplanan (display:contents) en una sola línea
+       con scroll horizontal y sin etiquetas de grupo. */
+    .tiles-bar.collapsed .tiles-wrap {
+      flex-direction: row;
+      flex-wrap: nowrap;
+      max-height: 24px;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    .tiles-bar.collapsed .tile-group { display: contents; }
+    .tiles-bar.collapsed .tile-group-label { display: none; }
+    /* La llave: toggle de colapso; el chevron rota al colapsar. */
+    .tiles-toggle {
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fff;
+      color: #6b7280;
+      font-size: 10px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .tiles-toggle:hover { background: #f3f4f6; color: #374151; }
+    .tiles-toggle .chev { transition: transform .15s; display: inline-block; }
+    .tiles-bar.collapsed .tiles-toggle .chev { transform: rotate(-90deg); }
+
     .tile {
       font-size: 11px;
       padding: 2px 8px;
@@ -221,35 +280,21 @@
       border: 1px solid;
       cursor: pointer;
       user-select: none;
+      white-space: nowrap;
     }
     .tile.ok {
       background: #ecfdf5; color: #065f46; border-color: #a7f3d0;
       cursor: default;
     }
-    .tile.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; position: relative; }
-    .tile.err:hover { background: #fee2e2; }
-    /* Tooltip propio con el mensaje de error (aparece al pasar el mouse) */
-    .tile.err::after {
-      content: attr(data-msg);
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
-      background: #1d2129;
-      color: #fff;
-      padding: 4px 8px;
-      border-radius: 3px;
-      font-size: 11px;
-      font-weight: 400;
-      white-space: normal;
-      width: max-content;
-      max-width: 260px;
-      z-index: 500;
-      display: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.22);
-      pointer-events: none;
-    }
-    .tile.err:hover::after { display: block; }
+    .tile.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+    .tile.err:hover { filter: brightness(0.97); }
+    .tile.no-target { cursor: default; }
+    .tile.sev-error { font-weight: 600; }
     .tile.more { background: #f3f4f6; color: #4b5563; border-color: #d1d5db; cursor: default; }
+    /* Resaltado cruzado: al pasar/enfocar un campo, sus tiles se marcan
+       (.tile-hot) y las demás se atenúan. El anillo usa el color del tile. */
+    .tiles-focus .tile:not(.tile-hot) { opacity: .28; }
+    .tile-hot { box-shadow: 0 0 0 2px currentColor; opacity: 1 !important; }
 
     /* ---------- Sub-pestañas (instancias) ---------- */
     .sub-tabs {
@@ -1211,6 +1256,11 @@
         "rules": [
           { "when": { "field": "bspCl", "op": "equalsField", "value": "cl" },
             "then": { "action": "error", "field": "bspCl", "value": "BSP CL debe ser distinto de CL" } }
+        ],
+        "tiles": [
+          { "text": "Mapa: {map}", "whenExpr": "map notEmpty", "color": "blue", "group": "Contexto", "severity": "info", "field": "map" },
+          { "text": "Modo: {mode}", "whenExpr": "mode notEmpty", "color": "indigo", "group": "Contexto", "severity": "info", "field": "mode" },
+          { "text": "Falta la posición de vista", "whenExpr": "coords notEmpty AND notesViewpos empty", "color": "amber", "group": "Revisión", "severity": "warn", "field": "notesViewpos" }
         ]
       },
       {
@@ -1310,6 +1360,39 @@ const FIELD_SIZES = [
   { id: "half",  label: "1/2 de fila" },
   { id: "third", label: "1/3 de fila" }
 ];
+
+// Paleta de colores con nombre para los tiles personalizados. Cada uno trae
+// fondo (bg), texto (fg) y borde para buen contraste en tema claro. Se usan
+// como estilo en línea (fuente única) tanto en la barra como en el editor.
+const TILE_COLORS = [
+  { id: "red",     label: "Rojo",      bg: "#fef2f2", fg: "#991b1b", border: "#fecaca" },
+  { id: "orange",  label: "Naranja",   bg: "#fff7ed", fg: "#9a3412", border: "#fed7aa" },
+  { id: "amber",   label: "Ámbar",     bg: "#fffbeb", fg: "#92400e", border: "#fde68a" },
+  { id: "yellow",  label: "Amarillo",  bg: "#fefce8", fg: "#854d0e", border: "#fde047" },
+  { id: "lime",    label: "Lima",      bg: "#f7fee7", fg: "#3f6212", border: "#d9f99d" },
+  { id: "green",   label: "Verde",     bg: "#f0fdf4", fg: "#166534", border: "#bbf7d0" },
+  { id: "emerald", label: "Esmeralda", bg: "#ecfdf5", fg: "#065f46", border: "#a7f3d0" },
+  { id: "teal",    label: "Teal",      bg: "#f0fdfa", fg: "#115e59", border: "#99f6e4" },
+  { id: "cyan",    label: "Cian",      bg: "#ecfeff", fg: "#155e75", border: "#a5f3fc" },
+  { id: "blue",    label: "Azul",      bg: "#eff6ff", fg: "#1e40af", border: "#bfdbfe" },
+  { id: "indigo",  label: "Índigo",    bg: "#eef2ff", fg: "#3730a3", border: "#c7d2fe" },
+  { id: "violet",  label: "Morado",    bg: "#f5f3ff", fg: "#5b21b6", border: "#ddd6fe" },
+  { id: "pink",    label: "Rosa",      bg: "#fdf2f8", fg: "#9d174d", border: "#fbcfe8" },
+  { id: "slate",   label: "Pizarra",   bg: "#f8fafc", fg: "#334155", border: "#cbd5e1" },
+  { id: "stone",   label: "Piedra",    bg: "#fafaf9", fg: "#57534e", border: "#e7e5e4" }
+];
+const TILE_COLOR_MAP = Object.fromEntries(TILE_COLORS.map(c => [c.id, c]));
+function tileColor(id) { return TILE_COLOR_MAP[id] || TILE_COLOR_MAP.slate; }
+
+// Severidad de un tile personalizado. Solo "error" bloquea el estado verde
+// "listo para copiar" (como un campo obligatorio). Aviso e info no bloquean.
+const TILE_SEVERITIES = [
+  ["error", "Error (bloquea listo)"],
+  ["warn",  "Aviso"],
+  ["info",  "Info"]
+];
+// Color por defecto sugerido según la severidad al crear un tile nuevo.
+const TILE_SEV_COLOR = { error: "red", warn: "amber", info: "blue" };
 
 /* ================================================================
    [2] UTILIDADES GENERALES
@@ -3057,34 +3140,204 @@ function reflectErrors(inst) {
   });
 }
 
-// Tiles de colores arriba: verde si todo bien, rojos por cada campo
-// con error. Click en un tile = saltar a ese campo.
+/* ---------- Tiles personalizados (definidos por el usuario) ----------
+   Cada form puede tener form.tiles = [ { text, whenExpr, color, group,
+   severity, field } ]. Son independientes de los campos: aparecen cuando su
+   condición es verdadera (o siempre, si la condición está vacía). Reutilizan
+   el motor de expresiones (parseExpr/evalAst) y exprFieldRefs. */
+function getFormTiles(form) { return (form && form.tiles) || []; }
+
+// Rellena valores por defecto de cada tile (configs viejas / import de CSV).
+function normalizeTiles(form) {
+  if (!Array.isArray(form.tiles)) { form.tiles = form.tiles == null ? [] : []; }
+  form.tiles.forEach(t => {
+    t.text = typeof t.text === "string" ? t.text : (t.text == null ? "" : String(t.text));
+    t.whenExpr = typeof t.whenExpr === "string" ? t.whenExpr : (t.whenExpr == null ? "" : String(t.whenExpr));
+    t.severity = ["error", "warn", "info"].includes(t.severity) ? t.severity : "info";
+    if (!TILE_COLOR_MAP[t.color]) t.color = TILE_SEV_COLOR[t.severity] || "slate";
+    t.group = typeof t.group === "string" ? t.group : (t.group == null ? "" : String(t.group));
+    t.field = typeof t.field === "string" ? t.field : (t.field == null ? "" : String(t.field));
+  });
+}
+function ensureTiles(cfg) {
+  (cfg.schema.forms || []).forEach(form => {
+    if (!Array.isArray(form.tiles)) form.tiles = [];
+    normalizeTiles(form);
+  });
+}
+
+// Campos a los que "toca" un tile: los que menciona su condición más el campo
+// destino explícito. Base del resaltado cruzado campo -> tile.
+function tileFieldRefs(tile) {
+  const refs = new Set(exprFieldRefs(tile.whenExpr || ""));
+  if (tile.field) refs.add(tile.field);
+  return [...refs];
+}
+
+// Sustituye {idCampo} en el texto por el valor actual de la instancia.
+function interpolateTileText(text, inst) {
+  return String(text || "").replace(/\{([A-Za-z0-9_\-.]+)\}/g, (m, id) => {
+    const v = inst.values[id];
+    if (v == null) return "";
+    return Array.isArray(v) ? v.join(", ") : String(v);
+  });
+}
+
+// Tiles personalizados activos ahora. Condición vacía = siempre activo
+// (tile informativo fijo). Devuelve { tile, idx, text }.
+function evalTiles(form, inst) {
+  const out = [];
+  getFormTiles(form).forEach((tile, idx) => {
+    const src = String(tile.whenExpr || "").trim();
+    let active;
+    if (!src) active = true;
+    else { try { active = evalAst(parseExpr(src), inst); } catch (e) { active = false; } }
+    if (active) out.push({ tile, idx, text: interpolateTileText(tile.text || tile.group || "(tile)", inst) });
+  });
+  return out;
+}
+
+// ¿Hay algo que impida el estado "listo para copiar"? Errores de campo o un
+// tile personalizado activo de severidad "error".
+function hasBlockingState(form, inst) {
+  if (Object.keys(inst.errors || {}).length) return true;
+  return evalTiles(form, inst).some(a => a.tile.severity === "error");
+}
+
+// Salta y enfoca un campo por id.
+function scrollToField(fieldId) {
+  const el = document.querySelector(`#formPanel .field[data-field="${fieldId}"]`);
+  if (!el) return;
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  const inp = el.querySelector("input, textarea");
+  if (inp) inp.focus({ preventScroll: true });
+}
+
+// Barra de tiles: verde si todo bien; si no, grupos con los errores de campo
+// (automáticos) y los tiles personalizados activos. Se puede colapsar a una
+// línea con la "llave".
 function renderTiles(inst) {
   const bar = $("tilesBar");
   if (!inst || !getForm(state.topTab)) { bar.innerHTML = ""; return; }
   const form = getForm(inst.formId);
-  const errs = Object.entries(inst.errors);
-  if (!errs.length) {
-    bar.innerHTML = `<span class="tile ok">✓ Sin errores — listo para copiar</span>`;
+  const fieldErrs = Object.entries(inst.errors);
+  const active = evalTiles(form, inst);
+  const blocking = fieldErrs.length > 0 || active.some(a => a.tile.severity === "error");
+
+  // Nada que mostrar: verde y salir.
+  if (!fieldErrs.length && !active.length) {
+    bar.classList.remove("collapsed");
+    bar.innerHTML = `<div class="tiles-wrap"><div class="tile-group"><span class="tile ok">✓ Sin errores — listo para copiar</span></div></div>`;
     return;
   }
-  const MAX_TILES = 10;
-  bar.innerHTML = errs.slice(0, MAX_TILES).map(([id, msg]) => {
-    const found = getField(form, id);
-    const label = found ? found.field.label : id;
-    return `<span class="tile err" data-tile="${escapeHtml(id)}" data-msg="${escapeHtml(msg)}">${escapeHtml(label)}</span>`;
-  }).join("") + (errs.length > MAX_TILES
-    ? `<span class="tile more">+${errs.length - MAX_TILES} más</span>` : "");
-  bar.querySelectorAll("[data-tile]").forEach(t => {
-    t.addEventListener("click", () => {
-      const el = document.querySelector(`#formPanel .field[data-field="${t.dataset.tile}"]`);
-      if (el) {
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
-        const inp = el.querySelector("input, textarea");
-        if (inp) inp.focus({ preventScroll: true });
-      }
+
+  const groups = [];
+  const groupFor = (key, label) => {
+    let g = groups.find(x => x.key === key);
+    if (!g) { g = { key, label, html: [] }; groups.push(g); }
+    return g;
+  };
+
+  // Tile "listo" si no hay nada bloqueante (convive con avisos e info).
+  if (!blocking) {
+    groupFor("__ok__", "").html.push(`<span class="tile ok">✓ Listo para copiar</span>`);
+  }
+
+  // Errores de campo (automáticos, uno por campo).
+  if (fieldErrs.length) {
+    const g = groupFor("__errs__", "Errores de campo");
+    fieldErrs.forEach(([id, msg]) => {
+      const found = getField(form, id);
+      const label = found ? found.field.label : id;
+      g.html.push(`<span class="tile err" data-target="${escapeHtml(id)}" data-fields="${escapeHtml(id)}" title="${escapeHtml(msg)}">${escapeHtml(label)}</span>`);
     });
+  }
+
+  // Tiles personalizados activos, agrupados por su etiqueta de grupo.
+  active.forEach(({ tile, text }) => {
+    const g = groupFor(tile.group ? "g:" + tile.group : "__free__", tile.group || "");
+    const col = tileColor(tile.color);
+    const refs = tileFieldRefs(tile);
+    const target = tile.field || refs[0] || "";
+    const cls = "tile sev-" + tile.severity + (target ? "" : " no-target");
+    const style = `background:${col.bg};color:${col.fg};border-color:${col.border}`;
+    const tip = tile.whenExpr ? "Cuando: " + tile.whenExpr : "";
+    g.html.push(`<span class="${cls}" style="${style}"${target ? ` data-target="${escapeHtml(target)}"` : ""}`
+      + ` data-fields="${escapeHtml(refs.join(" "))}"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${escapeHtml(text)}</span>`);
   });
+
+  const wrapHtml = groups.map(g => {
+    const label = g.label ? `<span class="tile-group-label">${escapeHtml(g.label)}</span>` : "";
+    return `<div class="tile-group">${label}${g.html.join("")}</div>`;
+  }).join("");
+
+  const collapsed = !!state.prefs.tilesCollapsed;
+  bar.classList.toggle("collapsed", collapsed);
+  bar.innerHTML =
+    `<div class="tiles-wrap">${wrapHtml}</div>` +
+    `<button class="tiles-toggle" id="tilesToggle" title="${collapsed ? "Expandir (ver todas las tiles)" : "Colapsar a una línea"}">` +
+    `<span class="chev">▾</span></button>`;
+
+  // Click en un tile con destino = saltar a ese campo.
+  bar.querySelectorAll("[data-target]").forEach(t => {
+    t.addEventListener("click", () => scrollToField(t.dataset.target));
+  });
+}
+
+// Interacciones de la barra de tiles. Se cablean UNA vez sobre elementos
+// persistentes (#tilesBar y #formPanel no se reemplazan, solo su innerHTML),
+// así que la delegación sobrevive a los re-render de la barra y del form.
+function wireTileInteractions() {
+  const bar = $("tilesBar");
+  const panel = $("formPanel");
+  if (!bar || !panel) return;
+
+  // La "llave": colapsar / expandir. El estado se guarda en la sesión.
+  // (Este patrón se reutilizará luego para colapsar secciones del form.)
+  bar.addEventListener("click", e => {
+    if (!e.target.closest("#tilesToggle")) return;
+    state.prefs.tilesCollapsed = !state.prefs.tilesCollapsed;
+    bar.classList.toggle("collapsed", state.prefs.tilesCollapsed);
+    const btn = $("tilesToggle");
+    if (btn) btn.title = state.prefs.tilesCollapsed
+      ? "Expandir (ver todas las tiles)" : "Colapsar a una línea";
+    scheduleSave();
+  });
+
+  // Resaltado cruzado: al pasar el mouse o enfocar un campo, todas las tiles
+  // que ese campo "toca" se marcan (.tile-hot) y las demás se atenúan.
+  let hotField = null;
+  const clear = () => {
+    if (!hotField) return;
+    bar.classList.remove("tiles-focus");
+    bar.querySelectorAll(".tile-hot").forEach(t => t.classList.remove("tile-hot"));
+    hotField = null;
+  };
+  const apply = (fieldId) => {
+    if (fieldId === hotField) return;
+    clear();
+    let any = false;
+    bar.querySelectorAll(".tile[data-fields]").forEach(t => {
+      const fs = (t.dataset.fields || "").split(" ").filter(Boolean);
+      if (fs.includes(fieldId)) { t.classList.add("tile-hot"); any = true; }
+    });
+    if (any) { bar.classList.add("tiles-focus"); hotField = fieldId; }
+  };
+  const leave = (e) => {
+    const f = e.target.closest(".field[data-field]");
+    if (!f) return;
+    if (!e.relatedTarget || !f.contains(e.relatedTarget)) clear();
+  };
+  panel.addEventListener("mouseover", e => {
+    const f = e.target.closest(".field[data-field]");
+    if (f) apply(f.dataset.field);
+  });
+  panel.addEventListener("mouseout", leave);
+  panel.addEventListener("focusin", e => {
+    const f = e.target.closest(".field[data-field]");
+    if (f) apply(f.dataset.field);
+  });
+  panel.addEventListener("focusout", leave);
 }
 
 /* ================================================================
@@ -3882,6 +4135,41 @@ function renderRulesTab() {
       <button data-cr-add="${escapeHtml(form.id)}" style="margin-top:6px;">+ Agregar condición a ${escapeHtml(form.label)}</button>`;
   }).join("");
 
+  // ---- Tiles personalizados ----
+  const tilesHtml = getForms().map(form => {
+    const fieldOptsT = (sel) => `<option value=""${!sel ? " selected" : ""}>(auto: 1er campo de la condición)</option>`
+      + allFields(form).filter(x => x.field.type !== "mirror")
+        .map(x => `<option value="${escapeHtml(x.field.id)}"${sel === x.field.id ? " selected" : ""}>${escapeHtml(x.field.label)}</option>`).join("");
+    const rows = getFormTiles(form).map((t, i) => {
+      const k = form.id + "|" + i;
+      const expr = t.whenExpr || "";
+      const err = exprError(expr);
+      const col = tileColor(t.color);
+      const colorOpts = TILE_COLORS.map(cc =>
+        `<option value="${cc.id}"${t.color === cc.id ? " selected" : ""}>${escapeHtml(cc.label)}</option>`).join("");
+      const sevOpts = TILE_SEVERITIES.map(([v, l]) =>
+        `<option value="${v}"${t.severity === v ? " selected" : ""}>${escapeHtml(l)}</option>`).join("");
+      return `<tr>
+        <td><input type="text" data-tr="${k}|text" value="${escapeHtml(t.text)}" placeholder="texto (admite {campo})" style="min-width:150px" /></td>
+        <td class="cond-expr-cell"><input type="text" class="cond-expr${err ? " cond-bad" : ""}"
+             data-tr="${k}|whenExpr" value="${escapeHtml(expr)}"
+             placeholder="vacío = siempre. ej. bugType = Crash AND consoleLog empty" />
+          <div class="cond-err" data-tr-err="${k}">${err ? escapeHtml(err) : ""}</div></td>
+        <td><select data-tr="${k}|color" class="tile-color-sel" style="background:${col.bg};color:${col.fg}">${colorOpts}</select></td>
+        <td><input type="text" data-tr="${k}|group" value="${escapeHtml(t.group)}" placeholder="(sin grupo)" style="width:90px" /></td>
+        <td><select data-tr="${k}|severity">${sevOpts}</select></td>
+        <td><select data-tr="${k}|field">${fieldOptsT(t.field)}</select></td>
+        <td><button class="row-del" data-tr-del="${k}" title="Borrar tile">✕</button></td>
+      </tr>`;
+    }).join("");
+    return `<h4 style="margin:10px 0 4px;font-size:12px;">${escapeHtml(form.label)}</h4>
+      <table class="data-table cond-table tile-table">
+        <thead><tr><th>Texto</th><th>Cuándo aparece</th><th>Color</th><th>Grupo</th><th>Tipo</th><th>Salta a</th><th></th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="7" style="color:#9ca3af;font-style:italic;">Sin tiles todavía.</td></tr>`}</tbody>
+      </table>
+      <button data-tr-add="${escapeHtml(form.id)}" style="margin-top:6px;">+ Agregar tile a ${escapeHtml(form.label)}</button>`;
+  }).join("");
+
   c.innerHTML = `
     <div class="rules-block">
       <h3>Validaciones por campo</h3>
@@ -3931,9 +4219,28 @@ function renderRulesTab() {
       </p>
       ${condsHtml}
     </div>
+    <div class="rules-block">
+      <h3>Tiles personalizados</h3>
+      <p class="rules-intro">
+        Tiles propios que aparecen arriba del formulario, independientes de los
+        campos. Cada uno tiene un <strong>texto</strong> (admite <code>{idCampo}</code>
+        para intercalar el valor de un campo), una <strong>condición</strong> que
+        decide cuándo se muestra (mismo motor que las condiciones de arriba;
+        <em>vacía = siempre visible</em>), un <strong>color</strong>, un
+        <strong>grupo</strong> opcional (los tiles del mismo grupo se dibujan
+        juntos) y un <strong>tipo</strong>: <em>Error</em> bloquea el "listo para
+        copiar" (como un campo obligatorio), <em>Aviso</em> e <em>Info</em> solo
+        informan. "Salta a" es el campo al que va el click; si lo dejas en auto,
+        usa el primer campo que menciona la condición. Al pasar el mouse por un
+        campo, se resaltan los tiles que lo mencionan. Ejemplos:
+        <code>bugType = Crash AND consoleLog empty</code> (error: falta el log) o
+        texto fijo <code>Mapa: {map}</code> con condición <code>map notEmpty</code>.
+      </p>
+      ${tilesHtml}
+    </div>
     <div class="rules-future">
-      Próximamente: tiles personalizados definidos por el usuario y más acciones
-      para los nombres de media. La estructura ya lo soporta; se agregará sin
+      Próximamente: más acciones para los nombres de media (condiciones sobre la
+      media y REGEX de la Key). La estructura ya lo soporta; se agregará sin
       romper tus datos. El formato de media ya es editable: regla
       <code>media_fmt</code> (placeholders {type}, {key}, {platform} y cualquier
       id de campo) y la lista <code>mediaTypes</code> en Data.
@@ -4007,7 +4314,7 @@ function renderRulesTab() {
     });
   });
   // Validación en vivo de la expresión mientras se teclea (sin re-render).
-  c.querySelectorAll(".cond-expr").forEach(inp => {
+  c.querySelectorAll(".cond-expr[data-cr]").forEach(inp => {
     inp.addEventListener("input", () => {
       const k = inp.dataset.cr.split("|").slice(0, 2).join("|");
       const err = exprError(inp.value);
@@ -4042,6 +4349,58 @@ function renderRulesTab() {
         onConfirm: () => {
           const form = getForm(formId);
           if (form && form.rules) form.rules.splice(+idx, 1);
+          renderRulesTab();
+          scheduleSave();
+        }
+      });
+    });
+  });
+
+  // ---- Wiring de los tiles personalizados ----
+  c.querySelectorAll("[data-tr]").forEach(el => {
+    const evt = el.tagName === "SELECT" ? "change" : "input";
+    el.addEventListener(evt, () => {
+      const [formId, idx, prop] = el.dataset.tr.split("|");
+      const form = getForm(formId);
+      const tile = form && getFormTiles(form)[+idx];
+      if (!tile) return;
+      tile[prop] = el.value;
+      if (prop === "color") renderRulesTab(); // refresca el color del propio select
+      scheduleSave();
+    });
+  });
+  // Validación en vivo de la expresión del tile (sin re-render).
+  c.querySelectorAll(".cond-expr[data-tr]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const k = inp.dataset.tr.split("|").slice(0, 2).join("|");
+      const err = exprError(inp.value);
+      inp.classList.toggle("cond-bad", !!err);
+      const box = c.querySelector(`[data-tr-err="${k}"]`);
+      if (box) box.textContent = err;
+    });
+  });
+  c.querySelectorAll("[data-tr-add]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const form = getForm(btn.dataset.trAdd);
+      if (!form) return;
+      form.tiles = form.tiles || [];
+      form.tiles.push({ text: "Nuevo tile", whenExpr: "", color: TILE_SEV_COLOR.info,
+                        group: "", severity: "info", field: "" });
+      renderRulesTab();
+      scheduleSave();
+    });
+  });
+  c.querySelectorAll("[data-tr-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const [formId, idx] = btn.dataset.trDel.split("|");
+      showConfirmModal({
+        title: "Borrar tile",
+        body: "¿Borrar definitivamente este tile?",
+        confirmText: "Borrar",
+        confirmClass: "danger",
+        onConfirm: () => {
+          const form = getForm(formId);
+          if (form && form.tiles) form.tiles.splice(+idx, 1);
           renderRulesTab();
           scheduleSave();
         }
@@ -4203,6 +4562,20 @@ function exportFieldsCsv() {
       cr[13] = r.then.action; cr[14] = r.then.field; cr[16] = r.then.value || "";
       rows.push(cr);
     });
+    // Tiles personalizados (type="tile"). Mapeo de columnas (README):
+    //   label=texto · source=expresión (whenExpr) · regex=severidad ·
+    //   regexmsg=campo destino · default=color · emptyas=grupo.
+    getFormTiles(form).forEach(t => {
+      const tr = empty();
+      tr[0] = form.id; tr[4] = "tile";
+      tr[3] = t.text || "";
+      tr[5] = t.whenExpr || "";
+      tr[13] = t.severity || "info";
+      tr[14] = t.field || "";
+      tr[15] = t.color || "";
+      tr[16] = t.group || "";
+      rows.push(tr);
+    });
   });
   downloadFile("bug_fields.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
   flashBanner("bug_fields.csv descargado. Ponlo en el sharefolder para compartirlo.");
@@ -4259,6 +4632,21 @@ function importFieldsCsv(text) {
       form.rules.push({
         whenExpr: whenExpr,
         then: { action: regex, field: regexmsg, value: emptyas || "" }
+      });
+    } else if (type === "tile") {
+      // Tile personalizado. label=texto · source=expresión · regex=severidad ·
+      // regexmsg=campo destino · default=color · emptyas=grupo.
+      const form = forms.find(f => f.id === formId);
+      if (!form) { errors.push(`Línea ${lineNo}: tile sin formulario «${formId}» previo`); continue; }
+      const exErr = exprError(source || "");
+      if (exErr) { errors.push(`Línea ${lineNo}: expresión de tile inválida — ${exErr}`); continue; }
+      if (regex && !TILE_SEVERITIES.some(([v]) => v === regex)) {
+        errors.push(`Línea ${lineNo}: severidad de tile desconocida «${regex}»`); continue;
+      }
+      form.tiles = form.tiles || [];
+      form.tiles.push({
+        text: label || "", whenExpr: source || "", severity: regex || "info",
+        field: regexmsg || "", color: def || "", group: emptyas || ""
       });
     } else if (type === "section") {
       const form = forms.find(f => f.id === formId);
@@ -4323,6 +4711,14 @@ function importFieldsCsv(text) {
       });
       if (!has(r.then.field)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo destino «${r.then.field}» no existe`);
     });
+    // Los tiles apuntan a campos que existan (los de la condición y "salta a").
+    getFormTiles(form).forEach((t, i) => {
+      const has = (id) => form.sections.some(s => s.fields.some(f => f.id === id));
+      exprFieldRefs(t.whenExpr).forEach(fid => {
+        if (!has(fid)) errors.push(`Tile ${i + 1} de «${form.id}»: el campo «${fid}» no existe`);
+      });
+      if (t.field && !has(t.field)) errors.push(`Tile ${i + 1} de «${form.id}»: el campo destino «${t.field}» no existe`);
+    });
   });
 
   if (!forms.length || !forms.some(f => f.sections.length)) {
@@ -4348,6 +4744,7 @@ function importFieldsCsv(text) {
     onConfirm: () => {
       config.schema.forms = forms;
       normalizeFieldSources(config.schema.forms); // fuentes viejas del CSV -> árbol
+      ensureTiles(config); // completa defaults de los tiles importados
       state.instances = state.instances.filter(i => forms.some(f => f.id === i.formId));
       state.instances.forEach(ensureInstanceFields);
       if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
@@ -4717,9 +5114,11 @@ function boot() {
   }
   migrateListsToTree(vanilla);
   migrateRulesToExpr(vanilla);
+  ensureTiles(vanilla);
   loadConfig();
   migrateListsToTree(config);
   migrateRulesToExpr(config);
+  ensureTiles(config);
   loadSession();
 
   // Sanear la sesión restaurada contra el schema actual
@@ -4741,6 +5140,7 @@ function boot() {
 
   wireStaticControls();
   wireMediaPanel();
+  wireTileInteractions();
   refreshAll();
 }
 
