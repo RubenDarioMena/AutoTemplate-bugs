@@ -18,18 +18,27 @@ acepta cualquier nombre nuevo — si agregas filas
 `list,weapons,AK-47`, la lista `weapons` se crea sola y queda
 disponible como fuente para campos dropdown.
 
+**Nota v3 sobre listas correlacionadas:** cualquier lista puede tener
+*listas dependientes* (hijas), como `POI` depende de `Mapa`. Ya no hay
+un par built-in especial: `Mapa` es una lista raíz normal (`list,map,…`)
+y `POI` es su dependiente (`childlist,poi,map`). Una lista puede ser
+padre de varias hijas, y una hija puede a su vez ser padre → árbol a
+cualquier profundidad (Región → Mapa → POI → …). Los CSV viejos con
+`map`/`poi`/`link`/`linkparent`/`linkchild` se **siguen leyendo** al
+cargar (se migran solos al árbol); al exportar se escribe el formato nuevo.
+
 ## Estructura
 
 El archivo tiene **3 columnas**:
 
-  | category | key        | value                          |
-  |----------|------------|--------------------------------|
-  | list     | regions    | NA                             |
-  | list     | platforms  | PC(MSS)                        |
-  | map      | -          | Highrise                       |
-  | poi      | Highrise   | Office A                       |
-  | tier     | T1         | Gameplay                       |
-  | rule     | kw_count   | 5                              |
+  | category  | key        | value                          |
+  |-----------|------------|--------------------------------|
+  | list      | regions    | NA                             |
+  | list      | map        | Highrise                       |
+  | childlist | poi        | map                            |
+  | childval  | poi        | Highrise :: Office A           |
+  | listlabel | poi        | POI                            |
+  | rule      | kw_count   | 5                              |
 
 ## Categorías y cómo editarlas
 
@@ -40,25 +49,34 @@ con la misma `key` y un nuevo `value`.
 Ejemplo: agregar la región "OCE"
 | list | regions | OCE |
 
-### `map` — lista de mapas
-Ignorar la columna `key` (usar `-`). Cada fila es un mapa.
+### `childlist` — declara una lista dependiente y su padre
+`key` = id de la lista hija. `value` = id de la lista padre (raíz o a su
+vez dependiente). Una fila por lista dependiente.
 
-| map | - | NewMap_42 |
+| childlist | poi | map |
 
-### `poi` — POIs agrupados por mapa
-`key` = nombre del mapa (debe existir en la categoría `map`).
-`value` = nombre del POI dentro de ese mapa.
+Aquí `poi` depende de `map`. Para encadenar (Región → Mapa → POI): la
+lista `map` sería `childlist,map,region` y `poi` seguiría siendo
+`childlist,poi,map`.
 
-| poi | NewMap_42 | Spawn |
-| poi | NewMap_42 | Tower |
-| poi | NewMap_42 | Courtyard |
+### `childval` — valores de una lista dependiente
+`key` = id de la lista hija. `value` = `padre :: valor` (el nombre del
+valor del padre, luego ` :: `, luego el valor hijo).
 
-Si borras un mapa en la categoría `map`, los POIs huérfanos se
-marcaran en rojo en la pestaña Data de la herramienta y tendrás
-que borrarlos a mano.
+| childval | poi | Highrise :: Office A |
+| childval | poi | Highrise :: Helipad  |
+| childval | poi | Skyline :: Rooftop   |
 
-### `tier` — tiers / categorías amplias
-Pares `key` (código) y `value` (descripción).
+Si borras un valor del padre, sus hijos quedan *huérfanos* y se marcan
+en rojo en la pestaña Data de la herramienta. Borrar el padre entero
+(o su lista) arrastra a todas sus dependientes en cascada.
+
+### `listlabel` — etiqueta bonita de una lista (opcional)
+`key` = id de la lista. `value` = nombre visible (p. ej. `map` → `Mapa`).
+Si no hay `listlabel`, se muestra el id tal cual.
+
+| listlabel | map | Mapa |
+| listlabel | poi | POI  |
 
 ### `rule` — reglas de validación
 Pares `key` (nombre de la regla) y `value` (valor).
@@ -107,8 +125,10 @@ Antes de sobrescribir, abrir en un editor de texto plano
   - La primera línea es exactamente: `category,key,value`
   - Cada fila tiene exactamente 2 comas separadoras
   - No hay líneas en blanco
-  - No hay filas con celdas vacías (excepto el `-` permitido en
-    la columna `key` de la categoría `map`)
+  - No hay filas con celdas vacías (todas las categorías usan la
+    columna `key`: el id de la lista o de la regla)
+  - En `childval`, el `value` lleva el separador ` :: ` entre el
+    valor del padre y el del hijo
 
 ## Respaldo
 

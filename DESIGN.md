@@ -735,6 +735,45 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     flechas hace scroll solo dentro del dropdown, y la flecha ▼ abre la
     lista completa (enfoca primero, luego renderiza).
 
+## Iteración 4 (2026-07-07): listas correlacionadas como árbol unificado
+
+  * **Modelo unificado en árbol.** Se retiró el par built-in Mapa/POI
+    (`data.maps`/`data.pois`) y los pares `data.linkedLists`
+    (padre+hijo empaquetados). Ahora:
+    - `data.lists  = { id: [valores] }` — listas raíz (planas).
+    - `data.childLists = { id: { parent, values:{pv:[...]} } }` —
+      dependientes; `values` indexado por el valor del padre y `parent`
+      apunta a CUALQUIER lista (raíz o dependiente).
+    - `data.listMeta = { id: { label } }` — etiqueta visible opcional.
+    Cualquier lista puede ser padre de varias dependientes, y una
+    dependiente puede ser padre de otra → profundidad arbitraria
+    (Región → Mapa → POI → …). Hijas siempre nuevas, un solo padre.
+  * **Resolución** (`optionsForField`, `parseSource`): fuente de campo
+    `<id>` (raíz) o `child:<hija>:<campoPadre>` (lee el valor del campo
+    padre y hace lookup en `childLists[hija].values[pv]` — por eso los
+    niveles encadenan sin lógica extra). Los hijos se indexan por el
+    STRING del valor del padre (dos padres homónimos comparten hijos, por
+    decisión de diseño). `getLinks()`/kind "parent" eliminados.
+  * **Migración automática** `migrateListsToTree` (boot, sobre vanilla y
+    config; idempotente): Mapa/POI → raíz `map` + dependiente `poi`;
+    cada `linkedLists` viejo → raíz + dependiente (`x_hijo`); reescribe
+    las fuentes de los campos (`parent:map`→`map`, `child:map:f`→
+    `child:poi:f`, etc.). `normalizeFieldSources` hace lo mismo al
+    importar un `bug_fields.csv` anterior.
+  * **Pestaña DATA**: una categoría por lista (raíz o dependiente,
+    rotulada "hija de …"). Editar un valor de una lista padre arrastra
+    en cascada los buckets de sus hijas (`renameParentValue`). El ✕
+    borra la lista y TODO su subárbol (`cascadeDeleteList`, con aviso).
+    "+ Lista correlacionada" (`addChildList`) crea una dependiente NUEVA
+    bajo la lista seleccionada. El editor de campo ofrece las hijas de
+    la lista a la que está atado cada campo (`sourceOptions`), habilitando
+    encadenar.
+  * **CSV `bug_data.csv`**: categorías nuevas `childlist` (id→padre),
+    `childval` (id → `padre :: valor`) y `listlabel` (id→etiqueta); las
+    raíces siguen como `list`. El formato viejo (`map`/`poi`/`link`/
+    `linkparent`/`linkchild`) se sigue leyendo al importar (se migra) y
+    se reescribe al exportar. Ver bug_data.README.md.
+
 ## Pendiente (siguientes iteraciones)
 
   * Tiles personalizados definidos por el usuario (los tiles de
