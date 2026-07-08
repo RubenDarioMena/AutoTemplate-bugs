@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M08 · Variables y constantes — Curso Bug Report Tool</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg-base:#09080F;--bg-s1:#0C0B13;--bg-s2:#0E0D16;--bg-s3:#110F18;--text-pri:#EEEBF6;--text-sec:#C7CDE0;--text-mut:#8B889C;--yellow:#F5C451;--accent:#A78BFA;--border:rgba(255,255,255,.07);--font-head:'Space Grotesk',system-ui,sans-serif;--font-body:'Plus Jakarta Sans',system-ui,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,monospace}
+body{background:var(--bg-base);color:var(--text-sec);font-family:var(--font-body);-webkit-font-smoothing:antialiased;min-height:100vh}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+a{color:inherit;text-decoration:none}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(900px 520px at 78% -10%,rgba(245,196,81,.18),transparent 60%),radial-gradient(720px 520px at -5% 95%,rgba(139,92,246,.10),transparent 55%)}
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:clamp(30px,6vw,68px) clamp(16px,4vw,32px) 130px}
+.hero{margin-bottom:clamp(34px,5vw,52px)}
+.badge{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;border-radius:999px;background:rgba(245,196,81,.12);border:1px solid rgba(245,196,81,.32);color:var(--yellow);font-size:12px;font-weight:600;letter-spacing:.16em;font-family:var(--font-mono)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--yellow);box-shadow:0 0 10px var(--yellow)}
+h1{font-family:var(--font-head);font-size:clamp(34px,8vw,60px);line-height:1.03;font-weight:700;color:#F4F2FB;margin:20px 0 0;letter-spacing:-.025em}
+h1 .hl{color:var(--yellow)}
+.hero p{color:#A7A4B8;font-size:clamp(16px,2.3vw,19px);line-height:1.65;margin:20px 0 0;max-width:60ch}
+.meta-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);color:#9A97AC;font-size:13px}
+.card{background:linear-gradient(180deg,var(--bg-s3),var(--bg-s2));border:1px solid var(--border);border-radius:18px;padding:clamp(20px,4vw,30px);box-shadow:0 24px 50px -34px rgba(0,0,0,.9);margin-bottom:clamp(24px,4vw,38px)}
+.card>p{color:#A7A4B8;font-size:clamp(15px,1.6vw,16.5px);line-height:1.7;margin:0 0 20px;max-width:62ch}
+.num-section{margin-bottom:clamp(24px,4vw,38px)}
+.num-label{display:inline-flex;align-items:center;gap:10px;margin-bottom:14px}
+.num-tag{font-family:var(--font-head);font-weight:700;font-size:14px;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#06120B;background:linear-gradient(145deg,#F5C451,#EAB308)}
+.num-title{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:var(--text-mut);text-transform:uppercase}
+.content-block{margin-bottom:18px}
+.content-block h3{font-family:var(--font-head);font-weight:600;font-size:18px;color:var(--text-pri);margin-bottom:8px}
+.content-block p{color:#A7A4B8;line-height:1.7;font-size:15.5px;max-width:60ch;margin-bottom:8px}
+.content-block strong{color:var(--text-pri)}
+.content-block code{font-family:var(--font-mono);font-size:13px;background:rgba(245,196,81,.1);color:var(--yellow);padding:1px 5px;border-radius:4px}
+.code-block{background:var(--bg-s1);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin:14px 0}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#100F18;border-bottom:1px solid var(--border)}
+.code-head span{font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.code-btns{display:flex;gap:8px}
+.code-btn{padding:6px 14px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text-sec);font-family:var(--font-body);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s}
+.code-btn:hover{background:rgba(245,196,81,.16);border-color:rgba(245,196,81,.22);color:var(--yellow)}
+.code-btn.primary{background:rgba(245,196,81,.16);border-color:rgba(245,196,81,.22);color:var(--yellow)}
+pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:13.5px;line-height:1.75;color:#C7CDE0}
+.code-cmt{color:#5C6A75;font-style:italic}.code-fn{color:#82AAFF}.code-str{color:#ECC48D}.code-kw{color:#C4B5FD}.code-prop{color:#93C5FD}
+.output-block{margin-top:12px;border:1px solid var(--border);border-radius:13px;overflow:hidden;display:none}
+.output-block.show{display:block}
+.output-head{padding:8px 16px;background:#100F18;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.output-body{padding:12px 16px;font-family:var(--font-mono);font-size:13px;line-height:1.6}
+.out-line{margin:3px 0;display:flex;gap:8px;align-items:flex-start}
+.out-tag{flex-shrink:0;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600}
+.out-tag.log{color:#93C5FD;background:rgba(147,197,253,.1)}
+.out-text{color:#C7CDE0}
+.highlight-box{background:rgba(245,196,81,.06);border:1px solid rgba(245,196,81,.15);border-radius:13px;padding:16px 18px;margin:14px 0}
+.highlight-box strong{color:var(--yellow)}
+.resources{display:flex;flex-direction:column;gap:12px}
+.res-link{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--border);transition:all .2s}
+.res-link:hover{background:rgba(245,196,81,.08);border-color:rgba(245,196,81,.25)}
+.res-name{font-family:var(--font-head);font-weight:700;font-size:16px;color:#EEEBF6}
+.res-desc{font-size:13.5px;color:var(--text-mut);margin-top:2px}
+.res-arrow{width:15px;height:15px;flex-shrink:0;opacity:.5}
+.cta{text-align:center;padding:clamp(30px,5vw,50px) 20px}
+.cta-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;color:var(--text-mut);text-transform:uppercase;margin-bottom:10px}
+.cta h2{font-family:var(--font-head);font-size:clamp(22px,3.5vw,30px);margin-bottom:14px;color:#F4F2FB}
+.cta p{color:#A7A4B8;font-size:16px;line-height:1.6;max-width:50ch;margin:0 auto 24px}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:14px;background:linear-gradient(145deg,#F5C451,#EAB308);color:#06120B;font-size:15px;font-weight:600;box-shadow:0 8px 24px -8px rgba(245,196,81,.6);cursor:pointer}
+.cta-btn:hover{transform:translateY(-2px)}
+.cta-btn svg{width:18px;height:18px}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="wrap">
+  <div class="hero">
+    <div class="badge"><span class="badge-dot"></span>MÓDULO 08 · VARIABLES</div>
+    <h1>Variables y <span class="hl">constantes</span> de la aplicación</h1>
+    <p>La primera sección de JavaScript de la herramienta declara todas las variables y constantes globales. Algunas no cambian nunca (constantes), otras se reasignan (let). Vamos a ver cada una y por qué es <code>let</code> o <code>const</code>.</p>
+    <div class="meta-chips"><span class="chip">⚡ JS</span><span class="chip">~10 min</span><span class="chip">Principiante</span></div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">1</span><span class="num-title">PRISTINE_HTML: capturar el HTML intacto</span></div>
+    <div class="card">
+      <div class="code-block"><div class="code-head"><span>JavaScript</span></div><pre><code><span class="code-cmt">// Lo primero que ejecuta la herramienta:</span>
+<span class="code-kw">const</span> PRISTINE_HTML = <span class="code-str">"&lt;!DOCTYPE html&gt;\\n"</span> + document.documentElement.outerHTML;</code></pre></div>
+      <div class="content-block">
+        <h3>¿Por qué capturar el HTML al cargar?</h3>
+        <p>La función "Exportar herramienta" descarga un nuevo <code>bug_tool.html</code> con la configuración modificada. Para hacer eso, necesita el HTML <strong>original</strong> —sin que el JavaScript haya modificado el DOM. Si esperara, el <code>innerHTML</code> de los paneles ya estaría lleno de formularios y campos. Capturándolo al principio (antes de que <code>boot()</code> renderice nada), tiene una copia limpia.</p>
+        <p>El "truco de los dos partes" (<code>"</scr" + "ipt>"</code>) evita que el parser HTML corte el script aquí al ver <code>&lt;/script&gt;</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">2</span><span class="num-title">CONFIG_KEY y SESSION_KEY: localStorage</span></div>
+    <div class="card">
+      <div class="code-block"><div class="code-head"><span>JavaScript</span></div><pre><code><span class="code-kw">const</span> CONFIG_KEY  = <span class="code-str">"bug_tool_v2_config"</span>;   <span class="code-cmt">// schema + data</span>
+<span class="code-kw">const</span> SESSION_KEY = <span class="code-str">"bug_tool_v2_session"</span>;  <span class="code-cmt">// instancias + preferencias</span></code></pre></div>
+      <div class="content-block">
+        <h3>Dos claves, dos propósitos</h3>
+        <p><strong>CONFIG_KEY</strong> guarda el schema y los datos (campos, listas, reglas). Cuando alguien edita algo en Data o Rules, se guarda aquí. Al "Exportar herramienta", este JSON se incrusta en el nuevo HTML.</p>
+        <p><strong>SESSION_KEY</strong> guarda las instancias abiertas (Bug 1, Bug 2...) y preferencias (pestaña activa, colapso de tiles). Así, al cerrar y reabrir, el navegador recupera dónde estabas.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">3</span><span class="num-title">El objeto state: el estado mutable global</span></div>
+    <div class="card">
+      <div class="code-block"><div class="code-head"><span>JavaScript</span></div><pre><code><span class="code-kw">const</span> state = {
+  topTab: <span class="code-str">""</span>,            <span class="code-cmt">// id del formulario activo, "data" o "rules"</span>
+  editMode: <span class="code-fn">false</span>,
+  instances: [],         <span class="code-cmt">// array de bugs abiertos</span>
+  activeInstanceId: <span class="code-fn">null</span>,
+  dataTab: { selectedCategory: <span class="code-str">""</span> },
+  prefs: { dontAskOnClose: <span class="code-fn">false</span> }
+};</code></pre></div>
+      <div class="highlight-box"><strong>¿Por qué <code>const</code> y no <code>let</code>?</strong> Porque <code>const</code> no permite reasignar la variable, pero sí permite <strong>mutar su contenido</strong>. No puedes hacer <code>state = {}</code>, pero sí <code>state.instances.push(...)</code> o <code>state.topTab = "bug"</code>. Es lo que queremos: el objeto siempre es el mismo, pero sus propiedades cambian.</div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">4</span><span class="num-title">let vs const en la herramienta</span></div>
+    <div class="card">
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px">
+        <thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-mut);text-transform:uppercase">Declaración</th><th style="text-align:left;padding:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-mut);text-transform:uppercase">Tipo</th><th style="text-align:left;padding:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-mut);text-transform:uppercase">¿Por qué?</th></tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px"><code>const PRISTINE_HTML</code></td><td style="padding:8px">string</td><td style="padding:8px">Nunca cambia; se captura una vez</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px"><code>let vanilla</code></td><td style="padding:8px">object|null</td><td style="padding:8px">Se reasigna al "Exportar herramienta"</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px"><code>let config</code></td><td style="padding:8px">object|null</td><td style="padding:8px">Se reasigna al cargar/cambiar config</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px"><code>const state</code></td><td style="padding:8px">object</td><td style="padding:8px">No se reasigna, pero sí se muta</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px"><code>const FIELD_TYPES</code></td><td style="padding:8px">array</td><td style="padding:8px">Lista fija de tipos de campo</td></tr>
+          <tr><td style="padding:8px"><code>let saveTimer</code></td><td style="padding:8px">number|null</td><td style="padding:8px">Se reasigna en cada debounce</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">5</span><span class="num-title">Tu primer momento</span></div>
+    <div class="card">
+      <p>Pulsa <strong>Ejecutar</strong> para ver las variables en acción. El código declara una versión simplificada del estado y lo muestra.</p>
+      <div class="code-block"><div class="code-head"><span>JavaScript</span><div class="code-btns"><button class="code-btn primary" onclick="runIntro()">Ejecutar</button></div></div><pre><code><span class="code-kw">const</span> CONFIG_KEY = <span class="code-str">"bug_tool_v2_config"</span>;
+<span class="code-kw">const</span> state = { topTab: <span class="code-str">"bug"</span>, instances: [], editMode: <span class="code-fn">false</span> };
+
+<span class="code-fn">console</span>.<span class="code-fn">log</span>(<span class="code-str">"CONFIG_KEY:"</span>, CONFIG_KEY);
+<span class="code-fn">console</span>.<span class="code-fn">log</span>(<span class="code-str">"state inicial:"</span>, state);
+
+<span class="code-cmt">// Mutar el objeto (const permite mutar, no reasignar)</span>
+state.instances.<span class="code-fn">push</span>({ id: <span class="code-str">"bug_1"</span>, title: <span class="code-str">"Bug 1"</span> });
+state.topTab = <span class="code-str">"bug"</span>;
+
+<span class="code-fn">console</span>.<span class="code-fn">log</span>(<span class="code-str">"state después de mutar:"</span>, state);</code></pre></div>
+      <div class="output-block" id="outIntro"><div class="output-head">Salida de la consola</div><div class="output-body" id="outIntroBody"></div></div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">6</span><span class="num-title">Recursos</span></div>
+    <div class="resources">
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Statements/let" target="_blank" rel="noopener"><div><div class="res-name">MDN · let</div><div class="res-desc">Variables que se pueden reasignar.</div></div><svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg></a>
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Statements/const" target="_blank" rel="noopener"><div><div class="res-name">MDN · const</div><div class="res-desc">Referencias que no se reasignan (pero sí mutan).</div></div><svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg></a>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-label">Las variables están listas</div>
+    <h2>¿Y las funciones que las usan?</h2>
+    <p>La herramienta tiene un conjunto de funciones utilitarias que se usan por todas partes. Vamos a verlas.</p>
+    <a class="cta-btn" href="M09_utilidades.html">MÓDULO 09 · Utilidades<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+  </div>
+</div>
+<script>
+"use strict";
+function runIntro(){
+  var out=document.getElementById('outIntro'),body=document.getElementById('outIntroBody');
+  body.innerHTML='';
+  var logs=[];
+  var origLog=console.log;
+  console.log=function(){var a=[].slice.call(arguments);logs.push({level:'log',text:a.map(function(x){return typeof x==='string'?x:JSON.stringify(x)}).join(' ')})};
+  try{
+    var CONFIG_KEY="bug_tool_v2_config";
+    var state={topTab:"bug",instances:[],editMode:false};
+    console.log("CONFIG_KEY:",CONFIG_KEY);
+    console.log("state inicial:",JSON.stringify(state));
+    state.instances.push({id:"bug_1",title:"Bug 1"});
+    state.topTab="bug";
+    console.log("state después de mutar:",JSON.stringify(state));
+  }catch(e){logs.push({level:'log',text:'Error: '+e.message})}finally{console.log=origLog}
+  if(!logs.length)logs.push({level:'log',text:'(sin salida)'});
+  logs.forEach(function(l){var line=document.createElement('div');line.className='out-line';var tag=document.createElement('span');tag.className='out-tag '+l.level;tag.textContent=l.level;var txt=document.createElement('span');txt.className='out-text';txt.textContent=l.text;line.appendChild(tag);line.appendChild(txt);body.appendChild(line);});
+  out.classList.add('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M03 · Schema y campos — Curso Bug Report Tool</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-base:#09080F; --bg-s1:#0C0B13; --bg-s2:#0E0D16; --bg-s3:#110F18; --bg-s4:#13111D; --bg-s5:#1B1926;
+  --text-pri:#EEEBF6; --text-sec:#C7CDE0; --text-mut:#8B889C; --text-sub:#5E5C6E;
+  --accent:#A78BFA; --accent-soft:rgba(139,92,246,.16); --accent-border:rgba(167,139,250,.35);
+  --cyan:#67E8F9; --yellow:#F5C451; --red:#FB7185; --green:#34D399;
+  --border:rgba(255,255,255,.07); --border-hi:rgba(255,255,255,.12);
+  --font-head:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Plus Jakarta Sans',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono','Fira Code',monospace;
+}
+body{background:var(--bg-base);color:var(--text-sec);font-family:var(--font-body);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}
+::selection{background:rgba(167,139,250,.32);color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+a{color:inherit;text-decoration:none}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(900px 520px at 78% -10%,rgba(34,184,207,.18),transparent 60%),radial-gradient(720px 520px at -5% 95%,rgba(52,211,153,.10),transparent 55%),radial-gradient(620px 440px at 105% 60%,rgba(139,92,246,.10),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:clamp(30px,6vw,68px) clamp(16px,4vw,32px) 130px}
+.hero{margin-bottom:clamp(34px,5vw,52px)}
+.badge{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;border-radius:999px;background:rgba(103,232,249,.12);border:1px solid rgba(103,232,249,.32);color:var(--cyan);font-size:12px;font-weight:600;letter-spacing:.16em;font-family:var(--font-mono)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+h1{font-family:var(--font-head);font-size:clamp(34px,8vw,60px);line-height:1.03;font-weight:700;color:#F4F2FB;margin:20px 0 0;letter-spacing:-.025em}
+h1 .hl{color:var(--cyan)}
+.hero p{color:#A7A4B8;font-size:clamp(16px,2.3vw,19px);line-height:1.65;margin:20px 0 0;max-width:60ch}
+.meta-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);color:#9A97AC;font-size:13px;font-weight:500}
+.card{background:linear-gradient(180deg,var(--bg-s3),var(--bg-s2));border:1px solid var(--border);border-radius:18px;padding:clamp(20px,4vw,30px);box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 24px 50px -34px rgba(0,0,0,.9);margin-bottom:clamp(24px,4vw,38px)}
+.card>p{color:#A7A4B8;font-size:clamp(15px,1.6vw,16.5px);line-height:1.7;margin:0 0 20px;max-width:62ch}
+.num-section{margin-bottom:clamp(24px,4vw,38px)}
+.num-label{display:inline-flex;align-items:center;gap:10px;margin-bottom:14px}
+.num-tag{font-family:var(--font-head);font-weight:700;font-size:14px;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#06120B;background:linear-gradient(145deg,#67E8F9,#5FD0E0)}
+.num-title{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:var(--text-mut);text-transform:uppercase}
+.content-block{margin-bottom:18px}
+.content-block h3{font-family:var(--font-head);font-weight:600;font-size:18px;color:var(--text-pri);margin-bottom:8px}
+.content-block p{color:#A7A4B8;line-height:1.7;font-size:15.5px;max-width:60ch;margin-bottom:8px}
+.content-block strong{color:var(--text-pri)}
+.content-block code{font-family:var(--font-mono);font-size:13px;background:rgba(103,232,249,.1);color:var(--cyan);padding:1px 5px;border-radius:4px}
+.code-block{background:var(--bg-s1);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin:14px 0}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#100F18;border-bottom:1px solid var(--border)}
+.code-head span{font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.code-btns{display:flex;gap:8px}
+.code-btn{padding:6px 14px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text-sec);font-family:var(--font-body);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s}
+.code-btn:hover{background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.22);color:var(--cyan)}
+.code-btn.primary{background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.22);color:var(--cyan)}
+pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:13.5px;line-height:1.75;color:#C7CDE0}
+.code-cmt{color:#5C6A75;font-style:italic}
+.code-key{color:#82AAFF;font-weight:600}
+.code-str{color:#98C379}
+.code-num{color:#F5C451}
+.code-bool{color:#C4B5FD}
+.output-block{margin-top:12px;border:1px solid var(--border);border-radius:13px;overflow:hidden;display:none}
+.output-block.show{display:block}
+.output-head{padding:8px 16px;background:#100F18;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.output-body{padding:12px 16px;font-family:var(--font-mono);font-size:12px;line-height:1.6;overflow-x:auto;max-height:400px}
+.out-text{color:#C7CDE0;white-space:pre}
+.field-type-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:16px}
+.field-type{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:13px;padding:14px 16px}
+.field-type-name{font-family:var(--font-mono);font-weight:600;font-size:14px;color:var(--cyan);margin-bottom:4px}
+.field-type-desc{font-size:13px;color:var(--text-mut);line-height:1.5}
+.prop-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+.prop-table th,.prop-table td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
+.prop-table th{font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.1em;text-transform:uppercase}
+.prop-table td{color:var(--text-sec)}
+.prop-table code{font-family:var(--font-mono);font-size:12px;color:var(--cyan);background:rgba(103,232,249,.08);padding:1px 5px;border-radius:4px}
+.resources{display:flex;flex-direction:column;gap:12px}
+.res-link{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--border);transition:all .2s}
+.res-link:hover{background:rgba(103,232,249,.08);border-color:rgba(103,232,249,.25)}
+.res-name{font-family:var(--font-head);font-weight:700;font-size:16px;color:#EEEBF6}
+.res-desc{font-size:13.5px;color:var(--text-mut);margin-top:2px}
+.res-arrow{width:15px;height:15px;flex-shrink:0;opacity:.5}
+.cta{text-align:center;padding:clamp(30px,5vw,50px) 20px}
+.cta-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;color:var(--text-mut);text-transform:uppercase;margin-bottom:10px}
+.cta h2{font-family:var(--font-head);font-size:clamp(22px,3.5vw,30px);margin-bottom:14px;color:#F4F2FB}
+.cta p{color:#A7A4B8;font-size:16px;line-height:1.6;max-width:50ch;margin:0 auto 24px}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:14px;background:linear-gradient(145deg,#34D399,#22C55E);color:#06120B;font-family:var(--font-body);font-size:15px;font-weight:600;box-shadow:0 8px 24px -8px rgba(52,211,153,.6);transition:all .25s;cursor:pointer}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px -8px rgba(52,211,153,.8)}
+.cta-btn svg{width:18px;height:18px}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="wrap">
+  <div class="hero">
+    <div class="badge"><span class="badge-dot"></span>MÓDULO 03 · SCHEMA</div>
+    <h1>Formularios y <span class="hl">tipos de campo</span> en el schema</h1>
+    <p>El JSON del schema define cada campo del formulario: su tipo, su etiqueta, sus validaciones y cómo se transforma al output. En este módulo recorremos los 5 tipos de campo y todas las propiedades que controlan su comportamiento.</p>
+    <div class="meta-chips">
+      <span class="chip">📋 Schema</span>
+      <span class="chip">~12 min de lectura</span>
+      <span class="chip">Nivel: intermedio</span>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">1</span><span class="num-title">Los 5 tipos de campo</span></div>
+    <div class="card">
+      <p>Cada campo del schema tiene una propiedad <code>type</code> que determina qué widget se renderiza y cómo se comporta:</p>
+      <div class="field-type-grid">
+        <div class="field-type"><div class="field-type-name">text</div><div class="field-type-desc">Texto de una línea. El más común: Team, Región, Coordenadas.</div></div>
+        <div class="field-type"><div class="field-type-name">textarea</div><div class="field-type-desc">Texto multi-línea. Descripciones largas, pasos para reproducir.</div></div>
+        <div class="field-type"><div class="field-type-name">autocomplete</div><div class="field-type-desc">Texto + dropdown filtrable. Las opciones salen de una lista de Data (source).</div></div>
+        <div class="field-type"><div class="field-type-name">keywords</div><div class="field-type-desc">Chips de palabras clave. Valida cantidad exacta, unicidad y no-overlap con el cuerpo del bug.</div></div>
+        <div class="field-type"><div class="field-type-name">mirror</div><div class="field-type-desc">Copia de otro campo. No aparece en el formulario, solo en el output (ej: CCS aparece 2 veces).</div></div>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>JSON — Ejemplos de cada tipo</span></div>
+        <pre><code><span class="code-cmt">// text — una línea</span>
+{ <span class="code-str">"id"</span>: <span class="code-str">"team"</span>, <span class="code-str">"label"</span>: <span class="code-str">"Team"</span>, <span class="code-str">"type"</span>: <span class="code-str">"text"</span>, <span class="code-str">"required"</span>: <span class="code-bool">true</span> }
+
+<span class="code-cmt">// textarea — multi-línea</span>
+{ <span class="code-str">"id"</span>: <span class="code-str">"description"</span>, <span class="code-str">"label"</span>: <span class="code-str">"Descripción larga"</span>, <span class="code-str">"type"</span>: <span class="code-str">"textarea"</span>, <span class="code-str">"rows"</span>: <span class="code-num">4</span> }
+
+<span class="code-cmt">// autocomplete — texto + dropdown</span>
+{ <span class="code-str">"id"</span>: <span class="code-str">"region"</span>, <span class="code-str">"label"</span>: <span class="code-str">"Región"</span>, <span class="code-str">"type"</span>: <span class="code-str">"autocomplete"</span>, <span class="code-str">"source"</span>: <span class="code-str">"regions"</span> }
+
+<span class="code-cmt">// keywords — chips</span>
+{ <span class="code-str">"id"</span>: <span class="code-str">"keywords"</span>, <span class="code-str">"label"</span>: <span class="code-str">"Palabras clave"</span>, <span class="code-str">"type"</span>: <span class="code-str">"keywords"</span>, <span class="code-str">"kwCount"</span>: <span class="code-str">"@kw_count"</span>, <span class="code-str">"kwOverlap"</span>: <span class="code-bool">true</span> }
+
+<span class="code-cmt">// mirror — copia para el output</span>
+{ <span class="code-str">"id"</span>: <span class="code-str">"ccsMirror"</span>, <span class="code-str">"label"</span>: <span class="code-str">"CCS (copia)"</span>, <span class="code-str">"type"</span>: <span class="code-str">"mirror"</span>, <span class="code-str">"source"</span>: <span class="code-str">"ccs"</span> }</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">2</span><span class="num-title">Propiedades de campo</span></div>
+    <div class="card">
+      <p>Cada campo puede tener estas propiedades (todas opcionales excepto <code>id</code> y <code>label</code>):</p>
+      <table class="prop-table">
+        <thead><tr><th>Propiedad</th><th>Qué hace</th><th>Ejemplo</th></tr></thead>
+        <tbody>
+          <tr><td><code>type</code></td><td>Tipo de widget (ver arriba)</td><td><code>"autocomplete"</code></td></tr>
+          <tr><td><code>label</code></td><td>Texto que ve el tester</td><td><code>"Team"</code></td></tr>
+          <tr><td><code>required</code></td><td>Si el campo no puede quedar vacío</td><td><code>true</code></td></tr>
+          <tr><td><code>regex</code></td><td>Validación con expresión regular o <code>@regla</code></td><td><code>"^\\d+$"</code></td></tr>
+          <tr><td><code>regexMsg</code></td><td>Mensaje si no cumple el regex</td><td><code>"Debe ser numérico"</code></td></tr>
+          <tr><td><code>template</code></td><td>Cómo sale en el output (<code>{value}</code> se reemplaza)</td><td><code>"CL: {value}"</code></td></tr>
+          <tr><td><code>source</code></td><td>Para autocomplete: qué lista de Data usa</td><td><code>"regions"</code></td></tr>
+          <tr><td><code>default</code></td><td>Valor por defecto (acepta <code>@regla</code>)</td><td><code>"@default_tz"</code></td></tr>
+          <tr><td><code>size</code></td><td>Ancho en el formulario: full, half, third</td><td><code>"half"</code></td></tr>
+          <tr><td><code>rows</code></td><td>Altura del textarea</td><td><code>4</code></td></tr>
+          <tr><td><code>sep</code></td><td>Separador antes del campo (modo joined)</td><td><code>" - "</code></td></tr>
+          <tr><td><code>joinPrev</code></td><td>Continúa en la línea anterior del output</td><td><code>true</code></td></tr>
+          <tr><td><code>perLine</code></td><td>Aplica la plantilla a cada línea escrita</td><td><code>true</code></td></tr>
+          <tr><td><code>emptyAs</code></td><td>Si está vacío, mostrar esto en el output</td><td><code>"N/A"</code></td></tr>
+          <tr><td><code>omitValue</code></td><td>Si el valor es este, omitir del output</td><td><code>"N/A"</code></td></tr>
+          <tr><td><code>help</code></td><td>Texto de ayuda debajo del campo</td><td><code>"Formato: X/Y"</code></td></tr>
+          <tr><td><code>kwCount</code></td><td>Solo keywords: cantidad exacta de chips</td><td><code>"@kw_count"</code></td></tr>
+          <tr><td><code>kwOverlap</code></td><td>Solo keywords: prohibir que aparezcan en el cuerpo</td><td><code>true</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">3</span><span class="num-title">Secciones y modos de output</span></div>
+    <div class="card">
+      <p>Los campos se agrupan en <strong>secciones</strong>. Cada sección tiene un <code>mode</code> que controla cómo se combinan sus campos en el output:</p>
+      <div class="code-block">
+        <div class="code-head"><span>JSON — Sección modo "joined"</span></div>
+        <pre><code>{
+  <span class="code-str">"id"</span>: <span class="code-str">"resumen"</span>,
+  <span class="code-str">"label"</span>: <span class="code-str">"Resumen (encabezado)"</span>,
+  <span class="code-str">"mode"</span>: <span class="code-str">"joined"</span>,        <span class="code-cmt">// todo en una línea</span>
+  <span class="code-str">"sep"</span>: <span class="code-str">" - "</span>,            <span class="code-cmt">// separador entre campos</span>
+  <span class="code-str">"fields"</span>: [ ... ]
+}</code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>JSON — Sección modo "lines"</span></div>
+        <pre><code>{
+  <span class="code-str">"id"</span>: <span class="code-str">"notas"</span>,
+  <span class="code-str">"label"</span>: <span class="code-str">"Notas"</span>,
+  <span class="code-str">"mode"</span>: <span class="code-str">"lines"</span>,           <span class="code-cmt">// cada campo en su línea</span>
+  <span class="code-str">"heading"</span>: <span class="code-str">"+Notas:+"</span>,        <span class="code-cmt">// texto antes del bloque</span>
+  <span class="code-str">"fields"</span>: [ ... ]
+}</code></pre>
+      </div>
+      <div class="content-block">
+        <h3>¿Cuándo usar cada modo?</h3>
+        <p><strong>joined</strong>: Para encabezados tipo resumen, donde varios campos van en una sola línea separados por guiones. Ej: <code>Team Alpha - NA - MP - Highrise</code>.</p>
+        <p><strong>lines</strong>: Para bloques de información donde cada campo merece su propia línea. Ej: pasos numerados, notas, resultados.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">4</span><span class="num-title">Plantillas con {value}</span></div>
+    <div class="card">
+      <p>La propiedad <code>template</code> controla cómo se transforma el valor del campo al output. <code>{value}</code> se reemplaza por lo que el tester escribió:</p>
+      <div class="code-block">
+        <div class="code-head"><span>Ejemplos de plantillas</span></div>
+        <pre><code><span class="code-cmt">// El valor tal cual:</span>
+<span class="code-str">"{value}"</span>  →  <span class="code-cmt">Escribe "foo"</span>  →  <span class="code-str">foo</span>
+
+<span class="code-cmt">// Con prefijo:</span>
+<span class="code-str">"CL: {value}"</span>  →  <span class="code-cmt">Escribe "12345"</span>  →  <span class="code-str">CL: 12345</span>
+
+<span class="code-cmt">// Con formato wiki:</span>
+<span class="code-str">"* *Perfil:* {value}"</span>  →  <span class="code-cmt">Escribe "user"</span>  →  <span class="code-str">* *Perfil:* user</span>
+
+<span class="code-cmt">// Pasos numerados (con perLine: true):</span>
+<span class="code-str">"# {value}"</span>  + perLine  →  <span class="code-cmt">Escribe "Abrir menu\nCerrar app"</span>  →
+<span class="code-str"># Abrir menu</span>
+<span class="code-str"># Cerrar app</span>
+
+<span class="code-cmt">// Con paréntesis:</span>
+<span class="code-str">"({value})"</span>  →  <span class="code-cmt">Escribe "MSS"</span>  →  <span class="code-str">(MSS)</span>
+
+<span class="code-cmt">// Con encabezado de sección:</span>
+<span class="code-str">"+ {value}"</span>  →  <span class="code-cmt">Escribe "variable1"</span>  →  <span class="code-str">+ variable1</span></code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">5</span><span class="num-title">Tu primer momento</span></div>
+    <div class="card">
+      <p>Pulsa <strong>Ver los 5 tipos</strong> para ver las definiciones JSON de cada tipo de campo formateadas.</p>
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript</span>
+          <div class="code-btns"><button class="code-btn primary" onclick="runIntro()">Ver los 5 tipos</button></div>
+        </div>
+        <pre><code><span class="code-cmt">// Las 5 definiciones de tipo de campo:</span>
+<span class="code-key">const</span> types = [
+  { type: <span class="code-str">"text"</span>,         label: <span class="code-str">"Texto (una línea)"</span> },
+  { type: <span class="code-str">"textarea"</span>,     label: <span class="code-str">"Texto (varias líneas)"</span> },
+  { type: <span class="code-str">"autocomplete"</span>, label: <span class="code-str">"Texto + dropdown"</span> },
+  { type: <span class="code-str">"keywords"</span>,     label: <span class="code-str">"Palabras clave (chips)"</span> },
+  { type: <span class="code-str">"mirror"</span>,       label: <span class="code-str">"Copia de otro campo"</span> }
+];
+console.<span class="code-key">log</span>(JSON.<span class="code-key">stringify</span>(types, <span class="code-bool">null</span>, <span class="code-num">2</span>));</code></pre>
+      </div>
+      <div class="output-block" id="outIntro">
+        <div class="output-head">Los 5 tipos de campo</div>
+        <div class="output-body"><pre class="out-text" id="outIntroBody"></pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">6</span><span class="num-title">Recursos</span></div>
+    <div class="resources">
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web/HTML/Element/input" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN · Form elements</div><div class="res-desc">Referencia de elementos de formulario HTML.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Learn/JavaScript/Objects/JSON" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN · JSON</div><div class="res-desc">Trabajar con estructuras de datos JSON.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-label">Ya conoces el schema completo</div>
+    <h2>¿Y cómo se ve todo eso? El CSS</h2>
+    <p>El JSON define QUÉ hay. El CSS define CÓMO se ve. Pasamos al bloque de estilos.</p>
+    <a class="cta-btn" href="../02_CSS/M04_reset_base.html">
+      MÓDULO 04 · Reset y base CSS
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</div>
+<script>
+"use strict";
+function runIntro(){
+  var out=document.getElementById('outIntro'),body=document.getElementById('outIntroBody');
+  var types=[
+    {id:"team",label:"Team",type:"text",required:true},
+    {id:"description",label:"Descripción larga",type:"textarea",rows:4},
+    {id:"region",label:"Región",type:"autocomplete",source:"regions",required:true},
+    {id:"keywords",label:"Palabras clave",type:"keywords",kwCount:"@kw_count",kwOverlap:true},
+    {id:"ccsMirror",label:"CCS (copia)",type:"mirror",source:"ccs"}
+  ];
+  try{body.textContent=JSON.stringify(types,null,2);}catch(e){body.textContent='Error: '+e.message;}
+  out.classList.add('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M01 · El esqueleto HTML — Curso Bug Report Tool</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-base:#09080F; --bg-s1:#0C0B13; --bg-s2:#0E0D16; --bg-s3:#110F18; --bg-s4:#13111D; --bg-s5:#1B1926;
+  --text-pri:#EEEBF6; --text-sec:#C7CDE0; --text-mut:#8B889C; --text-sub:#5E5C6E;
+  --accent:#67E8F9; --accent-soft:rgba(103,232,249,.16); --accent-border:rgba(103,232,249,.35);
+  --purple:#A78BFA; --yellow:#F5C451; --red:#FB7185; --green:#34D399; --cyan:#67E8F9;
+  --border:rgba(255,255,255,.07); --border-hi:rgba(255,255,255,.12);
+  --font-head:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Plus Jakarta Sans',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono','Fira Code',monospace;
+}
+body{background:var(--bg-base);color:var(--text-sec);font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}
+::selection{background:rgba(103,232,249,.32);color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+a{color:inherit;text-decoration:none}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:
+  radial-gradient(900px 520px at 78% -10%,rgba(103,232,249,.18),transparent 60%),
+  radial-gradient(720px 520px at -5% 95%,rgba(34,184,207,.11),transparent 55%),
+  radial-gradient(620px 440px at 105% 60%,rgba(167,139,250,.07),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;
+  padding:clamp(30px,6vw,68px) clamp(16px,4vw,32px) 130px}
+.hero{margin-bottom:clamp(34px,5vw,52px)}
+.badge{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;border-radius:999px;
+  background:rgba(103,232,249,.12);border:1px solid rgba(103,232,249,.32);color:var(--accent);
+  font-size:12px;font-weight:600;letter-spacing:.16em;font-family:var(--font-mono)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+h1{font-family:var(--font-head);font-size:clamp(34px,8vw,60px);line-height:1.03;
+  font-weight:700;color:#F4F2FB;margin:20px 0 0;letter-spacing:-.025em}
+h1 .hl{color:var(--accent)}
+.hero p{color:#A7A4B8;font-size:clamp(16px,2.3vw,19px);line-height:1.65;margin:20px 0 0;max-width:60ch}
+.meta-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:10px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);color:#9A97AC;font-size:13px;font-weight:500}
+.chip svg{width:14px;height:14px;flex-shrink:0}
+.card{background:linear-gradient(180deg,var(--bg-s3),var(--bg-s2));
+  border:1px solid var(--border);border-radius:18px;padding:clamp(20px,4vw,30px);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 24px 50px -34px rgba(0,0,0,.9);
+  margin-bottom:clamp(24px,4vw,38px)}
+.card-label{display:block;font-family:var(--font-mono);font-size:11px;
+  letter-spacing:.18em;color:var(--text-mut);text-transform:uppercase;margin-bottom:8px}
+h2{font-family:var(--font-head);font-weight:700;font-size:clamp(21px,3vw,27px);
+  color:#F4F2FB;margin:0 0 6px;letter-spacing:-.015em}
+.card>p{color:#A7A4B8;font-size:clamp(15px,1.6vw,16.5px);line-height:1.7;margin:0 0 20px;max-width:62ch}
+.num-section{margin-bottom:clamp(24px,4vw,38px)}
+.num-label{display:inline-flex;align-items:center;gap:10px;margin-bottom:14px}
+.num-tag{font-family:var(--font-head);font-weight:700;font-size:14px;width:30px;
+  height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  color:#06120B;background:linear-gradient(145deg,#67E8F9,#22D3EE)}
+.num-title{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;
+  color:var(--text-mut);text-transform:uppercase}
+.content-block{margin-bottom:18px}
+.content-block h3{font-family:var(--font-head);font-weight:600;font-size:18px;color:var(--text-pri);margin-bottom:8px}
+.content-block p{color:#A7A4B8;line-height:1.7;font-size:15.5px;max-width:60ch;margin-bottom:8px}
+.content-block strong{color:var(--text-pri)}
+.content-block code{font-family:var(--font-mono);font-size:13px;background:rgba(103,232,249,.1);
+  padding:2px 6px;border-radius:5px;color:var(--cyan)}
+.code-block{background:var(--bg-s1);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin:14px 0}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;
+  background:#100F18;border-bottom:1px solid var(--border)}
+.code-head span{font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.code-btns{display:flex;gap:8px}
+.code-btn{padding:6px 14px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.04);
+  color:var(--text-sec);font-family:var(--font-body);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s}
+.code-btn:hover{background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.22);color:var(--accent)}
+.code-btn.primary{background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.22);color:var(--accent)}
+pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:13.5px;line-height:1.75;color:#C7CDE0}
+.code-cmt{color:#5C6A75;font-style:italic}
+.code-fn{color:#82AAFF}
+.code-str{color:#ECC48D}
+.code-kw{color:#C4B5FD}
+.code-prop{color:#93C5FD}
+.code-tag{color:#67E8F9}
+.output-block{margin-top:12px;border:1px solid var(--border);border-radius:13px;overflow:hidden;display:none}
+.output-block.show{display:block}
+.output-head{padding:8px 16px;background:#100F18;border-bottom:1px solid var(--border);
+  font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.output-body{padding:12px 16px;font-family:var(--font-mono);font-size:13px;line-height:1.6}
+.out-line{margin:3px 0;display:flex;gap:8px;align-items:flex-start}
+.out-tag{flex-shrink:0;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600}
+.out-tag.log{color:#93C5FD;background:rgba(147,197,253,.1)}
+.out-tag.alert{color:#C4B5FD;background:rgba(196,181,253,.1)}
+.out-text{color:#C7CDE0}
+.layer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.layer{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:13px;padding:15px 17px}
+.layer-name{font-family:var(--font-head);font-weight:600;font-size:15.5px;color:var(--text-pri);margin-bottom:4px}
+.layer-desc{font-size:13.5px;color:var(--text-mut);line-height:1.55}
+.steps{counter-reset:step;display:flex;flex-direction:column;gap:14px;margin:16px 0}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step-num{flex-shrink:0;font-family:var(--font-head);font-weight:700;font-size:14px;
+  width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  color:#06120B;background:linear-gradient(145deg,#67E8F9,#22D3EE)}
+.step-body h4{font-family:var(--font-head);font-weight:600;font-size:15.5px;color:var(--text-pri);margin-bottom:3px}
+.step-body p{color:#9A97AC;font-size:14.5px;line-height:1.6}
+.step-body code{font-family:var(--font-mono);font-size:13px;background:rgba(103,232,249,.1);
+  padding:2px 6px;border-radius:5px;color:var(--cyan)}
+.resources{display:flex;flex-direction:column;gap:12px}
+.res-link{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;
+  border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--border);transition:all .2s}
+.res-link:hover{background:rgba(103,232,249,.08);border-color:rgba(103,232,249,.25)}
+.res-name{font-family:var(--font-head);font-weight:700;font-size:16px;color:#EEEBF6}
+.res-desc{font-size:13.5px;color:var(--text-mut);margin-top:2px}
+.res-arrow{width:15px;height:15px;flex-shrink:0;opacity:.5}
+.cta{text-align:center;padding:clamp(30px,5vw,50px) 20px}
+.cta-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;
+  color:var(--text-mut);text-transform:uppercase;margin-bottom:10px}
+.cta h2{font-size:clamp(22px,3.5vw,30px);margin-bottom:14px}
+.cta p{color:#A7A4B8;font-size:16px;line-height:1.6;max-width:50ch;margin:0 auto 24px}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:14px;
+  background:linear-gradient(145deg,#22D3EE,#06B6D4);color:#06120B;font-family:var(--font-body);
+  font-size:15px;font-weight:600;box-shadow:0 8px 24px -8px rgba(103,232,249,.6);transition:all .25s;cursor:pointer}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px -8px rgba(103,232,249,.8)}
+.cta-btn svg{width:18px;height:18px}
+@media(max-width:640px){.step{flex-direction:column;gap:6px}}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="wrap">
+  <div class="hero">
+    <div class="badge"><span class="badge-dot"></span>MÓDULO 01 · HTML — ESTRUCTURA</div>
+    <h1>El <span class="hl">esqueleto HTML</span>: contenedores y layout</h1>
+    <p>La herramienta vive en un solo archivo <code>.html</code>. Antes de que haya colores, animaciones o JavaScript, hay HTML: contenedores vacíos que definen qué zonas existen y cómo se organizan. En este módulo abrimos el archivo y miramos el esqueleto: la barra superior, el área principal, los paneles laterales y los contenedores ocultos.</p>
+    <div class="meta-chips">
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="#67E8F9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>~12 min de lectura</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Necesitas bug_tool.html</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Bloque I · HTML</span>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">1</span><span class="num-title">La idea en una imagen</span></div>
+    <div class="card">
+      <p>Imagina la herramienta como un taller con varias mesas de trabajo. Cada mesa tiene un propósito: una para escribir el bug, otra para ver el resultado, otra para editar datos. En HTML, cada mesa es un <strong>&lt;div&gt;</strong> — un contenedor vacío que espera a que CSS le dé forma y JS lo llene de contenido.</p>
+      <div class="layer-grid">
+        <div class="layer">
+          <div class="layer-name">Barra superior</div>
+          <div class="layer-desc">Las pestañas Bug, Regression, Data y Rules. Es el techo del taller.</div>
+        </div>
+        <div class="layer">
+          <div class="layer-name">Área principal</div>
+          <div class="layer-desc">Dos columnas: formulario a la izquierda, output a la derecha.</div>
+        </div>
+        <div class="layer">
+          <div class="layer-name">Paneles ocultos</div>
+          <div class="layer-desc">Data, Rules y el modal están en el HTML pero escondidos con display:none.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">2</span><span class="num-title">El &lt;head&gt;: metadatos y estilos</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>Lo primero que lee el navegador</h3>
+        <p>El <code>&lt;head&gt;</code> no se ve en pantalla, pero configura todo lo que el navegador necesita antes de pintar un solo pixel. En la herramienta tiene tres cosas:</p>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>HTML</span><div class="code-btns"></div></div>
+        <pre><code><span class="code-cmt">&lt;!-- El head configura el documento --&gt;</span>
+<span class="code-tag">&lt;head&gt;</span>
+  <span class="code-tag">&lt;meta</span> <span class="code-prop">charset</span>=<span class="code-str">"UTF-8"</span> <span class="code-tag">/&gt;</span>          <span class="code-cmt">&lt;!-- caracteres Unicode (acentos, ñ) --&gt;</span>
+  <span class="code-tag">&lt;meta</span> <span class="code-prop">name</span>=<span class="code-str">"viewport"</span> <span class="code-prop">content</span>=<span class="code-str">"width=device-width, initial-scale=1.0"</span> <span class="code-tag">/&gt;</span>  <span class="code-cmt">&lt;!-- responsive --&gt;</span>
+  <span class="code-tag">&lt;title&gt;</span>Bug Report Tool<span class="code-tag">&lt;/title&gt;</span>       <span class="code-cmt">&lt;!-- texto de la pestaña --&gt;</span>
+  <span class="code-tag">&lt;style&gt;</span> ... <span class="code-tag">&lt;/style&gt;</span>              <span class="code-cmt">&lt;!-- TODO el CSS va aquí dentro --&gt;</span>
+<span class="code-tag">&lt;/head&gt;</span></code></pre>
+      </div>
+      <div class="content-block">
+        <h3>Los tres metas que importan</h3>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><h4>charset="UTF-8"</h4><p>Permite usar acentos, ñ y caracteres especiales sin que aparezcan símbolos raros.</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><h4>viewport</h4><p>Le dice al navegador que adapte el ancho al dispositivo. Sin esto, en móvil se vería miniatura.</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><h4>&lt;style&gt; embebido</h4><p>El CSS va DENTRO del HTML, no en un archivo separado. Es lo que hace que la herramienta sea un solo archivo.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">3</span><span class="num-title">El &lt;body&gt;: contenedores principales</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>Cinco zonas visibles</h3>
+        <p>El <code>&lt;body&gt;</code> de la herramienta se divide en zonas. Cada zona es un <code>&lt;div&gt;</code> con un <code>id</code> o una <code>class</code> para que CSS y JS puedan encontrarla. De arriba abajo:</p>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>HTML — estructura del body</span><div class="code-btns"></div></div>
+        <pre><code><span class="code-tag">&lt;body&gt;</span>
+
+  <span class="code-cmt">&lt;!-- 1. BARRA SUPERIOR: pestañas + botones de export --&gt;</span>
+  <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"top-tabs"</span> <span class="code-prop">id</span>=<span class="code-str">"topTabs"</span><span class="code-tag">&gt;</span>
+    <span class="code-tag">&lt;div</span> <span class="code-prop">id</span>=<span class="code-str">"formTabs"</span><span class="code-tag">&gt;&lt;/div&gt;</span>  <span class="code-cmt">&lt;-- pestañas Bug/Regression (JS las llena) --&gt;</span>
+    <span class="code-tag">&lt;div</span> <span class="code-prop">data-tab</span>=<span class="code-str">"data"</span><span class="code-tag">&gt;</span>Data<span class="code-tag">&lt;/div&gt;</span>
+    <span class="code-tag">&lt;div</span> <span class="code-prop">data-tab</span>=<span class="code-str">"rules"</span><span class="code-tag">&gt;</span>Rules<span class="code-tag">&lt;/div&gt;</span>
+    <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"top-right"</span><span class="code-tag">&gt;</span>...<span class="code-tag">&lt;/div&gt;</span>  <span class="code-cmt">&lt;-- botones export, sesión --&gt;</span>
+  <span class="code-tag">&lt;/div&gt;</span>
+
+  <span class="code-cmt">&lt;!-- 2. BANNER de notificaciones (oculto por defecto) --&gt;</span>
+  <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"banner hidden"</span> <span class="code-prop">id</span>=<span class="code-str">"banner"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+
+  <span class="code-cmt">&lt;!-- 3. BARRA DE TILES (chips de validación) --&gt;</span>
+  <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"tiles-bar"</span> <span class="code-prop">id</span>=<span class="code-str">"tilesBar"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+
+  <span class="code-cmt">&lt;!-- 4. ÁREA PRINCIPAL: sub-pestañas + dos columnas --&gt;</span>
+  <span class="code-tag">&lt;div</span> <span class="code-prop">id</span>=<span class="code-str">"subTabsAndMain"</span><span class="code-tag">&gt;</span>
+    <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"sub-tabs"</span> <span class="code-prop">id</span>=<span class="code-str">"subTabs"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+    <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"main"</span> <span class="code-prop">id</span>=<span class="code-str">"main"</span><span class="code-tag">&gt;</span>
+      <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"form-col"</span><span class="code-tag">&gt;</span>        <span class="code-cmt">&lt;-- columna izquierda --&gt;</span>
+        <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"form-toolbar"</span><span class="code-tag">&gt;...&lt;/div&gt;</span>
+        <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"form-panel"</span> <span class="code-prop">id</span>=<span class="code-str">"formPanel"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+      <span class="code-tag">&lt;/div&gt;</span>
+      <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"output-panel"</span><span class="code-tag">&gt;</span>     <span class="code-cmt">&lt;-- columna derecha --&gt;</span>
+        <span class="code-tag">&lt;textarea</span> <span class="code-prop">id</span>=<span class="code-str">"outputTextarea"</span><span class="code-tag">&gt;&lt;/textarea&gt;</span>
+        <span class="code-tag">&lt;div</span> <span class="code-prop">id</span>=<span class="code-str">"mediaPanel"</span><span class="code-tag">&gt;...&lt;/div&gt;</span>  <span class="code-cmt">&lt;-- nombres de media --&gt;</span>
+      <span class="code-tag">&lt;/div&gt;</span>
+    <span class="code-tag">&lt;/div&gt;</span>
+  <span class="code-tag">&lt;/div&gt;</span>
+<span class="code-tag">&lt;/body&gt;</span></code></pre>
+      </div>
+      <div class="content-block">
+        <h3>Anatomía de un contenedor</h3>
+        <p>Cada <code>&lt;div&gt;</code> del body tiene dos formas de identificarse:</p>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><h4>id — único en toda la página</h4><p>JS lo usa con <code>document.getElementById("formPanel")</code>. Solo puede haber UN elemento con cada id.</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><h4>class — compartible</h4><p>CSS lo usa con <code>.top-tabs { ... }</code>. Varios elementos pueden tener la misma class.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">4</span><span class="num-title">Contenedores ocultos: Data, Rules y el modal</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>Existen en el HTML pero no se ven</h3>
+        <p>La herramienta tiene tres paneles que no se muestran al abrir el archivo: la pestaña Data, la pestaña Rules y el modal de confirmación. Están en el HTML desde el principio, pero con <code>style="display:none"</code> el navegador no los pinta hasta que JS los activa.</p>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>HTML — paneles ocultos</span><div class="code-btns"></div></div>
+        <pre><code><span class="code-cmt">&lt;!-- Pestaña Data: edita listas y reglas --&gt;</span>
+<span class="code-tag">&lt;div</span> <span class="code-prop">id</span>=<span class="code-str">"dataContainer"</span> <span class="code-prop">style</span>=<span class="code-str">"display:none;"</span><span class="code-tag">&gt;</span>
+  <span class="code-tag">&lt;div</span> <span class="code-prop">id</span>=<span class="code-str">"dataSidebar"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+  <span class="code-tag">&lt;div</span> <span class="code-prop">id</span>=<span class="code-str">"dataTableWrap"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+<span class="code-tag">&lt;/div&gt;</span>
+
+<span class="code-cmt">&lt;!-- Pestaña Rules: condiciones y tiles --&gt;</span>
+<span class="code-tag">&lt;div</span> <span class="code-prop">id</span>=<span class="code-str">"rulesContainer"</span> <span class="code-prop">style</span>=<span class="code-str">"display:none;"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+
+<span class="code-cmt">&lt;!-- Modal: diálogo de confirmación --&gt;</span>
+<span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"modal-backdrop"</span> <span class="code-prop">id</span>=<span class="code-str">"modal"</span><span class="code-tag">&gt;</span>
+  <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"modal"</span> <span class="code-prop">id</span>=<span class="code-str">"modalBox"</span><span class="code-tag">&gt;</span>
+    <span class="code-tag">&lt;h3&gt;</span><span class="code-tag">&lt;/h3&gt;</span>
+    <span class="code-tag">&lt;div</span> <span class="code-prop">class</span>=<span class="code-str">"modal-body"</span> <span class="code-prop">id</span>=<span class="code-str">"modalBody"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+    <span class="code-tag">&lt;div</span> <span class="code-prop">id</span>=<span class="code-str">"modalActions"</span><span class="code-tag">&gt;&lt;/div&gt;</span>
+  <span class="code-tag">&lt;/div&gt;</span>
+<span class="code-tag">&lt;/div&gt;</span></code></pre>
+      </div>
+      <div class="content-block">
+        <h3>Inputs de archivo invisibles</h3>
+        <p>La herramienta necesita botones que abran el diálogo de "seleccionar archivo" del sistema operativo. El navegador solo permite esto con <code>&lt;input type="file"&gt;</code>, así que se crean ocultos y JS los activa con un click programado:</p>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>HTML — inputs ocultos</span><div class="code-btns"></div></div>
+        <pre><code><span class="code-tag">&lt;input</span> <span class="code-prop">type</span>=<span class="code-str">"file"</span> <span class="code-prop">id</span>=<span class="code-str">"dataCsvInput"</span>
+       <span class="code-prop">accept</span>=<span class="code-str">".csv"</span> <span class="code-prop">style</span>=<span class="code-str">"display:none"</span> <span class="code-tag">/&gt;</span>
+
+<span class="code-tag">&lt;input</span> <span class="code-prop">type</span>=<span class="code-str">"file"</span> <span class="code-prop">id</span>=<span class="code-str">"sessionFileInput"</span>
+       <span class="code-prop">accept</span>=<span class="code-str">".json"</span> <span class="code-prop">style</span>=<span class="code-str">"display:none"</span> <span class="code-tag">/&gt;</span></code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">5</span><span class="num-title">Tu primer momento: identifica los contenedores</span></div>
+    <div class="card">
+      <p>Abre un editor de texto y escribe los IDs de los contenedores que encuentres en <code>bug_tool.html</code>. Este código simula la búsqueda — pulsa Ejecutar para ver qué IDs existen en el body:</p>
+      <div class="code-block">
+        <div class="code-head">
+          <span>JavaScript — buscar contenedores por id</span>
+          <div class="code-btns">
+            <button class="code-btn primary" onclick="runSearch()">Ejecutar</button>
+          </div>
+        </div>
+        <pre><code><span class="code-cmt">// Lista de IDs que el JavaScript busca con getElementById:</span>
+<span class="code-kw">var</span> contenedores = [
+  <span class="code-str">"topTabs"</span>, <span class="code-str">"formPanel"</span>, <span class="code-str">"outputTextarea"</span>,
+  <span class="code-str">"tilesBar"</span>, <span class="code-str">"modal"</span>, <span class="code-str">"banner"</span>,
+  <span class="code-str">"dataContainer"</span>, <span class="code-str">"rulesContainer"</span>,
+  <span class="code-str">"subTabs"</span>, <span class="code-str">"mediaPanel"</span>, <span class="code-str">"formTitle"</span>
+];
+
+contenedores.<span class="code-fn">forEach</span>(<span class="code-kw">function</span>(id) {
+  <span class="code-kw">var</span> el = document.<span class="code-fn">getElementById</span>(id);
+  <span class="code-fn">console</span>.<span class="code-fn">log</span>(id + <span class="code-str">": "</span> + (el ? <span class="code-str">"✓ existe"</span> : <span class="code-str">"✗ no encontrado"</span>));
+});</code></pre>
+      </div>
+      <div class="output-block" id="outSearch">
+        <div class="output-head">Salida de la consola</div>
+        <div class="output-body" id="outSearchBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">6</span><span class="num-title">Ejercicio: reconstruir el esqueleto</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>Crea un HTML con 4 de los contenedores</h3>
+        <p>Sin mirar el archivo original, crea un <code>.html</code> nuevo con esta estructura:</p>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Un &lt;div id="topTabs"&gt;</h4><p>Dentro, dos &lt;div&gt; con texto "Bug" y "Data".</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Un &lt;div id="main"&gt;</h4><p>Dentro, dos &lt;div&gt;: uno con class "form-col" y otro con class "output-panel".</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Un &lt;div id="modal" style="display:none"&gt;</h4><p>Dentro, un &lt;h3&gt; vacío y un &lt;div id="modalBody"&gt;.</p></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Ábrelo en el navegador</h4><p>No verás ninguna barra con pestañas (aún no hay CSS). Solo texto sin formato. Eso es normal: el HTML es la estructura, no el estilo.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">7</span><span class="num-title">Recursos para profundizar</span></div>
+    <div class="resources">
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web/HTML/Element/div" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN: &lt;div&gt;</div>
+        <div class="res-desc">El contenedor genérico. Documentación oficial en español.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web/HTML/Element/input" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN: &lt;input type="file"&gt;</div>
+        <div class="res-desc">Cómo funciona el selector de archivos oculto.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+      <a class="res-link" href="https://web.dev/learn/html" target="_blank" rel="noopener">
+        <div><div class="res-name">web.dev: Aprende HTML</div>
+        <div class="res-desc">Curso interactivo de Google sobre estructura HTML.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-label">Siguiente paso</div>
+    <h2>¿Listo para ver el JSON embebido?</h2>
+    <p>Ya conoces los contenedores. Ahora vamos a mirar dentro del archivo: hay un bloque de JSON escondido que define todos los formularios y datos de la herramienta.</p>
+    <a class="cta-btn" href="M02_JSON_embebido.html">
+      MÓDULO 02 · El JSON embebido
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</div>
+<script>
+"use strict";
+function runSearch(){
+  var out=document.getElementById('outSearch'),body=document.getElementById('outSearchBody');
+  body.innerHTML='';
+  var logs=[];
+  var origLog=console.log;
+  console.log=function(){var a=[].slice.call(arguments);logs.push({level:'log',text:a.map(function(x){return typeof x==='string'?x:JSON.stringify(x)}).join(' ')})};
+  var contenedores=["topTabs","formPanel","outputTextarea","tilesBar","modal","banner","dataContainer","rulesContainer","subTabs","mediaPanel","formTitle"];
+  try{
+    contenedores.forEach(function(id){
+      var el=document.getElementById(id);
+      console.log(id+": "+(el?"\u2713 existe":"\u2717 no encontrado"));
+    });
+  }catch(e){logs.push({level:'log',text:'Error: '+e.message})}finally{console.log=origLog}
+  if(!logs.length)logs.push({level:'log',text:'(sin salida visible)'});
+  logs.forEach(function(l){
+    var line=document.createElement('div');line.className='out-line';
+    var tag=document.createElement('span');tag.className='out-tag '+l.level;tag.textContent=l.level;
+    var txt=document.createElement('span');txt.className='out-text';txt.textContent=l.text;
+    line.appendChild(tag);line.appendChild(txt);body.appendChild(line);
+  });
+  out.classList.add('show');
+}
+</script>
+</body>
+</html>

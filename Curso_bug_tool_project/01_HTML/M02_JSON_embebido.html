@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M02 · Configuración embebida — Curso Bug Report Tool</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-base:#09080F; --bg-s1:#0C0B13; --bg-s2:#0E0D16; --bg-s3:#110F18; --bg-s4:#13111D; --bg-s5:#1B1926;
+  --text-pri:#EEEBF6; --text-sec:#C7CDE0; --text-mut:#8B889C; --text-sub:#5E5C6E;
+  --accent:#A78BFA; --accent-soft:rgba(139,92,246,.16); --accent-border:rgba(167,139,250,.35);
+  --cyan:#67E8F9; --yellow:#F5C451; --red:#FB7185; --green:#34D399;
+  --border:rgba(255,255,255,.07); --border-hi:rgba(255,255,255,.12);
+  --font-head:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Plus Jakarta Sans',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono','Fira Code',monospace;
+}
+body{background:var(--bg-base);color:var(--text-sec);font-family:var(--font-body);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}
+::selection{background:rgba(167,139,250,.32);color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+a{color:inherit;text-decoration:none}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(900px 520px at 78% -10%,rgba(34,184,207,.18),transparent 60%),radial-gradient(720px 520px at -5% 95%,rgba(52,211,153,.10),transparent 55%),radial-gradient(620px 440px at 105% 60%,rgba(139,92,246,.10),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:clamp(30px,6vw,68px) clamp(16px,4vw,32px) 130px}
+.hero{margin-bottom:clamp(34px,5vw,52px)}
+.badge{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;border-radius:999px;background:rgba(103,232,249,.12);border:1px solid rgba(103,232,249,.32);color:var(--cyan);font-size:12px;font-weight:600;letter-spacing:.16em;font-family:var(--font-mono)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+h1{font-family:var(--font-head);font-size:clamp(34px,8vw,60px);line-height:1.03;font-weight:700;color:#F4F2FB;margin:20px 0 0;letter-spacing:-.025em}
+h1 .hl{color:var(--cyan)}
+.hero p{color:#A7A4B8;font-size:clamp(16px,2.3vw,19px);line-height:1.65;margin:20px 0 0;max-width:60ch}
+.meta-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);color:#9A97AC;font-size:13px;font-weight:500}
+.card{background:linear-gradient(180deg,var(--bg-s3),var(--bg-s2));border:1px solid var(--border);border-radius:18px;padding:clamp(20px,4vw,30px);box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 24px 50px -34px rgba(0,0,0,.9);margin-bottom:clamp(24px,4vw,38px)}
+.card>p{color:#A7A4B8;font-size:clamp(15px,1.6vw,16.5px);line-height:1.7;margin:0 0 20px;max-width:62ch}
+.num-section{margin-bottom:clamp(24px,4vw,38px)}
+.num-label{display:inline-flex;align-items:center;gap:10px;margin-bottom:14px}
+.num-tag{font-family:var(--font-head);font-weight:700;font-size:14px;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#06120B;background:linear-gradient(145deg,#67E8F9,#5FD0E0)}
+.num-title{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:var(--text-mut);text-transform:uppercase}
+.content-block{margin-bottom:18px}
+.content-block h3{font-family:var(--font-head);font-weight:600;font-size:18px;color:var(--text-pri);margin-bottom:8px}
+.content-block p{color:#A7A4B8;line-height:1.7;font-size:15.5px;max-width:60ch;margin-bottom:8px}
+.content-block strong{color:var(--text-pri)}
+.content-block code{font-family:var(--font-mono);font-size:13px;background:rgba(103,232,249,.1);color:var(--cyan);padding:1px 5px;border-radius:4px}
+.code-block{background:var(--bg-s1);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin:14px 0}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#100F18;border-bottom:1px solid var(--border)}
+.code-head span{font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.code-btns{display:flex;gap:8px}
+.code-btn{padding:6px 14px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text-sec);font-family:var(--font-body);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s}
+.code-btn:hover{background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.22);color:var(--cyan)}
+.code-btn.primary{background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.22);color:var(--cyan)}
+pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:13.5px;line-height:1.75;color:#C7CDE0}
+.code-cmt{color:#5C6A75;font-style:italic}
+.code-key{color:#82AAFF;font-weight:600}
+.code-str{color:#98C379}
+.code-num{color:#F5C451}
+.code-bool{color:#C4B5FD}
+.code-punc{color:#8B889C}
+.output-block{margin-top:12px;border:1px solid var(--border);border-radius:13px;overflow:hidden;display:none}
+.output-block.show{display:block}
+.output-head{padding:8px 16px;background:#100F18;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.output-body{padding:12px 16px;font-family:var(--font-mono);font-size:12px;line-height:1.6;overflow-x:auto;max-height:400px}
+.out-text{color:#C7CDE0;white-space:pre}
+.json-structure{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.json-part{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:13px;padding:15px 17px}
+.json-part-name{font-family:var(--font-head);font-weight:600;font-size:15.5px;color:var(--cyan);margin-bottom:6px}
+.json-part-desc{font-size:13.5px;color:var(--text-mut);line-height:1.55}
+.steps{counter-reset:step;display:flex;flex-direction:column;gap:14px;margin:16px 0}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step-num{flex-shrink:0;font-family:var(--font-head);font-weight:700;font-size:14px;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#06120B;background:linear-gradient(145deg,#67E8F9,#5FD0E0)}
+.step-body h4{font-family:var(--font-head);font-weight:600;font-size:15.5px;color:var(--text-pri);margin-bottom:3px}
+.step-body p{color:#9A97AC;font-size:14.5px;line-height:1.6}
+.step-body code{font-family:var(--font-mono);font-size:13px;background:rgba(103,232,249,.1);color:var(--cyan);padding:1px 5px;border-radius:4px}
+.resources{display:flex;flex-direction:column;gap:12px}
+.res-link{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--border);transition:all .2s}
+.res-link:hover{background:rgba(103,232,249,.08);border-color:rgba(103,232,249,.25)}
+.res-name{font-family:var(--font-head);font-weight:700;font-size:16px;color:#EEEBF6}
+.res-desc{font-size:13.5px;color:var(--text-mut);margin-top:2px}
+.res-arrow{width:15px;height:15px;flex-shrink:0;opacity:.5}
+.cta{text-align:center;padding:clamp(30px,5vw,50px) 20px}
+.cta-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;color:var(--text-mut);text-transform:uppercase;margin-bottom:10px}
+.cta h2{font-family:var(--font-head);font-size:clamp(22px,3.5vw,30px);margin-bottom:14px;color:#F4F2FB}
+.cta p{color:#A7A4B8;font-size:16px;line-height:1.6;max-width:50ch;margin:0 auto 24px}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:14px;background:linear-gradient(145deg,#67E8F9,#22D3EE);color:#06120B;font-family:var(--font-body);font-size:15px;font-weight:600;box-shadow:0 8px 24px -8px rgba(103,232,249,.6);transition:all .25s;cursor:pointer}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px -8px rgba(103,232,249,.8)}
+.cta-btn svg{width:18px;height:18px}
+@media(max-width:640px){.step{flex-direction:column;gap:6px}.json-structure{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="wrap">
+  <div class="hero">
+    <div class="badge"><span class="badge-dot"></span>MÓDULO 02 · DATOS EMBEBIDOS</div>
+    <h1>Configuración <span class="hl">embebida</span>: el JSON dentro del HTML</h1>
+    <p>La herramienta no tiene una base de datos, ni un servidor, ni un archivo de configuración aparte. Toda la configuración —los formularios, las listas de opciones, las reglas— vive como un bloque de JSON dentro del propio HTML. Es el truco que hace que un solo archivo baste para todo.</p>
+    <div class="meta-chips">
+      <span class="chip">📋 JSON</span>
+      <span class="chip">~10 min de lectura</span>
+      <span class="chip">Nivel: principiante</span>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">1</span><span class="num-title">El truco del script type=application/json</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>Un &lt;script&gt; que el navegador NO ejecuta</h3>
+        <p>Normalmente, <code>&lt;script&gt;</code> ejecuta JavaScript. Pero si le pones <code>type="application/json"</code>, el navegador dice: "esto no es JavaScript, no lo ejecuto". Lo deja como texto dentro del DOM. Y desde JavaScript puedes leerlo con <code>document.getElementById(...).textContent</code> y usar <code>JSON.parse()</code> para convertirlo en un objeto.</p>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>HTML</span></div>
+        <pre><code><span class="code-cmt">&lt;!-- Este script NO se ejecuta. El navegador lo guarda como texto. --&gt;</span>
+<span class="code-key">&lt;script</span> <span class="code-str">type="application/json"</span> <span class="code-str">id="vanillaConfig"</span><span class="code-key">&gt;</span>
+{
+  <span class="code-str">"version"</span>: <span class="code-num">2</span>,
+  <span class="code-str">"data"</span>: { ... },
+  <span class="code-str">"schema"</span>: { ... }
+}
+<span class="code-key">&lt;/script&gt;</span>
+
+<span class="code-cmt">&lt;!-- Y este script SÍ se ejecuta y lee el de arriba: --&gt;</span>
+<span class="code-key">&lt;script&gt;</span>
+<span class="code-key">const</span> el = document.<span class="code-key">getElementById</span>(<span class="code-str">"vanillaConfig"</span>);
+<span class="code-key">const</span> config = JSON.<span class="code-key">parse</span>(el.textContent);
+console.<span class="code-key">log</span>(config.version); <span class="code-cmt">// 2</span>
+<span class="code-key">&lt;/script&gt;</span></code></pre>
+      </div>
+      <div class="content-block">
+        <h3>¿Por qué no usar un archivo .json aparte con fetch?</h3>
+        <p>Porque <code>fetch</code> no funciona en <code>file://</code> (sin servidor). El navegador bloquea <code>fetch</code> de archivos locales por seguridad (CORS). Con el JSON embebido en un <code>&lt;script&gt;</code>, no hay petición de red: el dato ya está en el DOM desde que se carga la página. <strong>Cero-red, cero-problemas.</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">2</span><span class="num-title">La estructura del JSON: data + schema</span></div>
+    <div class="card">
+      <p>El JSON embebido tiene dos grandes secciones: <strong>data</strong> (los datos que la herramienta usa) y <strong>schema</strong> (la definición de los formularios).</p>
+      <div class="json-structure">
+        <div class="json-part">
+          <div class="json-part-name">📦 data</div>
+          <div class="json-part-desc">Listas de opciones, mapas, reglas globales. Ej: <code>regions: ["NA","EU","LATAM"]</code>, <code>mediaTypes: ["Vid","Pic"]</code>, <code>kw_count: "5"</code>.</div>
+        </div>
+        <div class="json-part">
+          <div class="json-part-name">📐 schema</div>
+          <div class="json-part-desc">Definición de los formularios: qué secciones tienen, qué campos, qué validaciones. El JS lee esto y construye todo el formulario dinámicamente.</div>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>JSON simplificado</span></div>
+        <pre><code>{
+  <span class="code-str">"version"</span>: <span class="code-num">2</span>,
+  <span class="code-str">"data"</span>: {
+    <span class="code-str">"lists"</span>: {
+      <span class="code-str">"regions"</span>: [<span class="code-str">"NA"</span>, <span class="code-str">"EU"</span>, <span class="code-str">"APAC"</span>, <span class="code-str">"LATAM"</span>, <span class="code-str">"BR"</span>],
+      <span class="code-str">"platforms"</span>: [<span class="code-str">"PC"</span>, <span class="code-str">"PS5"</span>, <span class="code-str">"Xbox"</span>, <span class="code-str">"Switch"</span>]
+    },
+    <span class="code-str">"rules"</span>: {
+      <span class="code-str">"kw_count"</span>: <span class="code-str">"5"</span>,
+      <span class="code-str">"media_fmt"</span>: <span class="code-str">"{type}_{key}_{platform}_{cl}_(1)"</span>
+    }
+  },
+  <span class="code-str">"schema"</span>: {
+    <span class="code-str">"forms"</span>: [
+      {
+        <span class="code-str">"id"</span>: <span class="code-str">"bug"</span>,
+        <span class="code-str">"label"</span>: <span class="code-str">"Bug"</span>,
+        <span class="code-str">"sections"</span>: [ ... ]
+      }
+    ]
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">3</span><span class="num-title">Separar datos de código</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>El schema es la "fuente de verdad"</h3>
+        <p>No hay código JavaScript que diga "crea un campo llamado Team". En cambio, el JSON dice <code>{ "id": "team", "label": "Team", "type": "text" }</code> y el JavaScript tiene una función genérica que lee esa definición y crea el campo. <strong>Los datos describen qué; el código describe cómo.</strong></p>
+      </div>
+      <div class="content-block">
+        <h3>¿Por qué es tan potente?</h3>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><h4>El equipo de Database edita el JSON, no el código</h4><p>Quien mantiene las listas (regiones, mapas, POIs) solo cambia datos en la pestaña Data o importa un CSV. No toca JavaScript.</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><h4>"Exportar herramienta" reescribe el JSON</h4><p>Cuando alguien hace cambios y pulsa "Exportar herramienta", se descarga un nuevo <code>bug_tool.html</code> con el JSON actualizado embebido. Quien lo reciba verá esos cambios automáticamente.</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><h4>El código no cambia nunca, solo los datos</h4><p>El JavaScript es el mismo para todos. Lo que cambia entre versiones es el bloque <code>vanillaConfig</code>. Es como un programa y su archivo de configuración — pero en un solo archivo.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">4</span><span class="num-title">Tu primer momento</span></div>
+    <div class="card">
+      <p>Pulsa <strong>Ver el JSON</strong> para leer el bloque embebido en esta misma página y mostrarlo formateado. Es exactamente lo que hace la herramienta al arrancar.</p>
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript</span>
+          <div class="code-btns"><button class="code-btn primary" onclick="runIntro()">Ver el JSON</button></div>
+        </div>
+        <pre><code><span class="code-cmt">// Leer el JSON embebido y mostrarlo formateado:</span>
+<span class="code-key">const</span> el = document.<span class="code-key">getElementById</span>(<span class="code-str">"vanillaConfig"</span>);
+<span class="code-key">const</span> config = JSON.<span class="code-key">parse</span>(el.textContent);
+console.<span class="code-key">log</span>(JSON.<span class="code-key">stringify</span>(config, <span class="code-bool">null</span>, <span class="code-num">2</span>));</code></pre>
+      </div>
+      <div class="output-block" id="outIntro">
+        <div class="output-head">JSON leído del script embebido</div>
+        <div class="output-body"><pre class="out-text" id="outIntroBody"></pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">5</span><span class="num-title">Recursos para profundizar</span></div>
+    <div class="resources">
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web/HTML/Element/script" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN · El elemento &lt;script&gt;</div><div class="res-desc">Documentación del elemento script y el atributo type.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Learn/JavaScript/Objects/JSON" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN · Trabajar con JSON</div><div class="res-desc">Guía completa de JSON.parse y JSON.stringify.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-label">Ya sabes de dónde salen los datos</div>
+    <h2>¿Y cómo se definen los campos del formulario?</h2>
+    <p>El JSON del schema describe cada campo: su tipo, su etiqueta, su validación. Vamos a verlo en detalle.</p>
+    <a class="cta-btn" href="M03_schema_campos.html">
+      MÓDULO 03 · Schema y campos
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</div>
+<script type="application/json" id="vanillaConfig">
+{
+  "version": 2,
+  "data": {
+    "lists": {
+      "regions": ["NA", "EU", "APAC", "LATAM", "BR"],
+      "platforms": ["PC", "PS5", "Xbox Series X", "Switch"]
+    },
+    "rules": {
+      "kw_count": "5",
+      "media_fmt": "{type}_{key}_{platform}_{cl}_(1)"
+    }
+  },
+  "schema": {
+    "forms": [
+      {
+        "id": "bug",
+        "label": "Bug",
+        "sections": [
+          {
+            "id": "resumen",
+            "label": "Resumen",
+            "mode": "joined",
+            "fields": [
+              { "id": "team", "label": "Team", "type": "text", "required": true },
+              { "id": "region", "label": "Region", "type": "autocomplete", "source": "regions", "required": true }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+</script>
+<script>
+"use strict";
+function runIntro(){
+  var out=document.getElementById('outIntro'),body=document.getElementById('outIntroBody');
+  var el=document.getElementById('vanillaConfig');
+  try{
+    var config=JSON.parse(el.textContent);
+    body.textContent=JSON.stringify(config,null,2);
+  }catch(e){
+    body.textContent='Error: '+e.message;
+  }
+  out.classList.add('show');
+}
+</script>
+</body>
+</html>

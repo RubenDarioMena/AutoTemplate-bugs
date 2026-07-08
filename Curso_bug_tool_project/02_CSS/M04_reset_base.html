@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M04 · Reset y base CSS — Curso Bug Report Tool</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-base:#09080F; --bg-s1:#0C0B13; --bg-s2:#0E0D16; --bg-s3:#110F18; --bg-s4:#13111D; --bg-s5:#1B1926;
+  --text-pri:#EEEBF6; --text-sec:#C7CDE0; --text-mut:#8B889C; --text-sub:#5E5C6E;
+  --accent:#A78BFA; --accent-soft:rgba(139,92,246,.16); --accent-border:rgba(167,139,250,.35);
+  --cyan:#67E8F9; --yellow:#F5C451; --red:#FB7185; --green:#34D399;
+  --border:rgba(255,255,255,.07); --border-hi:rgba(255,255,255,.12);
+  --font-head:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Plus Jakarta Sans',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono','Fira Code',monospace;
+}
+body{background:var(--bg-base);color:var(--text-sec);font-family:var(--font-body);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}
+::selection{background:rgba(52,211,153,.32);color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+a{color:inherit;text-decoration:none}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(900px 520px at 78% -10%,rgba(52,211,153,.15),transparent 60%),radial-gradient(720px 520px at -5% 95%,rgba(34,184,207,.10),transparent 55%),radial-gradient(620px 440px at 105% 60%,rgba(139,92,246,.08),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:clamp(30px,6vw,68px) clamp(16px,4vw,32px) 130px}
+.hero{margin-bottom:clamp(34px,5vw,52px)}
+.badge{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;border-radius:999px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.32);color:var(--green);font-size:12px;font-weight:600;letter-spacing:.16em;font-family:var(--font-mono)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+h1{font-family:var(--font-head);font-size:clamp(34px,8vw,60px);line-height:1.03;font-weight:700;color:#F4F2FB;margin:20px 0 0;letter-spacing:-.025em}
+h1 .hl{color:var(--green)}
+.hero p{color:#A7A4B8;font-size:clamp(16px,2.3vw,19px);line-height:1.65;margin:20px 0 0;max-width:60ch}
+.meta-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);color:#9A97AC;font-size:13px;font-weight:500}
+.card{background:linear-gradient(180deg,var(--bg-s3),var(--bg-s2));border:1px solid var(--border);border-radius:18px;padding:clamp(20px,4vw,30px);box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 24px 50px -34px rgba(0,0,0,.9);margin-bottom:clamp(24px,4vw,38px)}
+.card>p{color:#A7A4B8;font-size:clamp(15px,1.6vw,16.5px);line-height:1.7;margin:0 0 20px;max-width:62ch}
+.num-section{margin-bottom:clamp(24px,4vw,38px)}
+.num-label{display:inline-flex;align-items:center;gap:10px;margin-bottom:14px}
+.num-tag{font-family:var(--font-head);font-weight:700;font-size:14px;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#06120B;background:linear-gradient(145deg,#34D399,#22C55E)}
+.num-title{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:var(--text-mut);text-transform:uppercase}
+.content-block{margin-bottom:18px}
+.content-block h3{font-family:var(--font-head);font-weight:600;font-size:18px;color:var(--text-pri);margin-bottom:8px}
+.content-block p{color:#A7A4B8;line-height:1.7;font-size:15.5px;max-width:60ch;margin-bottom:8px}
+.content-block strong{color:var(--text-pri)}
+.content-block code{font-family:var(--font-mono);font-size:13px;background:rgba(52,211,153,.1);color:var(--green);padding:1px 5px;border-radius:4px}
+.code-block{background:var(--bg-s1);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin:14px 0}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#100F18;border-bottom:1px solid var(--border)}
+.code-head span{font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.code-btns{display:flex;gap:8px}
+.code-btn{padding:6px 14px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text-sec);font-family:var(--font-body);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s}
+.code-btn:hover{background:rgba(52,211,153,.16);border-color:rgba(52,211,153,.22);color:var(--green)}
+.code-btn.primary{background:rgba(52,211,153,.16);border-color:rgba(52,211,153,.22);color:var(--green)}
+pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:13.5px;line-height:1.75;color:#C7CDE0}
+.code-cmt{color:#5C6A75;font-style:italic}
+.code-sel{color:#82AAFF}
+.code-prop{color:#ECC48D}
+.code-val{color:#98C379}
+.code-kw{color:#C4B5FD}
+.content-block code{font-family:var(--font-mono);font-size:13px;background:rgba(52,211,153,.1);color:var(--green);padding:1px 5px;border-radius:4px}
+.resources{display:flex;flex-direction:column;gap:12px}
+.res-link{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--border);transition:all .2s}
+.res-link:hover{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.25)}
+.res-name{font-family:var(--font-head);font-weight:700;font-size:16px;color:#EEEBF6}
+.res-desc{font-size:13.5px;color:var(--text-mut);margin-top:2px}
+.res-arrow{width:15px;height:15px;flex-shrink:0;opacity:.5}
+.cta{text-align:center;padding:clamp(30px,5vw,50px) 20px}
+.cta-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;color:var(--text-mut);text-transform:uppercase;margin-bottom:10px}
+.cta h2{font-family:var(--font-head);font-size:clamp(22px,3.5vw,30px);margin-bottom:14px;color:#F4F2FB}
+.cta p{color:#A7A4B8;font-size:16px;line-height:1.6;max-width:50ch;margin:0 auto 24px}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:14px;background:linear-gradient(145deg,#34D399,#22C55E);color:#06120B;font-family:var(--font-body);font-size:15px;font-weight:600;box-shadow:0 8px 24px -8px rgba(52,211,153,.6);transition:all .25s;cursor:pointer}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px -8px rgba(52,211,153,.8)}
+.cta-btn svg{width:18px;height:18px}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="wrap">
+  <div class="hero">
+    <div class="badge"><span class="badge-dot"></span>MÓDULO 04 · BASE CSS</div>
+    <h1>Reset, <span class="hl">base y tokens</span> de la herramienta</h1>
+    <p>La herramienta usa un tema claro (fondo gris claro, botones blancos con bordes). Antes de posicionar nada, hay un reset que iguala los navegadores y estilos base para todos los controles. Vamos a ver cómo empieza el CSS.</p>
+    <div class="meta-chips">
+      <span class="chip">🎨 CSS</span>
+      <span class="chip">~10 min de lectura</span>
+      <span class="chip">Nivel: principiante</span>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">1</span><span class="num-title">El reset universal</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>La primera línea de CSS</h3>
+        <p>El CSS de la herramienta empieza con la línea más conocida del mundo CSS:</p>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>CSS</span></div>
+        <pre><code><span class="code-sel">*</span>, *::before, *::after {
+  <span class="code-prop">margin</span>: <span class="code-val">0</span>;
+  <span class="code-prop">padding</span>: <span class="code-val">0</span>;
+  <span class="code-prop">box-sizing</span>: <span class="code-val">border-box</span>;
+}</code></pre>
+      </div>
+      <div class="content-block">
+        <h3>¿Por qué box-sizing: border-box?</h3>
+        <p>Sin <code>box-sizing: border-box</code>, el navegador calcula el ancho de un elemento sumando <code>width + padding + border</code>. Si dices <code>width: 100px</code> y le pones <code>padding: 10px</code> y <code>border: 1px</code>, el elemento ocupa 122px. Con <code>border-box</code>, el <code>width</code> incluye padding y border: ocupa exactamente 100px. <strong>Esto evita que los layouts se rompan cuando añades bordes o padding.</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">2</span><span class="num-title">El body como contenedor flex</span></div>
+    <div class="card">
+      <div class="code-block">
+        <div class="code-head"><span>CSS</span></div>
+        <pre><code><span class="code-sel">html, body</span> { <span class="code-prop">height</span>: <span class="code-val">100%</span>; }
+<span class="code-sel">body</span> {
+  <span class="code-prop">font-family</span>: <span class="code-val">-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif</span>;
+  <span class="code-prop">font-size</span>: <span class="code-val">13px</span>;
+  <span class="code-prop">color</span>: <span class="code-val">#1d2129</span>;
+  <span class="code-prop">background</span>: <span class="code-val">#f5f6f7</span>;
+  <span class="code-prop">overflow</span>: <span class="code-val">hidden</span>;
+  <span class="code-prop">display</span>: <span class="code-val">flex</span>;
+  <span class="code-prop">flex-direction</span>: <span class="code-val">column</span>;
+}</code></pre>
+      </div>
+      <div class="content-block">
+        <h3>¿Por qué overflow: hidden?</h3>
+        <p>La herramienta no quiere que la página entera se desplace. Cada panel (formulario, output) tiene su propio scroll interno. <code>overflow: hidden</code> en el body asegura que <strong>ningún contenido rompa la altura fijada</strong>: los hijos quienes gestionan su propio scroll.</p>
+      </div>
+      <div class="content-block">
+        <h3>font-family con system fonts</h3>
+        <p>La herramienta no carga Google Fonts (restricción cero-red). Usa <code>-apple-system, BlinkMacSystemFont, "Segoe UI"</code>: las tipografías nativas de cada sistema operativo. En Mac se ve San Francisco, en Windows se ve Segoe UI. Sin descargar nada.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">3</span><span class="num-title">Estilos base de botones e inputs</span></div>
+    <div class="card">
+      <p>En la herramienta, todos los botones comparten el mismo estilo base. Luego, clases específicas (<code>.primary</code>, <code>.danger</code>) añaden color:</p>
+      <div class="code-block">
+        <div class="code-head"><span>CSS</span></div>
+        <pre><code><span class="code-sel">button</span> {
+  <span class="code-prop">font-family</span>: <span class="code-val">inherit</span>;
+  <span class="code-prop">font-size</span>: <span class="code-val">12px</span>;
+  <span class="code-prop">cursor</span>: <span class="code-val">pointer</span>;
+  <span class="code-prop">border</span>: <span class="code-val">1px solid #c7ccd1</span>;
+  <span class="code-prop">background</span>: <span class="code-val">#fff</span>;
+  <span class="code-prop">padding</span>: <span class="code-val">4px 10px</span>;
+  <span class="code-prop">border-radius</span>: <span class="code-val">3px</span>;
+  <span class="code-prop">color</span>: <span class="code-val">#1d2129</span>;
+}
+<span class="code-sel">button:hover</span> { <span class="code-prop">background</span>: <span class="code-val">#f0f2f5</span>; }
+<span class="code-sel">button:active</span> { <span class="code-prop">background</span>: <span class="code-val">#e4e6eb</span>; }
+<span class="code-sel">button:disabled</span> { <span class="code-prop">cursor</span>: <span class="code-val">not-allowed</span>; <span class="code-prop">opacity</span>: <span class="code-val">0.5</span>; }
+
+<span class="code-cmt">/* Variante azul para acciones principales */</span>
+<span class="code-sel">button.primary</span> {
+  <span class="code-prop">background</span>: <span class="code-val">#2563eb</span>;
+  <span class="code-prop">color</span>: <span class="code-val">#fff</span>;
+  <span class="code-prop">border-color</span>: <span class="code-val">#1d4ed8</span>;
+}
+
+<span class="code-cmt">/* Variante roja para acciones destructivas */</span>
+<span class="code-sel">button.danger</span> {
+  <span class="code-prop">color</span>: <span class="code-val">#b91c1c</span>;
+  <span class="code-prop">border-color</span>: <span class="code-val">#fca5a5</span>;
+}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">4</span><span class="num-title">Focus states: la validación visual</span></div>
+    <div class="card">
+      <p>Cuando enfocas un input, el navegador da un <code>outline</code> por defecto. La herramienta lo sustituye por un borde azul y un halo de sombra:</p>
+      <div class="code-block">
+        <div class="code-head"><span>CSS</span></div>
+        <pre><code><span class="code-sel">input:focus, textarea:focus, select:focus</span> {
+  <span class="code-prop">outline</span>: <span class="code-val">none</span>;
+  <span class="code-prop">border-color</span>: <span class="code-val">#2563eb</span>;
+  <span class="code-prop">box-shadow</span>: <span class="code-val">0 0 0 2px rgba(37, 99, 235, 0.2)</span>;
+}
+
+<span class="code-cmt">/* Cuando el campo tiene error: borde rojo + halo rojo */</span>
+<span class="code-sel">.field.invalid input,
+.field.invalid textarea</span> {
+  <span class="code-prop">border-color</span>: <span class="code-val">#dc2626</span>;
+  <span class="code-prop">box-shadow</span>: <span class="code-val">0 0 0 2px rgba(220, 38, 38, 0.18)</span>;
+}</code></pre>
+      </div>
+      <div class="content-block">
+        <h3>El truco del box-shadow como halo</h3>
+        <p>Cuando un campo es inválido, en vez de cambiar el color de fondo (lo que mueve el layout), se usa <code>box-shadow</code> con <code>0 0 0 2px</code>: un anillo del color del borde que no ocupa espacio. El <code>border</code> cambia a rojo y el halo rojo lo rodea. El usuario lo nota al instante sin que nada salte.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">5</span><span class="num-title">Recursos</span></div>
+    <div class="resources">
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web/CSS/box-sizing" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN · box-sizing</div><div class="res-desc">La propiedad que cambia cómo se calcula el ancho.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web/CSS/flexbox" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN · Flexbox</div><div class="res-desc">El modelo de layout que usa la herramienta.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-label">La base está lista</div>
+    <h2>¿Cómo se organizan los contenedores?</h2>
+    <p>Ya hay reset y botones. Ahora falta el layout: cómo se reparten el espacio el formulario y el output.</p>
+    <a class="cta-btn" href="M05_flexbox_layout.html">
+      MÓDULO 05 · Flexbox layout
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</div>
+</body>
+</html>

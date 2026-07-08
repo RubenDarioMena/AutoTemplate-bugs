@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M00 · Bienvenida — Curso Bug Report Tool</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-base:#09080F; --bg-s1:#0C0B13; --bg-s2:#0E0D16; --bg-s3:#110F18; --bg-s4:#13111D; --bg-s5:#1B1926;
+  --text-pri:#EEEBF6; --text-sec:#C7CDE0; --text-mut:#8B889C; --text-sub:#5E5C6E;
+  --accent:#A78BFA; --accent-soft:rgba(139,92,246,.16); --accent-border:rgba(167,139,250,.35);
+  --purple:#A78BFA; --yellow:#F5C451; --red:#FB7185; --green:#34D399; --cyan:#67E8F9;
+  --border:rgba(255,255,255,.07); --border-hi:rgba(255,255,255,.12);
+  --font-head:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Plus Jakarta Sans',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono','Fira Code',monospace;
+}
+body{background:var(--bg-base);color:var(--text-sec);font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}
+::selection{background:rgba(167,139,250,.32);color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+a{color:inherit;text-decoration:none}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:
+  radial-gradient(900px 520px at 78% -10%,rgba(139,92,246,.20),transparent 60%),
+  radial-gradient(720px 520px at -5% 95%,rgba(34,184,207,.11),transparent 55%),
+  radial-gradient(620px 440px at 105% 60%,rgba(236,91,158,.07),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;
+  padding:clamp(30px,6vw,68px) clamp(16px,4vw,32px) 130px}
+.hero{margin-bottom:clamp(34px,5vw,52px)}
+.badge{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;border-radius:999px;
+  background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.32);color:var(--accent);
+  font-size:12px;font-weight:600;letter-spacing:.16em;font-family:var(--font-mono)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+h1{font-family:var(--font-head);font-size:clamp(34px,8vw,60px);line-height:1.03;
+  font-weight:700;color:#F4F2FB;margin:20px 0 0;letter-spacing:-.025em}
+h1 .hl{color:var(--accent)}
+.hero p{color:#A7A4B8;font-size:clamp(16px,2.3vw,19px);line-height:1.65;margin:20px 0 0;max-width:60ch}
+.meta-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:10px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);color:#9A97AC;font-size:13px;font-weight:500}
+.chip svg{width:14px;height:14px;flex-shrink:0}
+.card{background:linear-gradient(180deg,var(--bg-s3),var(--bg-s2));
+  border:1px solid var(--border);border-radius:18px;padding:clamp(20px,4vw,30px);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 24px 50px -34px rgba(0,0,0,.9);
+  margin-bottom:clamp(24px,4vw,38px)}
+.card-label{display:block;font-family:var(--font-mono);font-size:11px;
+  letter-spacing:.18em;color:var(--text-mut);text-transform:uppercase;margin-bottom:8px}
+h2{font-family:var(--font-head);font-weight:700;font-size:clamp(21px,3vw,27px);
+  color:#F4F2FB;margin:0 0 6px;letter-spacing:-.015em}
+.card>p{color:#A7A4B8;font-size:clamp(15px,1.6vw,16.5px);line-height:1.7;margin:0 0 20px;max-width:62ch}
+.num-section{margin-bottom:clamp(24px,4vw,38px)}
+.num-label{display:inline-flex;align-items:center;gap:10px;margin-bottom:14px}
+.num-tag{font-family:var(--font-head);font-weight:700;font-size:14px;width:30px;
+  height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  color:#06120B;background:linear-gradient(145deg,#A78BFA,#8B5CF6)}
+.num-title{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;
+  color:var(--text-mut);text-transform:uppercase}
+.content-block{margin-bottom:18px}
+.content-block h3{font-family:var(--font-head);font-weight:600;font-size:18px;color:var(--text-pri);margin-bottom:8px}
+.content-block p{color:#A7A4B8;line-height:1.7;font-size:15.5px;max-width:60ch;margin-bottom:8px}
+.content-block strong{color:var(--text-pri)}
+.code-block{background:var(--bg-s1);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin:14px 0}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;
+  background:#100F18;border-bottom:1px solid var(--border)}
+.code-head span{font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.code-btns{display:flex;gap:8px}
+.code-btn{padding:6px 14px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.04);
+  color:var(--text-sec);font-family:var(--font-body);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s}
+.code-btn:hover{background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.22);color:var(--accent)}
+.code-btn.primary{background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.22);color:var(--accent)}
+pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:13.5px;line-height:1.75;color:#C7CDE0}
+.code-cmt{color:#5C6A75;font-style:italic}
+.code-fn{color:#82AAFF}
+.code-str{color:#ECC48D}
+.code-kw{color:#C4B5FD}
+.code-prop{color:#93C5FD}
+.output-block{margin-top:12px;border:1px solid var(--border);border-radius:13px;overflow:hidden;display:none}
+.output-block.show{display:block}
+.output-head{padding:8px 16px;background:#100F18;border-bottom:1px solid var(--border);
+  font-family:var(--font-mono);font-size:11px;color:var(--text-mut);letter-spacing:.12em;text-transform:uppercase}
+.output-body{padding:12px 16px;font-family:var(--font-mono);font-size:13px;line-height:1.6}
+.out-line{margin:3px 0;display:flex;gap:8px;align-items:flex-start}
+.out-tag{flex-shrink:0;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600}
+.out-tag.log{color:#93C5FD;background:rgba(147,197,253,.1)}
+.out-tag.alert{color:#C4B5FD;background:rgba(196,181,253,.1)}
+.out-text{color:#C7CDE0}
+.layer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.layer{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:13px;padding:15px 17px}
+.layer-name{font-family:var(--font-head);font-weight:600;font-size:15.5px;color:var(--text-pri);margin-bottom:4px}
+.layer-desc{font-size:13.5px;color:var(--text-mut);line-height:1.55}
+.layer svg{width:22px;height:22px;margin-bottom:8px}
+.steps{counter-reset:step;display:flex;flex-direction:column;gap:14px;margin:16px 0}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step-num{flex-shrink:0;font-family:var(--font-head);font-weight:700;font-size:14px;
+  width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  color:#06120B;background:linear-gradient(145deg,#A78BFA,#8B5CF6)}
+.step-body h4{font-family:var(--font-head);font-weight:600;font-size:15.5px;color:var(--text-pri);margin-bottom:3px}
+.step-body p{color:#9A97AC;font-size:14.5px;line-height:1.6}
+.resources{display:flex;flex-direction:column;gap:12px}
+.res-link{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;
+  border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--border);transition:all .2s}
+.res-link:hover{background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.25)}
+.res-name{font-family:var(--font-head);font-weight:700;font-size:16px;color:#EEEBF6}
+.res-desc{font-size:13.5px;color:var(--text-mut);margin-top:2px}
+.res-arrow{width:15px;height:15px;flex-shrink:0;opacity:.5}
+.cta{text-align:center;padding:clamp(30px,5vw,50px) 20px}
+.cta-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;
+  color:var(--text-mut);text-transform:uppercase;margin-bottom:10px}
+.cta h2{font-size:clamp(22px,3.5vw,30px);margin-bottom:14px}
+.cta p{color:#A7A4B8;font-size:16px;line-height:1.6;max-width:50ch;margin:0 auto 24px}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:14px;
+  background:linear-gradient(145deg,#8B5CF6,#7C3AED);color:#fff;font-family:var(--font-body);
+  font-size:15px;font-weight:600;box-shadow:0 8px 24px -8px rgba(139,92,246,.6);transition:all .25s;cursor:pointer}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px -8px rgba(139,92,246,.8)}
+.cta-btn svg{width:18px;height:18px}
+@media(max-width:640px){.step{flex-direction:column;gap:6px}}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="wrap">
+  <div class="hero">
+    <div class="badge"><span class="badge-dot"></span>MÓDULO 00 · BIENVENIDA</div>
+    <h1>¿Qué es la <span class="hl">Bug Report Tool</span> y cómo funciona?</h1>
+    <p>Vamos a estudiar una aplicación real, construida en un solo archivo HTML, que sirve para reportar bugs. No necesitas instalar nada: la abres en el navegador y funciona. En este curso la desmontamos pieza por pieza para que entiendas cómo se construye.</p>
+    <div class="meta-chips">
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>~8 min de lectura</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Sin instalar nada</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="#67E8F9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>HTML + CSS + JS</span>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">1</span><span class="num-title">Qué es la herramienta</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>Un solo archivo que lo hace todo</h3>
+        <p>La <strong>Bug Report Tool</strong> es una herramienta para que un equipo de QA reporte bugs de forma estructurada. Vive en un único archivo <code>.html</code>. No usa servidores, no necesita conexión a internet, no requiere instalar nada. La copias a una carpeta compartida, la abres con doble clic y funciona.</p>
+        <p>Esto parece magia, pero no lo es. Toda la información que la herramienta necesita —los formularios, las listas de opciones, las reglas de validación, los nombres de archivos de media— está <strong>embebida dentro del propio HTML</strong> como un bloque de JSON. El JavaScript de la página lee ese JSON y construye la interfaz a partir de él.</p>
+      </div>
+      <div class="content-block">
+        <h3>Las tres capas en un solo archivo</h3>
+        <p>La herramienta usa las tres tecnologías fundamentales de la web, todas dentro del mismo <code>.html</code>:</p>
+        <div class="layer-grid">
+          <div class="layer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#67E8F9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
+            <div class="layer-name">HTML — Estructura</div>
+            <div class="layer-desc">Los contenedores, las pestañas, los campos. El esqueleto de la página.</div>
+          </div>
+          <div class="layer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 1 1-14 0"/></svg>
+            <div class="layer-name">CSS — Estilo</div>
+            <div class="layer-desc">Colores, posiciones, animaciones. Cómo se ve todo: el tema claro, los bordes, el layout.</div>
+          </div>
+          <div class="layer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F5C451" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+            <div class="layer-name">JS — Comportamiento</div>
+            <div class="layer-desc">La lógica: leer el JSON, validar campos, generar el output, guardar en localStorage.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">2</span><span class="num-title">La restricción de diseño</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>Cero-red, cero-install, file:// compatible</h3>
+        <p>Estas tres restricciones definen todo el diseño de la herramienta:</p>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Cero-red</h4><p>No usa <code>fetch</code>, no carga Google Fonts, no importa librerías de un CDN. Todo está dentro del archivo. Funciona sin conexión a internet.</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Cero-install</h4><p>No hay <code>npm install</code>, no hay bundler, no hay Node.js. La abres con <code>file://</code> y ya está. La pueden usar personas que no saben instalar nada.</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Distribución simple</h4><p>Se copia a una carpeta compartida (un sharefolder). Cada persona en el equipo la abre desde ahí. Los cambios se guardan en el navegador de cada uno con <code>localStorage</code>.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">3</span><span class="num-title">Recorrer la herramienta</span></div>
+    <div class="card">
+      <p>Antes de empezar a construir, familiarízate con lo que ya existe. Abre <code>bug_tool.html</code> en tu navegador (doble clic sobre el archivo) y explora estas zonas:</p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Barra superior (pestañas)</h4><p>Arriba: las pestañas <strong>Bug</strong>, <strong>Regression</strong>, <strong>Data</strong> y <strong>Rules</strong>. A la derecha, botones para exportar CSVs, guardar sesión y exportar la herramienta completa.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Barra de tiles</h4><p>Debajo de la barra superior: pequeños chips de colores que cambian según lo que escribas. Rojo si falta un campo obligatorio, verde si todo está listo.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Formulario (izquierda)</h4><p>El panel donde el tester escribe los datos del bug: equipo, región, plataforma, descripción, coordenadas, pasos para reproducir, etc.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Output (derecha)</h4><p>El texto que se genera automáticamente a partir de lo que escribiste. Lo copias y lo pegas en el issue tracker.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body"><h4>Panel de media (abajo)</h4><p>Genera nombres de archivos de media (vídeo, fotos, logs) con una regla configurable.</p></div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-body"><h4>Pestaña Data</h4><p>Editas las listas de opciones (regiones, plataformas, mapas, POIs) y las reglas globales.</p></div></div>
+        <div class="step"><div class="step-num">7</div><div class="step-body"><h4>Pestaña Rules</h4><p>Editas las validaciones de cada campo y las condiciones entre campos.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">4</span><span class="num-title">Las tres capas en acción</span></div>
+    <div class="card">
+      <p>Cada capa tiene un trabajo distinto. El siguiente código muestra, de forma simplificada, cómo las tres trabajan juntas en la herramienta real.</p>
+      <div class="code-block">
+        <div class="code-head">
+          <span>HTML + CSS + JS</span>
+          <div class="code-btns">
+            <button class="code-btn primary" onclick="runIntro()">Ejecutar</button>
+          </div>
+        </div>
+        <pre><code><span class="code-cmt">// La herramienta tiene 3 capas en un solo archivo:</span>
+
+<span class="code-cmt">// 1. HTML define los contenedores vacíos:</span>
+<span class="code-cmt">//    &lt;div id="formPanel"&gt;&lt;/div&gt;</span>
+<span class="code-cmt">//    &lt;textarea id="outputTextarea"&gt;&lt;/textarea&gt;</span>
+
+<span class="code-cmt">// 2. CSS les da forma y color:</span>
+<span class="code-cmt">//    .form-panel { flex:1; overflow-y:auto; }</span>
+<span class="code-cmt">//    .output-panel { flex:1; background:#fafbfc; }</span>
+
+<span class="code-cmt">// 3. JS los llena con vida:</span>
+<span class="code-fn">console</span>.<span class="code-fn">log</span>(<span class="code-str">'HTML da la estructura'</span>);
+<span class="code-fn">console</span>.<span class="code-fn">log</span>(<span class="code-str">'CSS da el estilo'</span>);
+<span class="code-fn">console</span>.<span class="code-fn">log</span>(<span class="code-str">'JS da el comportamiento'</span>);
+<span class="code-fn">console</span>.<span class="code-fn">log</span>(<span class="code-str">'Y todo en un solo .html'</span>);</code></pre>
+      </div>
+      <div class="output-block" id="outIntro">
+        <div class="output-head">Salida de la consola</div>
+        <div class="output-body" id="outIntroBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">5</span><span class="num-title">Tu primer ejercicio</span></div>
+    <div class="card">
+      <div class="content-block">
+        <h3>Abre la herramienta y llena un bug</h3>
+        <p>Antes de seguir, haz esto. Es la mejor forma de entender por qué la herramienta existe y qué hace.</p>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Abre <code>bug_tool.html</code></h4><p>Doble clic sobre el archivo. Se abre en tu navegador. No necesita servidor.</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Llena el formulario Bug</h4><p>Escribe algo en cada campo: Team, Región, Plataforma, Mapa, descripción, coordenadas con el formato <code>(X, Y, Z) (X, Y, Z)</code>, build URL con <code>getbuild://</code>, etc.</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Mira la barra de tiles</h4><p>Los chips cambian de rojo a verde según llenas campos. La tile verde "✓ Sin errores" aparece cuando todo está completo.</p></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Copia el output</h4><p>Pulsa "Copiar todo" en el panel derecho. Pega el resultado en un editor de texto. Ese es el texto que pegarías en el issue tracker.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="num-section">
+    <div class="num-label"><span class="num-tag">6</span><span class="num-title">Recursos para tu aventura</span></div>
+    <div class="resources">
+      <a class="res-link" href="https://developer.mozilla.org/es/docs/Web" target="_blank" rel="noopener">
+        <div><div class="res-name">MDN Web Docs</div>
+        <div class="res-desc">La documentación oficial de HTML, CSS y JavaScript. En español.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+      <a class="res-link" href="https://web.dev" target="_blank" rel="noopener">
+        <div><div class="res-name">web.dev</div>
+        <div class="res-desc">Guías modernas de Google sobre desarrollo web.</div></div>
+        <svg class="res-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-label">Has dado el primer paso</div>
+    <h2>¿Listo para ver el esqueleto HTML?</h2>
+    <p>Ya sabes qué hace la herramienta. Ahora vamos a abrirla y mirar su estructura: qué contenedores tiene y cómo se organizan.</p>
+    <a class="cta-btn" href="M01_HTML_esqueleto.html">
+      MÓDULO 01 · El esqueleto HTML
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</div>
+<script>
+"use strict";
+function runIntro(){
+  var out=document.getElementById('outIntro'),body=document.getElementById('outIntroBody');
+  body.innerHTML='';
+  var logs=[];
+  var origLog=console.log;
+  console.log=function(){var a=[].slice.call(arguments);logs.push({level:'log',text:a.map(function(x){return typeof x==='string'?x:JSON.stringify(x)}).join(' ')})};
+  try{new Function('console',"\nconsole.log('HTML da la estructura');\nconsole.log('CSS da el estilo');\nconsole.log('JS da el comportamiento');\nconsole.log('Y todo en un solo .html');\n")(console)}catch(e){logs.push({level:'log',text:'Error: '+e.message})}finally{console.log=origLog}
+  if(!logs.length)logs.push({level:'log',text:'(sin salida visible)'});
+  logs.forEach(function(l){
+    var line=document.createElement('div');line.className='out-line';
+    var tag=document.createElement('span');tag.className='out-tag '+l.level;tag.textContent=l.level;
+    var txt=document.createElement('span');txt.className='out-text';txt.textContent=l.text;
+    line.appendChild(tag);line.appendChild(txt);body.appendChild(line);
+  });
+  out.classList.add('show');
+}
+</script>
+</body>
+</html>
