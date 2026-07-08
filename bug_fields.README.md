@@ -54,7 +54,7 @@ Cinco tipos de fila, identificados por la columna `type`:
 | default   | valor inicial; acepta `@regla` (ej. `@default_tz`)        | (vacío)                        |
 | emptyas   | si el campo queda vacío, imprimir esto (ej. `N/A`). Vacío = omitir la línea | (vacío)      |
 | omitvalue | si el valor es exactamente esto, NO imprimir la línea (ej. `N/A` en BSP CL) | (vacío)      |
-| nogap     | (vacío)                                                   | `yes` = sin línea en blanco después de la sección |
+| nogap     | color del tile de error de ese campo (rojo por defecto; ver paleta abajo) | `yes` = sin línea en blanco después de la sección |
 | help      | texto de ayuda bajo el campo                              | (vacío)                        |
 | hidden    | `yes` = oculto por defecto (aparece solo por una condición) | (vacío)                     |
 | kwcount   | solo chips: cantidad exacta, número o `@regla` (vacío = sin límite) | (vacío)             |
@@ -132,11 +132,16 @@ CSV viajan con este mapeo de columnas (el resto quedan vacías):
   | regex    | tipo/severidad: `error` (bloquea "listo") / `warn` / `info`     |
   | regexmsg | campo al que salta el click (vacío = 1er campo de la condición) |
   | default  | color: red, orange, amber, yellow, lime, green, emerald, teal, cyan, blue, indigo, violet, pink, slate, stone |
-  | emptyas  | grupo (los tiles con el mismo grupo se dibujan juntos)          |
+  | emptyas  | grupo (dato reservado; hoy no cambia la vista)                  |
 
-Al pasar el mouse por un campo, se resaltan los tiles cuya condición lo
-mencionan (o cuyo "salta a" es ese campo) y los demás se atenúan. La
-barra se puede colapsar a una línea con la "llave" (▾) de la esquina.
+**La barra tiene dos líneas (bandas):** la 1ª son los tiles automáticos
+(un error por campo, en el orden del formulario; su color se edita en la
+columna Color de "Validaciones por campo"); la 2ª son estos tiles
+personalizados, **en el orden en que aparecen en la tabla de Rules**
+(reordenables con ▲▼). Cada banda muestra hasta 3 renglones y luego hace
+scroll. Al pasar el mouse por un campo, se resaltan los tiles cuya
+condición lo mencionan (o cuyo "salta a" es ese campo) y los demás se
+atenúan. La "llave" (▾) de la esquina colapsa cada banda a un renglón.
 
 Ejemplos:
   - *Falta ConsoleLog si es Crash* (bloquea):

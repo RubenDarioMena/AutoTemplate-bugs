@@ -790,39 +790,63 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
       activo); `warn`/`info` solo informan.
     - `color`: paleta de 15 colores con nombre (`TILE_COLORS`, fuente
       única; se aplica como estilo en línea, sin clases CSS por color).
-    - `group`: etiqueta; los tiles del mismo grupo se dibujan juntos.
+    - `group`: etiqueta (dato latente; la agrupación visual quedó para
+      una iteración futura, sin columna en la UI por ahora).
     - `field`: campo al que salta el click (vacío = 1er campo que
       menciona la condición, vía `tileFieldRefs`).
-  * **Barra (`renderTiles`).** Grupos apilados: "Errores de campo"
-    (automáticos) + un grupo por etiqueta de tile. Si nada bloquea, se
-    muestra el tile verde "Listo para copiar" junto a los avisos/info.
-    La barra (`.tiles-wrap`) se limita a ~3 líneas con scroll y se
-    **colapsa a una línea** con la "llave" (`#tilesToggle`, chevron que
-    rota); el estado vive en `state.prefs.tilesCollapsed`. La "llave" es
-    un patrón pensado para reutilizarse luego en las secciones del form.
+  * **Barra en DOS bandas (`renderTiles`).** `.tiles-wrap` apila dos
+    `.tiles-band`:
+    - **Banda 1 — automáticos**: un tile por error de campo, **en el
+      orden del formulario** (se recorre `allFields`, no `inst.errors`).
+      Su color sale de `field.errColor` (default `red`, idéntico al rojo
+      clásico). Si no hay errores de campo, un tile verde de estado
+      ("Listo para copiar", o "Campos sin errores" si algo más bloquea).
+    - **Banda 2 — personalizados**: los tiles activos **en el orden de
+      la lista en Rules** (`form.tiles`), separada por una línea sutil.
+    Cada banda envuelve hasta **3 renglones** (`max-height`) y luego hace
+    scroll. La "llave" (`#tilesToggle`, estado en
+    `state.prefs.tilesCollapsed`) colapsa cada banda a un renglón
+    (nowrap + scroll horizontal).
   * **Resaltado cruzado campo→tile** (`wireTileInteractions`, delegado
     una vez sobre `#formPanel` y `#tilesBar`, sobrevive a los re-render):
     al pasar el mouse o enfocar un campo, todos los tiles que lo "tocan"
     (`data-fields`, derivado de `exprFieldRefs` + `field`) se marcan
     (`.tile-hot`, anillo con el color propio) y el resto se atenúa
     (`.tiles-focus`). Complementa el click-tile→campo ya existente.
-  * **Edición** en la pestaña Rules: bloque "Tiles personalizados" con
-    una tabla por formulario (reusa el estilo `cond-table`/`cond-expr`
-    con validación en vivo de la expresión). El `<select>` de color se
-    tiñe con su propio color. Migración/normalización `ensureTiles` +
-    `normalizeTiles` en boot (vanilla y config) y tras importar CSV.
+  * **La "llave" como patrón reutilizable.** El mismo mecanismo se aplicó
+    a las **secciones del formulario** y a los paneles (output, media):
+    `uiCollapse` guarda el estado, `wireCollapse` (una vez, delegado en
+    `#formPanel` y contenedores persistentes) alterna la clase
+    `.collapsed`; el chevron `.sec-collapse` rota igual que la llave de
+    los tiles. Hace el formulario largo más navegable.
+  * **Edición** en la pestaña Rules:
+    - "Validaciones por campo": nueva columna **Color** (`data-rr-color`)
+      = color del tile de error de ese campo (default rojo → no se guarda
+      nada).
+    - "Tiles personalizados": tabla por formulario (reusa
+      `cond-table`/`cond-expr` con validación en vivo). Columnas Texto ·
+      Cuándo aparece · Color · Tipo · Salta a · **Orden (▲▼)** · borrar.
+      El `<select>` de color se tiñe con su propio color. Reordenar
+      (`data-tr-move`) cambia el orden en `form.tiles` = orden de la
+      banda 2.
+    - Migración/normalización `ensureTiles` + `normalizeTiles` en boot
+      (vanilla y config) y tras importar CSV.
   * **CSV**: filas `type=tile` en `bug_fields.csv` reusando columnas
     (label=texto, source=whenExpr, regex=severidad, regexmsg=campo
-    destino, default=color, emptyas=grupo) — el encabezado de 23
-    columnas NO cambia, así que los CSV viejos siguen importando. Ver
-    bug_fields.README.md. Verificado en navegador: agrupación, colores,
-    interpolación, colapso, resaltado, bloqueo por severidad y
-    round-trip CSV (export→import).
+    destino, default=color, emptyas=grupo). El color del tile de error de
+    un campo viaja en la columna `nogap` de la fila de campo (sin usar
+    para campos). El encabezado de 23 columnas **NO cambia**, así que los
+    CSV viejos siguen importando. Ver bug_fields.README.md. Verificado en
+    navegador: dos bandas en orden correcto, color por campo, colores de
+    tile, interpolación, colapso por banda, resaltado, reordenar, bloqueo
+    por severidad y round-trip CSV (export→import, con `errColor` y orden
+    de tiles).
 
 ## Pendiente (siguientes iteraciones)
 
-  * Reordenar tiles y grupos con flechas; color por grupo (hoy el color
-    es por tile). Ver ROADMAP §1.
+  * Agrupación visual de tiles por categoría y color por grupo (el dato
+    `group` ya existe; se pospuso a favor del modelo de dos bandas). Ver
+    ROADMAP §1.
   * Más conexiones media↔Rules: el formato por sección ya existe; falta
     lo que detalle Rubén (condiciones sobre media —p. ej. exigir
     ConsoleLog si el bug es Crash— y validar la Key con regex).

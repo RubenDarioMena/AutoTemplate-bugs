@@ -204,9 +204,11 @@
     .menu-pop .sep { border-top: 1px solid #e5e7eb; margin: 4px 0; }
 
     /* ---------- Tiles de estado (validación + personalizados) ---------- */
-    /* La barra es el contenedor posicionado; .tiles-wrap hace el flex-wrap y
-       se colapsa a 1 línea con la "llave" (▾). Expandida: máx. ~3 líneas con
-       scroll. La llave es un patrón reutilizable (luego, en las secciones). */
+    /* La barra es el contenedor posicionado. .tiles-wrap apila DOS bandas: la
+       1ª = tiles automáticos (errores de campo, en el orden del form); la 2ª =
+       tiles personalizados (orden de la lista en Rules). Cada banda envuelve
+       hasta 3 renglones y luego hace scroll. La "llave" (▾) colapsa cada banda
+       a un renglón; es un patrón reutilizable (luego, en las secciones). */
     .tiles-bar {
       position: relative;
       padding: 4px 26px 4px 8px;   /* margen derecho para la llave */
@@ -215,41 +217,25 @@
       flex: 0 0 auto;
     }
     .tiles-bar.hidden { display: none; }
-    /* Cada grupo es una fila que envuelve sus tiles; los grupos se apilan
-       en columna. La altura total se limita a ~3 líneas con scroll. */
-    .tiles-wrap {
+    .tiles-wrap { display: flex; flex-direction: column; gap: 3px; }
+    .tiles-band {
       display: flex;
-      flex-direction: column;
-      gap: 3px;
-      max-height: 78px;            /* ~3 líneas de tiles */
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 4px;
+      max-height: 74px;            /* ~3 renglones de tiles */
       overflow-y: auto;
       overflow-x: hidden;
     }
-    .tile-group {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 4px;
-    }
-    .tile-group-label {
-      font-size: 9.5px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      color: #9ca3af;
-      margin-right: 2px;
-    }
-    /* Colapsada: los grupos se aplanan (display:contents) en una sola línea
-       con scroll horizontal y sin etiquetas de grupo. */
-    .tiles-bar.collapsed .tiles-wrap {
-      flex-direction: row;
+    /* La 2ª banda (personalizados) se separa con una línea sutil. */
+    .tiles-band.band-custom { border-top: 1px dashed #e5e7eb; padding-top: 4px; }
+    /* Colapsada: cada banda a un renglón con scroll horizontal. */
+    .tiles-bar.collapsed .tiles-band {
       flex-wrap: nowrap;
       max-height: 24px;
       overflow-x: auto;
       overflow-y: hidden;
     }
-    .tiles-bar.collapsed .tile-group { display: contents; }
-    .tiles-bar.collapsed .tile-group-label { display: none; }
     /* La llave: toggle de colapso; el chevron rota al colapsar. */
     .tiles-toggle {
       position: absolute;
@@ -286,11 +272,9 @@
       background: #ecfdf5; color: #065f46; border-color: #a7f3d0;
       cursor: default;
     }
-    .tile.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-    .tile.err:hover { filter: brightness(0.97); }
     .tile.no-target { cursor: default; }
     .tile.sev-error { font-weight: 600; }
-    .tile.more { background: #f3f4f6; color: #4b5563; border-color: #d1d5db; cursor: default; }
+    .tile[data-target]:hover { filter: brightness(0.96); }
     /* Resaltado cruzado: al pasar/enfocar un campo, sus tiles se marcan
        (.tile-hot) y las demás se atenúan. El anillo usa el color del tile. */
     .tiles-focus .tile:not(.tile-hot) { opacity: .28; }
@@ -382,6 +366,25 @@
       background: #fff;
       border-right: 1px solid #d1d5db;
       min-height: 0;
+      overflow: hidden;
+      transition: width .18s ease;
+    }
+    /* Replegado: la columna se encoge a una riel; el output ocupa el ancho. */
+    .form-col.form-collapsed { width: 34px; min-width: 0; flex: 0 0 34px; }
+    .form-col.form-collapsed .form-panel { display: none; }
+    .form-col.form-collapsed .form-toolbar { padding: 6px 4px; justify-content: center; }
+    .form-col.form-collapsed .form-toolbar > *:not(#formCollapseBtn) { display: none; }
+    .form-col.form-collapsed #formCollapseBtn .chev { transform: rotate(180deg); }
+    .form-rail-label { display: none; }
+    .form-col.form-collapsed .form-rail-label {
+      display: block;
+      writing-mode: vertical-rl;
+      margin: 10px auto 0;
+      color: #6b7280;
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      user-select: none;
+      white-space: nowrap;
     }
     .form-toolbar {
       display: flex;
@@ -439,9 +442,24 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      padding: 24px 12px 12px 4px;
+      padding: 8px 12px 12px 4px;
+      overflow: hidden;
+      min-width: 0;
+      transition: flex-basis .18s ease;
     }
-    .output-side button { width: 100%; }
+    .output-side .rail-btn { align-self: flex-end; }
+    .output-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
+    }
+    .output-actions button { width: 100%; }
+    /* Replegado: franja delgada; se ocultan los botones, queda el chevron. */
+    .output-side.actions-collapsed { flex-basis: 30px; }
+    .output-side.actions-collapsed .output-actions { display: none; }
+    .output-side.actions-collapsed .rail-btn { align-self: center; }
+    .output-side.actions-collapsed .rail-btn .chev { transform: rotate(180deg); }
 
     /* ---------- Panel de nombres de media ---------- */
     .media-panel {
@@ -452,10 +470,20 @@
     }
     .media-panel-header {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 8px;
       margin-bottom: 6px;
     }
+    /* Cuerpo colapsable de la media (Key + filas): grid 1fr→0fr (~180ms). */
+    .media-panel-body {
+      display: grid;
+      grid-template-rows: 1fr;
+      transition: grid-template-rows .18s ease;
+    }
+    .media-panel-body-inner { overflow: hidden; min-height: 0; }
+    .media-panel.collapsed .media-panel-body { grid-template-rows: 0fr; }
+    .media-panel.collapsed .media-panel-header { margin-bottom: 0; }
+    .media-panel.collapsed #mediaCollapseBtn .chev { transform: rotate(-90deg); }
     .media-panel-header h4 {
       font-size: 11px;
       font-weight: 700;
@@ -539,6 +567,52 @@
       align-items: center;
       gap: 4px;
     }
+    /* ---------- Compactación: colapsar secciones ---------- */
+    /* Chevron de colapso: SIEMPRE visible (no depende del modo edición).
+       Único disparador del colapso; el nombre de la sección no reacciona. */
+    .sec-collapse {
+      flex: 0 0 auto;
+      width: 18px; height: 18px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fff;
+      color: #6b7280;
+      font-size: 10px; line-height: 1;
+      cursor: pointer;
+    }
+    .sec-collapse:hover { background: #eef2ff; color: #1d4ed8; border-color: #c7d2fe; }
+    .sec-collapse .chev { display: inline-block; transition: transform .18s ease; }
+    .form-section.collapsed .sec-collapse .chev { transform: rotate(-90deg); }
+    .sec-label { flex: 0 1 auto; }
+    /* Cuerpo colapsable: grid 1fr→0fr para animar altura desconocida (~180ms)
+       sin medir en JS. El hijo interno recorta con overflow durante el cierre. */
+    .form-section-body {
+      display: grid;
+      grid-template-rows: 1fr;
+      transition: grid-template-rows .18s ease;
+    }
+    .form-section-body-inner { overflow: hidden; min-height: 0; }
+    .form-section.collapsed .form-section-body { grid-template-rows: 0fr; }
+    .form-section.collapsed h4 { margin-bottom: 0; }
+
+    /* Botón genérico de repliegue de panel (formulario / media / copiar). */
+    .rail-btn {
+      flex: 0 0 auto;
+      width: 22px; height: 22px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fff;
+      color: #6b7280;
+      font-size: 12px; line-height: 1;
+      cursor: pointer;
+    }
+    .rail-btn:hover { background: #eef2ff; color: #1d4ed8; border-color: #c7d2fe; }
+    .rail-btn .chev { display: inline-block; transition: transform .18s ease; }
+
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
@@ -1029,12 +1103,14 @@
   <div id="subTabsAndMain">
     <div class="sub-tabs" id="subTabs"></div>
     <div class="main" id="main">
-      <div class="form-col">
+      <div class="form-col" id="formCol">
         <div class="form-toolbar">
+          <button id="formCollapseBtn" class="rail-btn" title="Replegar el formulario para dar más espacio al output"><span class="chev">«</span></button>
           <h3 id="formTitle">Formulario</h3>
           <button id="addSectionTopBtn" title="Agrega una sección nueva al final del formulario">+ Sección</button>
           <button class="edit-toggle" id="editToggle" title="Activa el modo edición para agregar, mover o borrar secciones y campos">✎ Editar formulario</button>
         </div>
+        <div class="form-rail-label">Formulario</div>
         <div class="form-panel" id="formPanel"></div>
       </div>
       <div class="output-panel">
@@ -1043,10 +1119,14 @@
             <label>Output (editable antes de copiar)</label>
             <textarea id="outputTextarea" spellcheck="false"></textarea>
           </div>
-          <div class="output-side" id="outputActions"></div>
+          <div class="output-side" id="outputSide">
+            <button id="actionsCollapseBtn" class="rail-btn" title="Replegar los botones de copiar para ensanchar el output"><span class="chev">▸</span></button>
+            <div class="output-actions" id="outputActions"></div>
+          </div>
         </div>
         <div class="media-panel" id="mediaPanel">
           <div class="media-panel-header">
+            <button id="mediaCollapseBtn" class="rail-btn" title="Replegar los nombres de media"><span class="chev">▾</span></button>
             <h4>Nombres de media</h4>
             <span class="hint" id="mediaFmtHint"></span>
             <button class="tool-btn media-edit-btn" id="mediaConfigBtn"
@@ -1055,12 +1135,14 @@
           <!-- Key del ticket: la escribe el tester al crear el issue.
                Los nombres de abajo se generan solos con esta key y los
                campos del formulario, según la regla media_fmt. -->
-          <div class="media-row">
-            <span class="media-type">Key</span>
-            <input type="text" id="mediaTicketKey" placeholder="clave del ticket (p. ej. ABC-1234)" />
-            <span></span>
-          </div>
-          <div id="mediaRows"></div>
+          <div class="media-panel-body"><div class="media-panel-body-inner">
+            <div class="media-row">
+              <span class="media-type">Key</span>
+              <input type="text" id="mediaTicketKey" placeholder="clave del ticket (p. ej. ABC-1234)" />
+              <span></span>
+            </div>
+            <div id="mediaRows"></div>
+          </div></div>
         </div>
       </div>
     </div>
@@ -1383,6 +1465,11 @@ const TILE_COLORS = [
 ];
 const TILE_COLOR_MAP = Object.fromEntries(TILE_COLORS.map(c => [c.id, c]));
 function tileColor(id) { return TILE_COLOR_MAP[id] || TILE_COLOR_MAP.slate; }
+// <option> de la paleta para los <select> de color (validación y tiles).
+function tileColorOptions(selected) {
+  return TILE_COLORS.map(cc =>
+    `<option value="${cc.id}"${selected === cc.id ? " selected" : ""}>${escapeHtml(cc.label)}</option>`).join("");
+}
 
 // Severidad de un tile personalizado. Solo "error" bloquea el estado verde
 // "listo para copiar" (como un campo obligatorio). Aviso e info no bloquean.
@@ -2009,7 +2096,7 @@ function renderForm() {
   const fx = evalFieldRules(form, inst);
   lastFxJson = JSON.stringify(fx);
 
-  panel.innerHTML = form.sections.map(sec => sectionHtml(sec, inst, fx)).join("")
+  panel.innerHTML = form.sections.map(sec => sectionHtml(sec, inst, fx, form)).join("")
     + `<button class="add-section-btn" id="addSectionBtn">+ Agregar sección</button>`;
   wireFormEvents(inst, form);
   revalidate(inst);
@@ -2024,7 +2111,14 @@ function rerenderIfRulesChanged(form, inst) {
   if (fxNow !== lastFxJson) renderForm();
 }
 
-function sectionHtml(sec, inst, fx) {
+// Estado de colapso de la UI (fase "compactación"): SOLO en memoria. No se
+// guarda en state.prefs ni se exporta; cada recarga arranca todo expandido
+// (decisión de diseño). Se relee en cada render, así el colapso sobrevive a
+// los re-render dentro de la sesión pero no a un reload.
+const uiCollapse = { sections: Object.create(null), form: false, media: false, actions: false };
+function sectionCollapseKey(form, secId) { return form.id + ":" + secId; }
+
+function sectionHtml(sec, inst, fx, form) {
   const tools = `
     <span class="sec-tools">
       <button class="tool-btn" data-sec-add="${sec.id}" title="Agregar campo a esta sección">+ campo</button>
@@ -2055,9 +2149,13 @@ function sectionHtml(sec, inst, fx) {
     if (g.size === 3) return `<div class="row-3">${cells}</div>`;
     return cells;
   }).join("");
-  return `<div class="form-section" data-section="${escapeHtml(sec.id)}">
-    <h4>${escapeHtml(sec.label)}${tools}</h4>
-    ${body}
+  const collapsed = !!uiCollapse.sections[sectionCollapseKey(form, sec.id)];
+  return `<div class="form-section${collapsed ? " collapsed" : ""}" data-section="${escapeHtml(sec.id)}">
+    <h4>
+      <button class="sec-collapse" data-sec-collapse="${sec.id}" title="Colapsar / expandir sección"><span class="chev">▾</span></button>
+      <span class="sec-label">${escapeHtml(sec.label)}</span>${tools}
+    </h4>
+    <div class="form-section-body"><div class="form-section-body-inner">${body}</div></div>
   </div>`;
 }
 
@@ -3220,61 +3318,63 @@ function renderTiles(inst) {
   const bar = $("tilesBar");
   if (!inst || !getForm(state.topTab)) { bar.innerHTML = ""; return; }
   const form = getForm(inst.formId);
-  const fieldErrs = Object.entries(inst.errors);
+
+  // Banda 1: errores de campo EN EL ORDEN DEL FORM.
+  const fieldErrs = [];
+  allFields(form).forEach(({ field }) => {
+    if (inst.errors[field.id]) fieldErrs.push([field.id, inst.errors[field.id], field]);
+  });
+  // Errores sin campo asociado (caso raro): al final, sin color propio.
+  Object.keys(inst.errors).forEach(id => {
+    if (!fieldErrs.some(e => e[0] === id)) fieldErrs.push([id, inst.errors[id], null]);
+  });
+  // Banda 2: tiles personalizados activos, en el orden de la lista de Rules.
   const active = evalTiles(form, inst);
   const blocking = fieldErrs.length > 0 || active.some(a => a.tile.severity === "error");
 
   // Nada que mostrar: verde y salir.
   if (!fieldErrs.length && !active.length) {
     bar.classList.remove("collapsed");
-    bar.innerHTML = `<div class="tiles-wrap"><div class="tile-group"><span class="tile ok">✓ Sin errores — listo para copiar</span></div></div>`;
+    bar.innerHTML = `<div class="tiles-wrap"><div class="tiles-band"><span class="tile ok">✓ Sin errores — listo para copiar</span></div></div>`;
     return;
   }
 
-  const groups = [];
-  const groupFor = (key, label) => {
-    let g = groups.find(x => x.key === key);
-    if (!g) { g = { key, label, html: [] }; groups.push(g); }
-    return g;
-  };
-
-  // Tile "listo" si no hay nada bloqueante (convive con avisos e info).
-  if (!blocking) {
-    groupFor("__ok__", "").html.push(`<span class="tile ok">✓ Listo para copiar</span>`);
-  }
-
-  // Errores de campo (automáticos, uno por campo).
+  // Banda 1 (automáticos). Cada tile usa el color del campo (default rojo).
+  let band1;
   if (fieldErrs.length) {
-    const g = groupFor("__errs__", "Errores de campo");
-    fieldErrs.forEach(([id, msg]) => {
-      const found = getField(form, id);
-      const label = found ? found.field.label : id;
-      g.html.push(`<span class="tile err" data-target="${escapeHtml(id)}" data-fields="${escapeHtml(id)}" title="${escapeHtml(msg)}">${escapeHtml(label)}</span>`);
-    });
+    band1 = fieldErrs.map(([id, msg, field]) => {
+      const label = field ? field.label : id;
+      const cid = (field && TILE_COLOR_MAP[field.errColor]) ? field.errColor : "red";
+      const col = tileColor(cid);
+      const style = `background:${col.bg};color:${col.fg};border-color:${col.border}`;
+      return `<span class="tile sev-error" style="${style}" data-target="${escapeHtml(id)}" data-fields="${escapeHtml(id)}" title="${escapeHtml(msg)}">${escapeHtml(label)}</span>`;
+    }).join("");
+  } else {
+    band1 = `<span class="tile ok">✓ ${blocking ? "Campos sin errores" : "Listo para copiar"}</span>`;
   }
 
-  // Tiles personalizados activos, agrupados por su etiqueta de grupo.
-  active.forEach(({ tile, text }) => {
-    const g = groupFor(tile.group ? "g:" + tile.group : "__free__", tile.group || "");
-    const col = tileColor(tile.color);
-    const refs = tileFieldRefs(tile);
-    const target = tile.field || refs[0] || "";
-    const cls = "tile sev-" + tile.severity + (target ? "" : " no-target");
-    const style = `background:${col.bg};color:${col.fg};border-color:${col.border}`;
-    const tip = tile.whenExpr ? "Cuando: " + tile.whenExpr : "";
-    g.html.push(`<span class="${cls}" style="${style}"${target ? ` data-target="${escapeHtml(target)}"` : ""}`
-      + ` data-fields="${escapeHtml(refs.join(" "))}"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${escapeHtml(text)}</span>`);
-  });
-
-  const wrapHtml = groups.map(g => {
-    const label = g.label ? `<span class="tile-group-label">${escapeHtml(g.label)}</span>` : "";
-    return `<div class="tile-group">${label}${g.html.join("")}</div>`;
-  }).join("");
+  // Banda 2 (personalizados).
+  let band2 = "";
+  if (active.length) {
+    band2 = active.map(({ tile, text }) => {
+      const col = tileColor(tile.color);
+      const refs = tileFieldRefs(tile);
+      const target = tile.field || refs[0] || "";
+      const cls = "tile sev-" + tile.severity + (target ? "" : " no-target");
+      const style = `background:${col.bg};color:${col.fg};border-color:${col.border}`;
+      const tip = tile.whenExpr ? "Cuando: " + tile.whenExpr : "";
+      return `<span class="${cls}" style="${style}"${target ? ` data-target="${escapeHtml(target)}"` : ""}`
+        + ` data-fields="${escapeHtml(refs.join(" "))}"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${escapeHtml(text)}</span>`;
+    }).join("");
+  }
 
   const collapsed = !!state.prefs.tilesCollapsed;
   bar.classList.toggle("collapsed", collapsed);
   bar.innerHTML =
-    `<div class="tiles-wrap">${wrapHtml}</div>` +
+    `<div class="tiles-wrap">` +
+      `<div class="tiles-band band-auto">${band1}</div>` +
+      (band2 ? `<div class="tiles-band band-custom">${band2}</div>` : "") +
+    `</div>` +
     `<button class="tiles-toggle" id="tilesToggle" title="${collapsed ? "Expandir (ver todas las tiles)" : "Colapsar a una línea"}">` +
     `<span class="chev">▾</span></button>`;
 
@@ -3282,6 +3382,40 @@ function renderTiles(inst) {
   bar.querySelectorAll("[data-target]").forEach(t => {
     t.addEventListener("click", () => scrollToField(t.dataset.target));
   });
+}
+
+// Compactación: colapso de secciones y repliegue de paneles. Se cablea UNA
+// vez en boot sobre elementos persistentes (no se reemplazan, solo su
+// innerHTML), así sobrevive a los re-render. El estado vive en uiCollapse.
+function wireCollapse() {
+  // Secciones: delegación en #formPanel (persistente). Solo el chevron
+  // dispara; el nombre no. Toggle de clase directo = respuesta inmediata +
+  // animación CSS; el próximo renderForm reaplica la clase desde uiCollapse.
+  const panel = $("formPanel");
+  if (panel) {
+    panel.addEventListener("click", e => {
+      const btn = e.target.closest("[data-sec-collapse]");
+      if (!btn) return;
+      const form = getForm(state.topTab);
+      if (!form) return;
+      const key = sectionCollapseKey(form, btn.dataset.secCollapse);
+      uiCollapse.sections[key] = !uiCollapse.sections[key];
+      const sec = btn.closest(".form-section");
+      if (sec) sec.classList.toggle("collapsed", uiCollapse.sections[key]);
+    });
+  }
+  // Paneles: sus cabeceras son markup estático, listeners directos por id.
+  const panelToggle = (btnId, elId, cls, key) => {
+    const btn = $(btnId), el = $(elId);
+    if (!btn || !el) return;
+    btn.addEventListener("click", () => {
+      uiCollapse[key] = !uiCollapse[key];
+      el.classList.toggle(cls, uiCollapse[key]);
+    });
+  };
+  panelToggle("formCollapseBtn",    "formCol",    "form-collapsed",    "form");
+  panelToggle("mediaCollapseBtn",   "mediaPanel", "collapsed",         "media");
+  panelToggle("actionsCollapseBtn", "outputSide", "actions-collapsed", "actions");
 }
 
 // Interacciones de la barra de tiles. Se cablean UNA vez sobre elementos
@@ -4083,6 +4217,8 @@ function renderRulesTab() {
       sec.fields.forEach(f => {
         if (f.type === "mirror") return;
         const key = form.id + "|" + f.id;
+        const ecid = TILE_COLOR_MAP[f.errColor] ? f.errColor : "red";
+        const ecol = tileColor(ecid);
         fieldRows += `<tr>
           <td class="rules-form-cell">${escapeHtml(form.label)} · ${escapeHtml(sec.label)}</td>
           <td>${escapeHtml(f.label)}</td>
@@ -4090,6 +4226,7 @@ function renderRulesTab() {
           <td><input type="text" data-rr-rx="${escapeHtml(key)}" value="${escapeHtml(f.regex || "")}" placeholder="regex o @regla" /></td>
           <td><input type="text" data-rr-msg="${escapeHtml(key)}" value="${escapeHtml(f.regexMsg || "")}" /></td>
           <td><input type="text" data-rr-def="${escapeHtml(key)}" value="${escapeHtml(f.default || "")}" /></td>
+          <td><select data-rr-color="${escapeHtml(key)}" class="tile-color-sel" style="background:${ecol.bg};color:${ecol.fg}">${tileColorOptions(ecid)}</select></td>
         </tr>`;
       });
     });
@@ -4140,13 +4277,12 @@ function renderRulesTab() {
     const fieldOptsT = (sel) => `<option value=""${!sel ? " selected" : ""}>(auto: 1er campo de la condición)</option>`
       + allFields(form).filter(x => x.field.type !== "mirror")
         .map(x => `<option value="${escapeHtml(x.field.id)}"${sel === x.field.id ? " selected" : ""}>${escapeHtml(x.field.label)}</option>`).join("");
-    const rows = getFormTiles(form).map((t, i) => {
+    const tiles = getFormTiles(form);
+    const rows = tiles.map((t, i) => {
       const k = form.id + "|" + i;
       const expr = t.whenExpr || "";
       const err = exprError(expr);
       const col = tileColor(t.color);
-      const colorOpts = TILE_COLORS.map(cc =>
-        `<option value="${cc.id}"${t.color === cc.id ? " selected" : ""}>${escapeHtml(cc.label)}</option>`).join("");
       const sevOpts = TILE_SEVERITIES.map(([v, l]) =>
         `<option value="${v}"${t.severity === v ? " selected" : ""}>${escapeHtml(l)}</option>`).join("");
       return `<tr>
@@ -4155,16 +4291,19 @@ function renderRulesTab() {
              data-tr="${k}|whenExpr" value="${escapeHtml(expr)}"
              placeholder="vacío = siempre. ej. bugType = Crash AND consoleLog empty" />
           <div class="cond-err" data-tr-err="${k}">${err ? escapeHtml(err) : ""}</div></td>
-        <td><select data-tr="${k}|color" class="tile-color-sel" style="background:${col.bg};color:${col.fg}">${colorOpts}</select></td>
-        <td><input type="text" data-tr="${k}|group" value="${escapeHtml(t.group)}" placeholder="(sin grupo)" style="width:90px" /></td>
+        <td><select data-tr="${k}|color" class="tile-color-sel" style="background:${col.bg};color:${col.fg}">${tileColorOptions(t.color)}</select></td>
         <td><select data-tr="${k}|severity">${sevOpts}</select></td>
         <td><select data-tr="${k}|field">${fieldOptsT(t.field)}</select></td>
+        <td style="white-space:nowrap">
+          <button class="tool-btn" data-tr-move="${k}|-1" title="Subir (aparece antes)"${i === 0 ? " disabled" : ""}>▲</button>
+          <button class="tool-btn" data-tr-move="${k}|1" title="Bajar (aparece después)"${i === tiles.length - 1 ? " disabled" : ""}>▼</button>
+        </td>
         <td><button class="row-del" data-tr-del="${k}" title="Borrar tile">✕</button></td>
       </tr>`;
     }).join("");
     return `<h4 style="margin:10px 0 4px;font-size:12px;">${escapeHtml(form.label)}</h4>
       <table class="data-table cond-table tile-table">
-        <thead><tr><th>Texto</th><th>Cuándo aparece</th><th>Color</th><th>Grupo</th><th>Tipo</th><th>Salta a</th><th></th></tr></thead>
+        <thead><tr><th>Texto</th><th>Cuándo aparece</th><th>Color</th><th>Tipo</th><th>Salta a</th><th>Orden</th><th></th></tr></thead>
         <tbody>${rows || `<tr><td colspan="7" style="color:#9ca3af;font-style:italic;">Sin tiles todavía.</td></tr>`}</tbody>
       </table>
       <button data-tr-add="${escapeHtml(form.id)}" style="margin-top:6px;">+ Agregar tile a ${escapeHtml(form.label)}</button>`;
@@ -4179,10 +4318,12 @@ function renderRulesTab() {
         puedes escribir la expresión directa (ej. <code>^\\d+$</code> para números) o
         <code>@nombre</code> para usar una regla global de la tabla de abajo
         (ej. <code>@coord_re</code>). El campo se marca en rojo cuando no cumple y
-        aparece un tile arriba del formulario.
+        aparece su tile en la <strong>primera línea</strong> de la barra de arriba
+        (en el orden del formulario). La columna <strong>Color</strong> cambia el
+        color de ese tile (por defecto rojo).
       </p>
       <table class="data-table">
-        <thead><tr><th>Formulario · Sección</th><th>Campo</th><th>Oblig.</th><th>Regex</th><th>Mensaje de error</th><th>Default</th></tr></thead>
+        <thead><tr><th>Formulario · Sección</th><th>Campo</th><th>Oblig.</th><th>Regex</th><th>Mensaje de error</th><th>Default</th><th>Color</th></tr></thead>
         <tbody>${fieldRows}</tbody>
       </table>
     </div>
@@ -4222,17 +4363,18 @@ function renderRulesTab() {
     <div class="rules-block">
       <h3>Tiles personalizados</h3>
       <p class="rules-intro">
-        Tiles propios que aparecen arriba del formulario, independientes de los
-        campos. Cada uno tiene un <strong>texto</strong> (admite <code>{idCampo}</code>
-        para intercalar el valor de un campo), una <strong>condición</strong> que
-        decide cuándo se muestra (mismo motor que las condiciones de arriba;
-        <em>vacía = siempre visible</em>), un <strong>color</strong>, un
-        <strong>grupo</strong> opcional (los tiles del mismo grupo se dibujan
-        juntos) y un <strong>tipo</strong>: <em>Error</em> bloquea el "listo para
-        copiar" (como un campo obligatorio), <em>Aviso</em> e <em>Info</em> solo
-        informan. "Salta a" es el campo al que va el click; si lo dejas en auto,
-        usa el primer campo que menciona la condición. Al pasar el mouse por un
-        campo, se resaltan los tiles que lo mencionan. Ejemplos:
+        Tiles propios que aparecen en la <strong>segunda línea</strong> de la barra
+        de arriba, independientes de los campos y <strong>en el orden de esta
+        tabla</strong> (usa ▲▼ para reordenarlos). Cada uno tiene un
+        <strong>texto</strong> (admite <code>{idCampo}</code> para intercalar el
+        valor de un campo), una <strong>condición</strong> que decide cuándo se
+        muestra (mismo motor que las condiciones de arriba;
+        <em>vacía = siempre visible</em>), un <strong>color</strong> y un
+        <strong>tipo</strong>: <em>Error</em> bloquea el "listo para copiar" (como
+        un campo obligatorio), <em>Aviso</em> e <em>Info</em> solo informan.
+        "Salta a" es el campo al que va el click; si lo dejas en auto, usa el
+        primer campo que menciona la condición. Al pasar el mouse por un campo, se
+        resaltan los tiles que lo mencionan. Ejemplos:
         <code>bugType = Crash AND consoleLog empty</code> (error: falta el log) o
         texto fijo <code>Mapa: {map}</code> con condición <code>map notEmpty</code>.
       </p>
@@ -4289,6 +4431,14 @@ function renderRulesTab() {
     const t = findTarget(el.dataset.rrDef);
     if (!t) return;
     if (el.value) t.field.default = el.value; else delete t.field.default;
+    scheduleSave();
+  }));
+  // Color del tile de error del campo (default rojo = sin guardar nada).
+  c.querySelectorAll("[data-rr-color]").forEach(el => el.addEventListener("change", () => {
+    const t = findTarget(el.dataset.rrColor);
+    if (!t) return;
+    if (el.value && el.value !== "red") t.field.errColor = el.value; else delete t.field.errColor;
+    renderRulesTab(); // refresca el color del propio select
     scheduleSave();
   }));
   c.querySelectorAll("[data-rr-global]").forEach(el => el.addEventListener("input", () => {
@@ -4405,6 +4555,21 @@ function renderRulesTab() {
           scheduleSave();
         }
       });
+    });
+  });
+  // Reordenar tiles (▲▼): cambia el orden de la lista = orden en la 2ª banda.
+  c.querySelectorAll("[data-tr-move]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const [formId, idx, dir] = btn.dataset.trMove.split("|");
+      const form = getForm(formId);
+      const tiles = form && getFormTiles(form);
+      if (!tiles) return;
+      const i = +idx, to = i + (+dir);
+      if (to < 0 || to >= tiles.length) return;
+      const [moved] = tiles.splice(i, 1);
+      tiles.splice(to, 0, moved);
+      renderRulesTab();
+      scheduleSave();
     });
   });
 }
@@ -4548,7 +4713,8 @@ function exportFieldsCsv() {
           f.size || "", f.template || "", sepOut(f.sep),
           f.joinPrev ? "yes" : "", f.perLine ? "yes" : "", f.rows || "",
           f.required ? "yes" : "", f.regex || "", f.regexMsg || "",
-          f.default || "", f.emptyAs || "", f.omitValue || "", "", f.help || "",
+          f.default || "", f.emptyAs || "", f.omitValue || "",
+          (f.errColor && f.errColor !== "red") ? f.errColor : "", f.help || "",
           f.hidden ? "yes" : "", f.kwCount || "", f.kwOverlap ? "yes" : ""
         ]);
       });
@@ -4691,6 +4857,9 @@ function importFieldsCsv(text) {
       if (def) f.default = def;
       if (emptyas) f.emptyAs = emptyas;
       if (omitvalue) f.omitValue = omitvalue;
+      // En filas de campo la columna nogap se reutiliza para el color del
+      // tile de error (rojo por defecto). Un color desconocido se ignora.
+      if (nogap && TILE_COLOR_MAP[nogap] && nogap !== "red") f.errColor = nogap;
       if (help) f.help = help;
       if (csvTruthy(hidden)) f.hidden = true;
       if (type === "keywords") {
@@ -5141,6 +5310,7 @@ function boot() {
   wireStaticControls();
   wireMediaPanel();
   wireTileInteractions();
+  wireCollapse();
   refreshAll();
 }
 

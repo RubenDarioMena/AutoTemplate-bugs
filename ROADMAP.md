@@ -8,15 +8,19 @@ aún no implementadas. Sin fechas: se van tomando por iteración.
 Implementado: en la pestaña **Rules** hay una tabla de tiles por
 formulario (`form.tiles`) con texto (admite `{idCampo}`), condición
 propia (mismo motor de expresiones; vacía = siempre visible), color de
-una paleta con nombre (15 colores), grupo y severidad (error bloquea el
-"listo para copiar"; aviso/info solo informan). Los tiles automáticos
-por campo se conservan. La barra agrupa los tiles, se colapsa a una
-línea con la "llave" (▾) y, al pasar el mouse por un campo, resalta los
-tiles que lo mencionan y atenúa el resto. Viajan en `bug_fields.csv`
-como filas `type=tile`. Ver ADDENDUM de DESIGN.md (iteración 5).
+una paleta con nombre (15 colores), severidad (error bloquea el "listo
+para copiar"; aviso/info solo informan) y orden reordenable con ▲▼. Los
+tiles automáticos por campo se conservan y su color también es editable
+(columna Color en "Validaciones por campo"). La barra tiene dos líneas:
+1ª = automáticos (orden del form), 2ª = personalizados (orden de la
+tabla de Rules); cada una hasta 3 renglones y luego scroll. Se colapsa
+por banda con la "llave" (▾) —patrón reutilizado también en las
+secciones del form— y, al pasar el mouse por un campo, resalta los tiles
+que lo mencionan y atenúa el resto. Viajan en `bug_fields.csv` como
+filas `type=tile`. Ver ADDENDUM de DESIGN.md (iteración 5).
 
-Ideas menores que quedan sueltas: reordenar tiles/grupos con flechas y
-color por grupo (hoy el color es por tile).
+Queda para después: agrupación visual por categoría y color por grupo
+(el dato `group` ya existe, sin UI por ahora).
 
 ## 2. Más conexiones media ↔ Rules
 
