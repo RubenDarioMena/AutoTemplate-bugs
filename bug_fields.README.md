@@ -80,26 +80,42 @@ En `template`, `sep` y el encabezado de sección se puede escribir
 
 ## Filas `type=cond` — condiciones entre campos
 
-Reglas del tipo *si el campo A ... entonces el campo B ...*. Lo
+Reglas del tipo *SI (expresión) ENTONCES (acción sobre un campo)*. Lo
 normal es editarlas en la pestaña **Rules** de la herramienta; en el
 CSV viajan con este mapeo de columnas (el resto quedan vacías):
 
   | columna  | contiene                                                    |
   |----------|-------------------------------------------------------------|
   | form     | id del formulario                                           |
-  | source   | campo de la condición (el "si")                             |
-  | template | operador: empty / notEmpty / equals / notEquals / matches / equalsField / notEqualsField |
-  | default  | valor de la condición (regex con matches; id de otro campo con *Field) |
+  | source   | EXPRESIÓN booleana de la condición (el "si") — ver abajo     |
   | regex    | acción: show / hide / disable / setDefault / error          |
   | regexmsg | campo destino (el "entonces")                               |
   | emptyas  | valor de la acción (default a poner, o mensaje de error)    |
 
+La **expresión** (columna `source`) es texto y admite `AND`, `OR`,
+`NOT` y paréntesis, anidados a cualquier profundidad. Comparaciones:
+
+  - `campo empty` / `campo notEmpty`
+  - `campo = "valor"` / `campo != "valor"`
+  - `campo matches @regla` (o una regex directa)
+  - `campoA = campoB` — compara dos campos por id (ambos no vacíos)
+  - `@regla` suelta = evalúa esa regla booleana; se pueden concatenar
+    (`@esLod OR @esVlod`)
+
+El input se pone en rojo en la pestaña Rules si la sintaxis es inválida.
+
 Ejemplos reales:
-  - *BSP CL igual a CL → error*: `bug,,,,cond,bspCl,,equalsField,,,,,,error,bspCl,cl,BSP CL debe ser distinto de CL,...`
+  - *BSP CL igual a CL → error*:
+    `bug,,,,cond,bspCl = cl,,,,,,,,error,bspCl,,BSP CL debe ser distinto de CL,...`
   - *Descripción corta contiene "LOD" → mostrar LOD number*: campo
     `lodNumber` creado con `hidden=yes`, y una fila cond con
-    `source=shortDescription`, `template=matches`, `default=LOD`,
+    `source=shortDescription matches @lod` (o `matches "LOD"`),
     `regex=show`, `regexmsg=lodNumber`.
+
+> Compatibilidad: los CSV de la iteración 2 traían el operador en
+> `template` y el valor en `default` (formato campo/op/valor); se
+> siguen leyendo al importar y se reescriben como expresión al
+> exportar. No hay que migrar nada a mano.
 
 ## Valores de `source` para autocomplete
 

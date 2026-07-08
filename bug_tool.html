@@ -459,6 +459,10 @@
       padding: 0 6px;
     }
     .media-row-actions .row-del:hover { background: #fee2e2; color: #b91c1c; }
+    /* El tipo de media reutiliza el widget autocomplete; su columna es
+       angosta (120px), así que el desplegable se ensancha para leerse bien. */
+    .media-row .media-type-ac { position: relative; }
+    .media-row .media-type-ac .autocomplete-list { min-width: 180px; }
     .add-media-btn { margin-top: 8px; font-size: 11px; padding: 3px 10px; }
     .media-preview {
       margin-top: 6px;
@@ -496,7 +500,8 @@
     /* ---------- Controles del modo edición ---------- */
     /* Ocultos por defecto; body.editing los muestra. */
     .sec-tools, .fld-tools, .add-section-btn, .mirror-field,
-    #addSectionTopBtn { display: none; }
+    .media-edit-btn, #addSectionTopBtn { display: none; }
+    body.editing .media-edit-btn { display: inline-flex; margin-left: 6px; }
     body.editing #addSectionTopBtn { display: inline-block; margin-left: auto; }
     body.editing .form-toolbar .edit-toggle { margin-left: 0; }
     body.editing .sec-tools { display: inline-flex; gap: 2px; margin-left: auto; }
@@ -537,6 +542,24 @@
     }
     .cond-table td { white-space: nowrap; }
     .cond-then { color: #1d4ed8; font-weight: 700; font-size: 10px; text-transform: uppercase; }
+    /* Celda de expresión booleana: ancha, monospace y con aviso de error */
+    .cond-expr-cell { white-space: normal; min-width: 320px; }
+    .cond-table input.cond-expr {
+      width: 100%;
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11px;
+    }
+    .cond-table input.cond-expr.cond-bad {
+      border-color: #dc2626;
+      background: #fef2f2;
+    }
+    .cond-err {
+      color: #b91c1c;
+      font-size: 10px;
+      margin-top: 2px;
+      min-height: 12px;
+      white-space: normal;
+    }
 
     /* ---------- Autocomplete ---------- */
     .autocomplete { position: relative; }
@@ -580,6 +603,16 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.08);
     }
     .autocomplete.open .autocomplete-list { display: block; }
+    /* Cuando no cabe hacia abajo, el dropdown se abre hacia arriba
+       (campos en la parte inferior del form o del panel de media). */
+    .autocomplete.drop-up .autocomplete-list {
+      top: auto;
+      bottom: 100%;
+      border-top: 1px solid #c7ccd1;
+      border-bottom: none;
+      border-radius: 3px 3px 0 0;
+      box-shadow: 0 -4px 8px rgba(0,0,0,0.08);
+    }
     .autocomplete-empty {
       padding: 4px 8px;
       color: #9ca3af;
@@ -971,6 +1004,8 @@
           <div class="media-panel-header">
             <h4>Nombres de media</h4>
             <span class="hint" id="mediaFmtHint"></span>
+            <button class="tool-btn media-edit-btn" id="mediaConfigBtn"
+              title="Editar la lista y la regla de nombres de esta sección">✎</button>
           </div>
           <!-- Key del ticket: la escribe el tester al crear el issue.
                Los nombres de abajo se generan solos con esta key y los
@@ -1415,6 +1450,40 @@ function migrateLinkSources(cfg) {
       })));
 }
 
+// Encierra un literal en comillas seguras para el lenguaje de expresiones.
+function quoteLit(v) {
+  v = String(v == null ? "" : v);
+  return v.includes('"') ? `'${v}'` : `"${v}"`;
+}
+
+// Convierte una condición vieja { field, op, value } a texto de expresión.
+function whenToExpr(w) {
+  if (!w || !w.field) return "";
+  const f = w.field, val = w.value == null ? "" : w.value;
+  switch (w.op) {
+    case "empty":          return `${f} empty`;
+    case "notEmpty":       return `${f} notEmpty`;
+    case "equals":         return `${f} = ${quoteLit(val)}`;
+    case "notEquals":      return `${f} != ${quoteLit(val)}`;
+    case "matches":        return `${f} matches ${String(val).startsWith("@") ? val : quoteLit(val)}`;
+    case "equalsField":    return `${f} = ${val}`;
+    case "notEqualsField": return `${f} != ${val}`;
+    default:               return "";
+  }
+}
+
+// Normaliza las reglas de todos los formularios a la forma nueva
+// (whenExpr: texto). Mantiene retrocompatibilidad: si ya trae whenExpr, no
+// toca; si trae `when` viejo, lo convierte y elimina el objeto.
+function migrateRulesToExpr(cfg) {
+  (cfg.schema.forms || []).forEach(form => {
+    (form.rules || []).forEach(r => {
+      if (typeof r.whenExpr === "string") { delete r.when; return; }
+      if (r.when) { r.whenExpr = whenToExpr(r.when); delete r.when; }
+    });
+  });
+}
+
 function configIsDirty() {
   return JSON.stringify(config) !== JSON.stringify(vanilla);
 }
@@ -1479,7 +1548,7 @@ function getLinks() {
 // { value, label }. Ya NO genera un "pois:" por cada campo: solo el padre
 // de cada link y, por cada campo que ES padre de un link, su hijo.
 function sourceOptions(form) {
-  const opts = Object.keys(config.data.lists).map(k => ({ value: k, label: "Lista: " + k }));
+  const opts = Object.keys(config.data.lists).map(k => ({ value: k, label: k }));
   const links = getLinks();
   Object.values(links).forEach(L => {
     opts.push({ value: "parent:" + L.id, label: L.parentLabel + " (lista correlacionada)" });
@@ -1988,6 +2057,34 @@ function clearDependents(form, name, inst, panel) {
    para sumar el texto escrito a la lista (queda en DATA), y cada
    opción tiene una ✕ para borrarla definitivamente (con
    confirmación). */
+// Ancestro scrolleable más cercano (el que recorta el dropdown). Ej.: el
+// .form-panel (overflow-y:auto) o el panel de media.
+function nearestScrollParent(el) {
+  let p = el.parentElement;
+  while (p && p !== document.body) {
+    const oy = getComputedStyle(p).overflowY;
+    if ((oy === "auto" || oy === "scroll") && p.scrollHeight > p.clientHeight) return p;
+    p = p.parentElement;
+  }
+  return null;
+}
+
+// Decide si el dropdown abre hacia abajo (por defecto) o hacia arriba
+// (clase drop-up) según el espacio disponible dentro del contenedor que lo
+// recorta. Se llama con la lista ya visible para poder medir su alto real.
+function positionAutocomplete(wrap, list) {
+  wrap.classList.remove("drop-up");
+  const rect = wrap.getBoundingClientRect();
+  const sp = nearestScrollParent(wrap);
+  const topBound = sp ? sp.getBoundingClientRect().top : 0;
+  const bottomBound = sp ? sp.getBoundingClientRect().bottom : window.innerHeight;
+  const listH = list.offsetHeight;
+  const spaceBelow = bottomBound - rect.bottom;
+  const spaceAbove = rect.top - topBound;
+  // Solo abre hacia arriba si no cabe abajo y arriba hay más sitio.
+  if (spaceBelow < listH && spaceAbove > spaceBelow) wrap.classList.add("drop-up");
+}
+
 function wireAutocomplete(input, inst, form, field) {
   const wrap = input.closest(".autocomplete");
   const list = wrap.querySelector(".autocomplete-list");
@@ -2048,13 +2145,18 @@ function wireAutocomplete(input, inst, form, field) {
     }
     activeIdx = -1;
     wrap.classList.add("open");
+    positionAutocomplete(wrap, list);
   };
 
   if (arrow) {
     arrow.addEventListener("mousedown", (e) => {
       e.preventDefault();
       if (wrap.classList.contains("open")) wrap.classList.remove("open");
-      else { renderList(true); input.focus(); }
+      // Enfoca PRIMERO: focus dispara renderList(false) (filtrado por el
+      // texto ya escrito); luego renderList(true) lo sobrescribe con TODAS
+      // las opciones. Si se invierte el orden, el focus re-filtra y el
+      // dropdown se abre incompleto la primera vez (bug de la flecha).
+      else { input.focus(); renderList(true); }
     });
   }
   input.addEventListener("focus", () => renderList(false));
@@ -2088,7 +2190,14 @@ function wireAutocomplete(input, inst, form, field) {
       return;
     }
     items.forEach((it, i) => it.classList.toggle("active", i === activeIdx));
-    if (activeIdx >= 0 && items[activeIdx]) items[activeIdx].scrollIntoView({ block: "nearest" });
+    // Desplaza SOLO dentro del propio dropdown (no la página): así navegar
+    // con las flechas nunca mueve el resto del layout.
+    if (activeIdx >= 0 && items[activeIdx]) {
+      const it = items[activeIdx];
+      if (it.offsetTop < list.scrollTop) list.scrollTop = it.offsetTop;
+      else if (it.offsetTop + it.offsetHeight > list.scrollTop + list.clientHeight)
+        list.scrollTop = it.offsetTop + it.offsetHeight - list.clientHeight;
+    }
   });
 }
 
@@ -2543,6 +2652,204 @@ function getFormRules(form) {
   return form.rules || [];
 }
 
+/* ================================================================
+   MOTOR DE EXPRESIONES BOOLEANAS (AND / OR / NOT)
+   ================================================================
+   La condición de una regla es una EXPRESIÓN de texto anidable. Gramática
+   (palabras clave indistintas de may/min):
+
+     expr    := or
+     or      := and  ( ("OR"|"||")  and )*
+     and     := not  ( ("AND"|"&&") not )*
+     not     := ("NOT"|"!") not  |  primary
+     primary := "(" expr ")"  |  "@"nombre  |  comparación
+     comparación := campo ( "empty" | "notEmpty"
+                          | ("="|"==") operando       // igual
+                          | ("!="|"<>") operando       // distinto
+                          | ("matches"|"~") operando ) // cumple regex/@regla
+     operando := "texto"  |  "@"nombre  |  palabra
+
+   - operando entre comillas → literal;  @nombre → @regla;  palabra suelta →
+     id de campo (compara valor contra valor: equalsField/notEqualsField).
+   - "@nombre" suelto = evalúa esa @regla como sub-expresión booleana
+     (permite reutilizar/concatenar reglas: «@esLod OR @esVlod»).
+   Retrocompatible: una `when` vieja { field, op, value } sigue evaluándose. */
+
+function tokenizeExpr(src) {
+  const toks = [];
+  let i = 0;
+  const isWord = (c) => /[A-Za-z0-9_\-.]/.test(c);
+  while (i < src.length) {
+    const c = src[i];
+    if (/\s/.test(c)) { i++; continue; }
+    if (c === "(" || c === ")") { toks.push({ t: c }); i++; continue; }
+    if (c === '"' || c === "'") {
+      let j = i + 1, s = "";
+      while (j < src.length && src[j] !== c) { s += src[j]; j++; }
+      if (j >= src.length) throw new Error("Falta cerrar la comilla");
+      toks.push({ t: "str", v: s }); i = j + 1; continue;
+    }
+    if (c === "@") {
+      let j = i + 1, s = "";
+      while (j < src.length && /[A-Za-z0-9_]/.test(src[j])) { s += src[j]; j++; }
+      if (!s) throw new Error("@ sin nombre de regla");
+      toks.push({ t: "ref", v: s }); i = j; continue;
+    }
+    const two = src.slice(i, i + 2);
+    if (two === "==" || two === "!=" || two === "<>" || two === "&&" || two === "||") {
+      toks.push({ t: "op", v: two }); i += 2; continue;
+    }
+    if (c === "=" || c === "~" || c === "!") { toks.push({ t: "op", v: c }); i++; continue; }
+    if (isWord(c)) {
+      let j = i, s = "";
+      while (j < src.length && isWord(src[j])) { s += src[j]; j++; }
+      toks.push({ t: "word", v: s }); i = j; continue;
+    }
+    throw new Error("Carácter inesperado: «" + c + "»");
+  }
+  return toks;
+}
+
+// Parser de descenso recursivo → AST. Lanza Error con mensaje legible.
+function parseExpr(src) {
+  const toks = tokenizeExpr(src);
+  let p = 0;
+  const peek = () => toks[p];
+  const isKw = (w) => peek() && peek().t === "word" && peek().v.toLowerCase() === w;
+  const isOp = (...vs) => peek() && peek().t === "op" && vs.includes(peek().v);
+
+  function parseOr() {
+    let left = parseAnd();
+    while (isKw("or") || isOp("||")) { p++; left = { type: "or", items: [left, parseAnd()] }; }
+    return left;
+  }
+  function parseAnd() {
+    let left = parseNot();
+    while (isKw("and") || isOp("&&")) { p++; left = { type: "and", items: [left, parseNot()] }; }
+    return left;
+  }
+  function parseNot() {
+    if (isKw("not") || isOp("!")) { p++; return { type: "not", item: parseNot() }; }
+    return parsePrimary();
+  }
+  function parsePrimary() {
+    if (peek() && peek().t === "(") {
+      p++;
+      const e = parseOr();
+      if (!peek() || peek().t !== ")") throw new Error("Falta cerrar «)»");
+      p++;
+      return e;
+    }
+    if (peek() && peek().t === "ref") { const name = peek().v; p++; return { type: "ref", name }; }
+    // comparación: empieza por un id de campo (word)
+    if (!peek() || peek().t !== "word") throw new Error("Se esperaba un campo o «(»");
+    const field = peek().v; p++;
+    // operador postfijo empty/notEmpty
+    if (isKw("empty")) { p++; return { type: "cmp", field, op: "empty" }; }
+    if (isKw("notempty")) { p++; return { type: "cmp", field, op: "notEmpty" }; }
+    // operador binario
+    let op;
+    if (isOp("=", "==")) op = "eq";
+    else if (isOp("!=", "<>")) op = "ne";
+    else if (isKw("matches") || isOp("~")) op = "matches";
+    else throw new Error("Se esperaba un operador después de «" + field + "»");
+    p++;
+    if (!peek()) throw new Error("Falta el valor de la comparación");
+    const tk = peek(); p++;
+    let operand;
+    if (tk.t === "str") operand = { kind: "lit", v: tk.v };
+    else if (tk.t === "ref") operand = { kind: "ref", v: tk.v };
+    else if (tk.t === "word") operand = { kind: "word", v: tk.v };
+    else throw new Error("Valor de comparación inválido");
+    return { type: "cmp", field, op, operand };
+  }
+
+  if (!toks.length) throw new Error("Expresión vacía");
+  const ast = parseOr();
+  if (p < toks.length) throw new Error("Sobra texto tras la expresión");
+  return ast;
+}
+
+// Convierte un nodo de comparación a la forma { field, op, value } que ya
+// sabe evaluar evalCondition (reusando toda su semántica).
+function cmpToWhen(node) {
+  if (node.op === "empty" || node.op === "notEmpty") return { field: node.field, op: node.op };
+  const o = node.operand || { kind: "lit", v: "" };
+  if (node.op === "matches") {
+    const val = o.kind === "ref" ? "@" + o.v : o.v;
+    return { field: node.field, op: "matches", value: val };
+  }
+  // eq/ne: palabra suelta que ES un id de campo → comparación campo-a-campo
+  const isFieldRef = o.kind === "word" && anyFieldHasId(o.v);
+  if (o.kind === "ref") return { field: node.field, op: node.op === "eq" ? "equals" : "notEquals", value: "@" + o.v };
+  if (isFieldRef) return { field: node.field, op: node.op === "eq" ? "equalsField" : "notEqualsField", value: o.v };
+  return { field: node.field, op: node.op === "eq" ? "equals" : "notEquals", value: o.v };
+}
+
+// ¿Algún campo de cualquier formulario tiene este id? (para decidir si un
+// operando suelto es referencia a campo o literal).
+function anyFieldHasId(id) {
+  return getForms().some(f => allFields(f).some(x => x.field.id === id));
+}
+
+// Evalúa un AST contra la instancia. `seen` evita ciclos entre @reglas.
+function evalAst(ast, inst, seen) {
+  if (!ast) return false;
+  switch (ast.type) {
+    case "or":  return ast.items.some(x => evalAst(x, inst, seen));
+    case "and": return ast.items.every(x => evalAst(x, inst, seen));
+    case "not": return !evalAst(ast.item, inst, seen);
+    case "cmp": return evalCondition(cmpToWhen(ast), inst);
+    case "ref": {
+      const name = ast.name;
+      if (seen && seen.has(name)) return false; // ciclo
+      const raw = config.data.rules[name];
+      if (raw == null || String(raw).trim() === "") return false;
+      try {
+        const sub = parseExpr(String(raw));
+        const s2 = new Set(seen || []); s2.add(name);
+        return evalAst(sub, inst, s2);
+      } catch (e) { return false; } // @regla que no es expresión booleana
+    }
+    default: return false;
+  }
+}
+
+// Evalúa la condición de una regla, aceptando la forma nueva (whenExpr:
+// string) o la vieja (when: {field,op,value}). Vacío = no dispara.
+function ruleWhenTrue(rule, inst) {
+  if (typeof rule.whenExpr === "string") {
+    const src = rule.whenExpr.trim();
+    if (!src) return false;
+    try { return evalAst(parseExpr(src), inst); }
+    catch (e) { return false; } // expresión inválida: la regla no aplica
+  }
+  if (rule.when) return evalCondition(rule.when, inst);
+  return false;
+}
+
+// Valida una expresión; devuelve "" si es válida o el mensaje de error.
+function exprError(src) {
+  if (!String(src || "").trim()) return "";
+  try { parseExpr(String(src)); return ""; }
+  catch (e) { return e.message || "Expresión inválida"; }
+}
+
+// Ids de campo usados como lado izquierdo de una comparación en la expresión
+// (para validar al importar que existan). No mira los operandos (pueden ser
+// literales) ni desciende a otras @reglas. Si no parsea, devuelve [].
+function exprFieldRefs(src) {
+  const ids = [];
+  const walk = (n) => {
+    if (!n) return;
+    if (n.type === "cmp") ids.push(n.field);
+    else if (n.type === "not") walk(n.item);
+    else if (n.type === "or" || n.type === "and") n.items.forEach(walk);
+  };
+  try { walk(parseExpr(String(src || ""))); } catch (e) {}
+  return ids;
+}
+
 function evalCondition(when, inst) {
   const v = String(inst.values[when.field] == null ? "" : inst.values[when.field]).trim();
   const target = String(when.value == null ? "" : when.value).trim();
@@ -2576,8 +2883,8 @@ function evalFieldRules(form, inst) {
     fx[field.id] = { hidden: !!field.hidden, disabled: false };
   });
   getFormRules(form).forEach(r => {
-    if (!r.when || !r.then || !fx[r.then.field]) return;
-    if (!evalCondition(r.when, inst)) return;
+    if ((!r.when && r.whenExpr == null) || !r.then || !fx[r.then.field]) return;
+    if (!ruleWhenTrue(r, inst)) return;
     const t = fx[r.then.field];
     if (r.then.action === "show") t.hidden = false;
     else if (r.then.action === "hide") t.hidden = true;
@@ -2642,10 +2949,10 @@ function revalidate(inst) {
   // Condiciones con acción "marcar error" (ej. BSP CL igual a CL).
   // No aplican sobre campos ocultos o bloqueados.
   getFormRules(form).forEach(r => {
-    if (!r.when || !r.then || r.then.action !== "error") return;
+    if ((!r.when && r.whenExpr == null) || !r.then || r.then.action !== "error") return;
     const st = fx[r.then.field];
     if (!st || st.hidden || st.disabled) return;
-    if (evalCondition(r.when, inst)) {
+    if (ruleWhenTrue(r, inst)) {
       inst.errors[r.then.field] = r.then.value || "Valor inválido";
     }
   });
@@ -2896,9 +3203,25 @@ function addBtn(container, label, fn, cls) {
      {loQueSea} → el valor de cualquier campo del formulario por id
                   (ej. {cl}, {map}, {bugType})
 
-   Los tipos de fila salen de la lista `mediaTypes` en DATA. */
-function mediaTypes() {
-  return config.data.lists.mediaTypes || ["Vid", "Pic", "ConsoleLog", "DxDiag"];
+   Los tipos de fila salen de la lista `mediaTypes` en DATA.
+
+   La lista y la regla se pueden configurar POR SECCIÓN (bug, regression...)
+   con el lápiz del panel de media: `form.media = { source, fmt }`. Si la
+   sección no tiene override, usa la lista "mediaTypes" y la regla global
+   `config.data.rules.media_fmt`. Así la media de regresión puede llevar,
+   por ejemplo, un prefijo "Open_" distinto al del bug. */
+
+// Formulario cuya media se está mostrando (la pestaña activa).
+function currentMediaForm() { return getForm(state.topTab); }
+
+// Lista de DATA que alimenta el dropdown de tipo de media de la sección.
+function mediaSource(form) {
+  form = form || currentMediaForm();
+  return (form && form.media && form.media.source) || "mediaTypes";
+}
+
+function mediaTypes(form) {
+  return config.data.lists[mediaSource(form)] || ["Vid", "Pic", "ConsoleLog", "DxDiag"];
 }
 
 // Tipo con el que nace una fila de media nueva (el primero de la lista).
@@ -2907,8 +3230,10 @@ function defaultMediaType() {
   return t.length ? t[0] : "Pic";
 }
 
-function mediaFormat() {
-  return config.data.rules.media_fmt || "{type}_{key}_{platform}_{cl}_(1)";
+function mediaFormat(form) {
+  form = form || currentMediaForm();
+  return (form && form.media && form.media.fmt) || config.data.rules.media_fmt
+    || "{type}_{key}_{platform}_{cl}_(1)";
 }
 
 function getPlatformForMedia(inst) {
@@ -2937,25 +3262,31 @@ function buildMediaName(mediaType, inst) {
 function renderMediaPanel() {
   const inst = getActiveInstance();
   if (!inst) return;
+  const mform = currentMediaForm();
   if (inst.ticketKey === undefined) inst.ticketKey = "";
   if (!Array.isArray(inst.media)) inst.media = [defaultMediaType()];
-  $("mediaFmtHint").textContent = "Formato (regla media_fmt): " + mediaFormat();
+  $("mediaFmtHint").textContent = "Formato (regla media_fmt): " + mediaFormat(mform);
+  const cfgBtn = $("mediaConfigBtn");
+  if (cfgBtn) cfgBtn.onclick = () => showMediaConfigEditor();
   const keyInput = $("mediaTicketKey");
   if (document.activeElement !== keyInput) keyInput.value = inst.ticketKey;
 
   // Una fila por cada media que el tester quiera. Cada fila tiene un
   // selector de tipo (text+dropdown vía datalist) y el nombre generado
   // al lado (solo lectura + copiar). Se pueden agregar y borrar.
-  const types = mediaTypes();
-  const datalist = `<datalist id="mediaTypeList">${types.map(t =>
-    `<option value="${escapeHtml(t)}"></option>`).join("")}</datalist>`;
   const rows = $("mediaRows");
   rows.innerHTML = inst.media.map((type, i) => {
     const { name, missing } = buildMediaName(type, inst);
     const ok = !missing.length;
     return `<div class="media-row" data-media-i="${i}">
-      <input type="text" class="media-type-input" list="mediaTypeList" data-media-type="${i}"
-        value="${escapeHtml(type)}" placeholder="tipo (pic, vid...)" />
+      <div class="field autocomplete media-type-ac">
+        <div class="autocomplete-input-wrap">
+          <input type="text" class="media-type-input" data-media-type="${i}"
+            value="${escapeHtml(type)}" placeholder="tipo (pic, vid...)" />
+          <span class="autocomplete-arrow" data-ac-toggle title="Ver todas las opciones">▼</span>
+        </div>
+        <div class="autocomplete-list"></div>
+      </div>
       <input type="text" readonly data-media-name="${i}" value="${ok ? escapeHtml(name) : ""}"
         placeholder="${ok ? "" : "falta: " + escapeHtml(missing.join(", "))}" />
       <span class="media-row-actions">
@@ -2965,7 +3296,6 @@ function renderMediaPanel() {
       </span>
     </div>`;
   }).join("")
-    + datalist
     + `<button id="addMediaBtn" class="add-media-btn" title="Agrega otra media">+ Agregar media</button>`;
 
   // Actualiza solo el nombre generado de una fila (sin re-render: así el
@@ -2985,14 +3315,21 @@ function renderMediaPanel() {
     }
   };
 
+  // El tipo de media usa el MISMO widget autocomplete que los campos del
+  // formulario, respaldado por la lista de media de la sección (agregar/borrar
+  // opciones in situ). Campo sintético: fuente = lista configurada.
+  const mediaTypeField = { id: "mediaType", label: "Tipo de media", source: mediaSource(mform) };
   rows.querySelectorAll("[data-media-type]").forEach(inp => {
     const i = +inp.dataset.mediaType;
+    // Sincroniza a inst.media[i] tanto al escribir como al elegir del dropdown
+    // (la selección despacha un evento "input").
     inp.addEventListener("input", () => {
       inst.media[i] = inp.value;
       markInstanceDirty(inst);
       refreshRowName(i);
     });
     inp.addEventListener("blur", () => { saveAll(); setSaveIndicator("saved"); });
+    wireAutocomplete(inp, inst, null, mediaTypeField);
   });
   rows.querySelectorAll("[data-media-copy]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -3034,6 +3371,62 @@ function wireMediaPanel() {
   keyInput.addEventListener("blur", () => {
     saveAll();
     setSaveIndicator("saved");
+  });
+}
+
+// Editor (modo edición) de la media de la sección activa: qué lista de DATA
+// alimenta su dropdown y qué regla genera el nombre. Se guarda en
+// `form.media`, de modo que bug y regression pueden tener reglas distintas
+// (p. ej. regression con prefijo "Open_").
+function showMediaConfigEditor() {
+  const form = currentMediaForm();
+  if (!form) return;
+  const curSource = mediaSource(form);
+  const curFmt = mediaFormat(form);
+  const listOpts = Object.keys(config.data.lists).map(k =>
+    `<option value="${escapeHtml(k)}"${k === curSource ? " selected" : ""}>${escapeHtml(k)}</option>`).join("");
+  const overridden = !!(form.media && (form.media.source || form.media.fmt));
+  const body = `
+    <div class="fe-grid">
+      <div class="fe-full">
+        <label>Lista de tipos de media (en DATA)</label>
+        <select id="mc_source">${listOpts}</select>
+        <div class="field-help">Alimenta el dropdown de tipo (Vid, Pic, ConsoleLog...).</div>
+      </div>
+      <div class="fe-full">
+        <label>Regla del nombre (media_fmt)</label>
+        <input type="text" id="mc_fmt" value="${escapeHtml(curFmt)}" />
+        <div class="field-help">Placeholders: {type}, {key}, {platform}, {cl} y cualquier {idDeCampo}. Ej. regresión: «Open_{type}_{key}_{platform}_{cl}_(1)».</div>
+      </div>
+      <div class="fe-full">
+        <label class="checkbox"><input type="checkbox" id="mc_reset"${overridden ? "" : " disabled"} /> Volver a la configuración global (usar «mediaTypes» y la regla de DATA/RULES)</label>
+        <div class="field-help">${overridden
+          ? "Esta sección tiene una configuración propia."
+          : "Esta sección usa la configuración global. Al guardar con otra lista o regla, se vuelve propia de «" + escapeHtml(form.label) + "»."}</div>
+      </div>
+    </div>`;
+  showEditorModal({
+    title: `Media — ${form.label}`,
+    wide: false,
+    bodyHtml: body,
+    onConfirm: () => {
+      if ($("mc_reset") && $("mc_reset").checked) {
+        delete form.media;
+      } else {
+        const src = $("mc_source").value || "mediaTypes";
+        const fmt = $("mc_fmt").value.trim();
+        if (!fmt) { flashBanner("La regla del nombre no puede quedar vacía.", true); return false; }
+        // Guarda la config COMPLETA (lista + regla), no solo el diff contra el
+        // global: así el export es autodescriptivo y no depende de que quien
+        // importe tenga el mismo global (puede tener una versión desfasada).
+        // Para "seguir el global" está el checkbox de reset (borra form.media).
+        form.media = { source: src, fmt: fmt };
+      }
+      renderMediaPanel();
+      scheduleSave();
+      flashBanner("Configuración de media actualizada. Recuerda exportar la herramienta para compartirla.");
+      return true;
+    }
   });
 }
 
@@ -3439,23 +3832,19 @@ function renderRulesTab() {
       .map(x => `<option value="${escapeHtml(x.field.id)}"${sel === x.field.id ? " selected" : ""}>${escapeHtml(x.field.label)}</option>`)
       .join("");
     const rows = getFormRules(form).map((r, i) => {
-      const opOpts = COND_OPS.map(([v, l]) =>
-        `<option value="${v}"${r.when.op === v ? " selected" : ""}>${l}</option>`).join("");
       const actOpts = COND_ACTIONS.map(([v, l]) =>
         `<option value="${v}"${r.then.action === v ? " selected" : ""}>${l}</option>`).join("");
-      const needsWhenVal = !["empty", "notEmpty"].includes(r.when.op);
-      const whenPh = ["equalsField", "notEqualsField"].includes(r.when.op)
-        ? "id del otro campo (ej. cl)"
-        : r.when.op === "matches" ? "regex o @regla" : "valor";
       const needsThenVal = ["setDefault", "error"].includes(r.then.action);
       const thenPh = r.then.action === "error" ? "mensaje de error" : "valor o @regla";
       const k = form.id + "|" + i;
+      const expr = r.whenExpr || "";
+      const err = exprError(expr);
       return `<tr>
         <td class="cond-then">Si</td>
-        <td><select data-cr="${k}|when.field">${fieldOpts(r.when.field)}</select></td>
-        <td><select data-cr="${k}|when.op">${opOpts}</select></td>
-        <td><input type="text" data-cr="${k}|when.value" value="${escapeHtml(r.when.value || "")}"
-             placeholder="${needsWhenVal ? whenPh : "(no aplica)"}"${needsWhenVal ? "" : " disabled"} /></td>
+        <td class="cond-expr-cell"><input type="text" class="cond-expr${err ? " cond-bad" : ""}"
+             data-cr="${k}|whenExpr" value="${escapeHtml(expr)}"
+             placeholder="ej. shortDescription matches @lod AND NOT poi empty" />
+          <div class="cond-err" data-cr-err="${k}">${err ? escapeHtml(err) : ""}</div></td>
         <td class="cond-then">entonces</td>
         <td><select data-cr="${k}|then.action">${actOpts}</select></td>
         <td><select data-cr="${k}|then.field">${fieldOpts(r.then.field)}</select></td>
@@ -3503,13 +3892,19 @@ function renderRulesTab() {
     <div class="rules-block">
       <h3>Condiciones entre campos</h3>
       <p class="rules-intro">
-        Reglas del tipo <em>si el campo A ... entonces el campo B ...</em>. Con
-        "cumple REGEX" el valor acepta una expresión o <code>@regla</code>.
-        Para campos exclusivos de un tipo de issue (ej. "LOD number"): crea el
-        campo con <strong>"Oculto por defecto"</strong> y agrega aquí una condición
-        que lo muestre (ej. si Descripción corta cumple REGEX <code>LOD</code> →
-        mostrar LOD number). "Poner default si está vacío" rellena el campo
-        destino sin pisar lo ya escrito. Las condiciones se aplican al salir de
+        Reglas del tipo <em>SI (expresión) ENTONCES (acción sobre un campo)</em>.
+        La <strong>expresión</strong> se escribe como texto y admite
+        <code>AND</code>, <code>OR</code>, <code>NOT</code> y paréntesis, anidados
+        a cualquier profundidad. Comparaciones por campo:
+        <code>campo empty</code>, <code>campo notEmpty</code>,
+        <code>campo = "valor"</code>, <code>campo != "valor"</code>,
+        <code>campo matches @regla</code> (o una regex), y
+        <code>campoA = campoB</code> (compara dos campos). Puedes referenciar otra
+        <code>@regla</code> booleana suelta y concatenarlas
+        (<code>@esLod OR @esVlod</code>). Ejemplo:
+        <code>shortDescription matches @lod AND NOT poi empty</code>. El input se
+        pone en rojo si la sintaxis es inválida. "Poner default si está vacío"
+        rellena el campo destino sin pisar lo ya escrito. Se aplican al salir de
         cada campo.
       </p>
       ${condsHtml}
@@ -3579,11 +3974,24 @@ function renderRulesTab() {
       const form = getForm(formId);
       const rule = form && getFormRules(form)[+idx];
       if (!rule) return;
-      const [part, prop] = path.split(".");
-      rule[part][prop] = el.value;
+      if (path.includes(".")) {
+        const [part, prop] = path.split(".");
+        rule[part][prop] = el.value;
+        if (prop === "action") renderRulesTab(); // habilita/deshabilita el valor
+      } else {
+        rule[path] = el.value; // whenExpr (string top-level)
+      }
       scheduleSave();
-      // Cambiar el operador/acción habilita o deshabilita los inputs de valor
-      if (prop === "op" || prop === "action") renderRulesTab();
+    });
+  });
+  // Validación en vivo de la expresión mientras se teclea (sin re-render).
+  c.querySelectorAll(".cond-expr").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const k = inp.dataset.cr.split("|").slice(0, 2).join("|");
+      const err = exprError(inp.value);
+      inp.classList.toggle("cond-bad", !!err);
+      const box = c.querySelector(`[data-cr-err="${k}"]`);
+      if (box) box.textContent = err;
     });
   });
   c.querySelectorAll("[data-cr-add]").forEach(btn => {
@@ -3594,7 +4002,7 @@ function renderRulesTab() {
       if (!first) { flashBanner("El formulario no tiene campos.", true); return; }
       form.rules = form.rules || [];
       form.rules.push({
-        when: { field: first.field.id, op: "equals", value: "" },
+        whenExpr: `${first.field.id} notEmpty`,
         then: { action: "hide", field: first.field.id, value: "" }
       });
       renderRulesTab();
@@ -3740,8 +4148,9 @@ const FIELDS_CSV_HEADER = [
 const SEP_NONE = "NONE";
 // Las condiciones entre campos viajan como filas type="cond" con este
 // mapeo de columnas (documentado en bug_fields.README.md):
-//   source=campo condición · template=operador · default=valor condición
-//   regex=acción · regexmsg=campo destino · emptyas=valor de la acción
+//   source=EXPRESIÓN booleana (whenExpr) · regex=acción ·
+//   regexmsg=campo destino · emptyas=valor de la acción
+// (formato viejo op/valor en template/default se sigue leyendo al importar).
 
 function exportFieldsCsv() {
   const rows = [FIELDS_CSV_HEADER.slice()];
@@ -3771,11 +4180,12 @@ function exportFieldsCsv() {
         ]);
       });
     });
-    // Condiciones entre campos del formulario (type="cond")
+    // Condiciones entre campos del formulario (type="cond").
+    // La expresión booleana (whenExpr) viaja en la columna source.
     getFormRules(form).forEach(r => {
       const cr = empty();
       cr[0] = form.id; cr[4] = "cond";
-      cr[5] = r.when.field; cr[7] = r.when.op; cr[15] = r.when.value || "";
+      cr[5] = r.whenExpr || whenToExpr(r.when) || "";
       cr[13] = r.then.action; cr[14] = r.then.field; cr[16] = r.then.value || "";
       rows.push(cr);
     });
@@ -3809,19 +4219,31 @@ function importFieldsCsv(text) {
       if (forms.find(f => f.id === formId)) { errors.push(`Línea ${lineNo}: formulario «${formId}» repetido`); continue; }
       forms.push({ id: formId, label: label || formId, sections: [] });
     } else if (type === "cond") {
-      // Condición entre campos: source=campo, template=op, default=valor,
-      // regex=acción, regexmsg=campo destino, emptyas=valor de la acción
+      // Condición entre campos. Formato nuevo (iteración 3): la EXPRESIÓN
+      // booleana viaja en `source` y `template` queda vacío. Formato viejo
+      // (iteración 2): source=campo, template=op, default=valor; se detecta
+      // por `template` = operador válido y se convierte a expresión al vuelo,
+      // así todo queda como `whenExpr` (una sola forma en memoria).
+      // regex=acción · regexmsg=campo destino · emptyas=valor de la acción.
       const form = forms.find(f => f.id === formId);
       if (!form) { errors.push(`Línea ${lineNo}: condición sin formulario «${formId}» previo`); continue; }
-      if (!COND_OPS.some(([v]) => v === template)) {
-        errors.push(`Línea ${lineNo}: operador desconocido «${template}»`); continue;
-      }
       if (!COND_ACTIONS.some(([v]) => v === regex)) {
         errors.push(`Línea ${lineNo}: acción desconocida «${regex}»`); continue;
       }
+      let whenExpr;
+      if (template) {
+        if (!COND_OPS.some(([v]) => v === template)) {
+          errors.push(`Línea ${lineNo}: operador desconocido «${template}»`); continue;
+        }
+        whenExpr = whenToExpr({ field: source, op: template, value: def || "" });
+      } else {
+        whenExpr = source || "";
+        const exErr = exprError(whenExpr);
+        if (exErr) { errors.push(`Línea ${lineNo}: expresión inválida — ${exErr}`); continue; }
+      }
       form.rules = form.rules || [];
       form.rules.push({
-        when: { field: source, op: template, value: def || "" },
+        whenExpr: whenExpr,
         then: { action: regex, field: regexmsg, value: emptyas || "" }
       });
     } else if (type === "section") {
@@ -3877,11 +4299,14 @@ function importFieldsCsv(text) {
     }
   }
 
-  // Las condiciones deben apuntar a campos que existan en su formulario
+  // Las condiciones deben apuntar a campos que existan en su formulario:
+  // los campos comparados en la expresión y el campo destino del "entonces".
   forms.forEach(form => {
     getFormRules(form).forEach((r, i) => {
       const has = (id) => form.sections.some(s => s.fields.some(f => f.id === id));
-      if (!has(r.when.field)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo «${r.when.field}» no existe`);
+      exprFieldRefs(r.whenExpr).forEach(fid => {
+        if (!has(fid)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo «${fid}» no existe`);
+      });
       if (!has(r.then.field)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo destino «${r.then.field}» no existe`);
     });
   });
@@ -4278,9 +4703,11 @@ function boot() {
   }
   ensureLinksData(vanilla);
   migrateLinkSources(vanilla);
+  migrateRulesToExpr(vanilla);
   loadConfig();
   ensureLinksData(config);
   migrateLinkSources(config);
+  migrateRulesToExpr(config);
   loadSession();
 
   // Sanear la sesión restaurada contra el schema actual

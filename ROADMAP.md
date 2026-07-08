@@ -17,12 +17,16 @@ reutiliza el mismo motor de condiciones que ya existe.
 
 ## 2. Más conexiones media ↔ Rules
 
-Ya editable: el formato (`media_fmt`) y los tipos (`mediaTypes`).
-Falta (Rubén dará detalle de lo que necesita el equipo):
+Ya editable: el formato (`media_fmt`) y los tipos (`mediaTypes`),
+y desde la iteración 3 la lista y el formato **por sección/formulario**
+(`form.media`, con el lápiz del panel de media; regresión puede llevar
+prefijo `Open_`). Falta (Rubén dará detalle de lo que necesita el
+equipo):
 
   - Condiciones sobre media, p. ej. "si el tipo de bug es Crash,
-    exigir ConsoleLog" (tile o error si falta la Key).
-  - Formatos distintos por tipo de media o por formulario.
+    exigir ConsoleLog" (tile o error si falta la Key). Reutilizaría el
+    motor de expresiones de la iteración 3.
+  - Formatos distintos por **tipo de media** (hoy: por sección).
   - Validar la Key del ticket con una REGEX (formato de la
     plataforma de issues del cliente).
 

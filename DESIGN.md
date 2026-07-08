@@ -694,9 +694,53 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     description (el resto). CSV de campos: 23 columnas
     (+hidden, +kwcount, +kwoverlap) y filas cond.
 
+## Iteración 3 (2026-07-07): expresiones booleanas, media por sección
+
+  * **Motor de expresiones booleanas** para las condiciones entre
+    campos. La condición dejó de ser `when: {field, op, value}` y pasó
+    a `whenExpr: "<texto>"`. Gramática (may/min indistinto): `AND`/`&&`,
+    `OR`/`||`, `NOT`/`!`, paréntesis, y comparaciones
+    `campo empty|notEmpty`, `campo = "v"` (`==`), `campo != "v"`
+    (`<>`), `campo matches @regla|regex` (`~`) y `campoA = campoB`
+    (dos campos por id). Un `@nombre` suelto evalúa esa regla de DATA
+    como sub-expresión booleana y permite concatenarlas
+    (`@esLod OR @esVlod`); hay guardia anti-ciclos. Pipeline:
+    `tokenizeExpr` → `parseExpr` (descenso recursivo → AST) →
+    `evalAst`, que reusa `evalCondition` por comparación (misma
+    semántica de siempre). `ruleWhenTrue` acepta la forma nueva o una
+    `when` vieja. Sintaxis inválida → mensaje legible (`exprError`).
+  * **Migración automática** `migrateRulesToExpr` (en boot, sobre
+    vanilla y config): convierte cada `when` vieja a texto con
+    `whenToExpr` y borra el objeto. Los HTML/CSV ya distribuidos se
+    completan solos al abrir.
+  * **Pestaña Rules**: las tres columnas (campo/operador/valor) se
+    reemplazaron por UN input de expresión monospace con validación en
+    vivo (borde rojo + mensaje bajo el campo). El CSV `type=cond` lleva
+    la expresión en la columna `source` (ver bug_fields.README.md); el
+    formato viejo op/valor se sigue leyendo al importar.
+  * **Media por sección**: `form.media = { source, fmt }` permite que
+    cada formulario (bug, regression...) use su propia lista de tipos y
+    su propia regla de nombre — p. ej. regresión con prefijo `Open_`.
+    Sin override usa la lista `mediaTypes` y la regla global
+    `media_fmt`. Se edita con el lápiz ✎ del panel de media (solo en
+    modo edición); el editor guarda la config COMPLETA (lista+regla),
+    no el diff contra el global, para que el export sea autodescriptivo.
+    Un checkbox "volver al global" borra el override. `mediaTypes()`,
+    `mediaFormat()` y `mediaSource()` ahora reciben el formulario.
+  * **Autocomplete**: el tipo de media usa el mismo widget autocomplete
+    que los campos (agregar/borrar opciones in situ) en vez del
+    `datalist`. El dropdown se abre hacia arriba (`drop-up`) cuando no
+    cabe abajo dentro de su contenedor scrolleable
+    (`positionAutocomplete` / `nearestScrollParent`), navegar con
+    flechas hace scroll solo dentro del dropdown, y la flecha ▼ abre la
+    lista completa (enfoca primero, luego renderiza).
+
 ## Pendiente (siguientes iteraciones)
 
   * Tiles personalizados definidos por el usuario (los tiles de
     validación ya existen; falta que el usuario defina los suyos).
-  * Más conexiones media↔Rules (el formato ya es la regla media_fmt;
-    Rubén detallará qué más necesita).
+    Reutilizarán el mismo motor de expresiones (ROADMAP §1).
+  * Más conexiones media↔Rules: el formato por sección ya existe; falta
+    lo que detalle Rubén (condiciones sobre media —p. ej. exigir
+    ConsoleLog si el bug es Crash— y validar la Key con regex).
+    Ver ROADMAP §2.
