@@ -480,7 +480,7 @@
       grid-template-rows: 1fr;
       transition: grid-template-rows .18s ease;
     }
-    .media-panel-body-inner { overflow: hidden; min-height: 0; }
+    .media-panel-body-inner { overflow: visible; min-height: 0; }
     .media-panel.collapsed .media-panel-body { grid-template-rows: 0fr; }
     .media-panel.collapsed .media-panel-header { margin-bottom: 0; }
     .media-panel.collapsed #mediaCollapseBtn .chev { transform: rotate(-90deg); }
@@ -1000,6 +1000,13 @@
     .fe-grid .fe-full { grid-column: 1 / -1; }
     .fe-grid label { margin-top: 4px; }
     .fe-grid label.checkbox { margin-top: 2px; }
+    .fe-readonly {
+      background: #f3f4f6;
+      color: #6b7280;
+      border-color: #d1d5db;
+      box-shadow: inset 0 -2px 0 #e5e7eb;
+      cursor: default;
+    }
     .fe-sep {
       grid-column: 1 / -1;
       border-top: 1px solid #e5e7eb;
@@ -2730,6 +2737,11 @@ function showFieldEditor(form, sec, field) {
         <input type="text" id="fe_label" value="${escapeHtml(f.label)}" />
       </div>
       <div>
+        <label>Keybind (id para condiciones)</label>
+        <input type="text" id="fe_id" class="fe-readonly" value="${escapeHtml(f.id || "")}" readonly />
+        <div class="field-help">${isNew ? "Se genera desde la etiqueta y queda fijo al guardar." : "Es fijo: úsalo en RULES y referencias entre campos."}</div>
+      </div>
+      <div>
         <label>Tipo de campo</label>
         <select id="fe_type">${typeOpts}</select>
       </div>
@@ -2798,9 +2810,9 @@ function showFieldEditor(form, sec, field) {
         <input type="text" id="fe_regexMsg" value="${escapeHtml(f.regexMsg || "")}" />
       </div>
       <div>
-        <label>Chips: cantidad exacta</label>
+        <label>Chips: cantidad</label>
         <input type="text" id="fe_kwCount" value="${escapeHtml(f.kwCount || "")}" />
-        <div class="field-help">Solo palabras clave. Número o @regla (ej. @kw_count). Vacío = sin límite.</div>
+        <div class="field-help">Número exacto, mínimo con &gt;= (ej. &gt;=5) o @regla. Vacío = sin límite.</div>
       </div>
       <div style="display:flex;align-items:end;">
         <label class="checkbox"><input type="checkbox" id="fe_kwOverlap"${f.kwOverlap ? " checked" : ""} /> Chips: prohibir que aparezcan en el cuerpo del bug</label>
@@ -2815,6 +2827,13 @@ function showFieldEditor(form, sec, field) {
       // La fuente depende del tipo: listas para dropdown, campos para copia.
       const typeSel = $("fe_type");
       const srcSel = $("fe_source");
+      const labelInp = $("fe_label");
+      const idInp = $("fe_id");
+      if (isNew) {
+        const refreshId = () => { idInp.value = uniqueFieldId(form, slugify(labelInp.value.trim())); };
+        labelInp.addEventListener("input", refreshId);
+        refreshId();
+      }
       const fillSources = () => {
         const t = typeSel.value;
         let opts = [];
@@ -2885,8 +2904,8 @@ function showFieldEditor(form, sec, field) {
    Validaciones por campo (editables en RULES):
      - required: no puede quedar vacío
      - regex: expresión regular literal o @regla de DATA
-   Palabras clave (por campo): cantidad exacta (kwCount, acepta
-   @regla), unicidad, y opcionalmente que no aparezcan en el cuerpo
+   Palabras clave (por campo): cantidad exacta o mínima (kwCount acepta
+   >=N y @regla), unicidad, y opcionalmente que no aparezcan en el cuerpo
    del bug (kwOverlap).
 
    CONDICIONES ENTRE CAMPOS (form.rules, editables en RULES):
@@ -3040,6 +3059,25 @@ function anyFieldHasId(id) {
   return getForms().some(f => allFields(f).some(x => x.field.id === id));
 }
 
+// Una referencia inexistente invalida la expresión completa, incluso dentro
+// de NOT. Así un typo nunca puede convertirse accidentalmente en `true`.
+function astHasMissingField(ast, inst) {
+  const form = getForm(inst.formId);
+  if (!form) return true;
+  const walk = (node) => {
+    if (!node) return false;
+    if (node.type === "cmp") {
+      if (!getField(form, node.field)) return true;
+      const w = cmpToWhen(node);
+      return ["equalsField", "notEqualsField"].includes(w.op) && !getField(form, w.value);
+    }
+    if (node.type === "not") return walk(node.item);
+    if (node.type === "or" || node.type === "and") return node.items.some(walk);
+    return false;
+  };
+  return walk(ast);
+}
+
 // Evalúa un AST contra la instancia. `seen` evita ciclos entre @reglas.
 function evalAst(ast, inst, seen) {
   if (!ast) return false;
@@ -3055,6 +3093,7 @@ function evalAst(ast, inst, seen) {
       if (raw == null || String(raw).trim() === "") return false;
       try {
         const sub = parseExpr(String(raw));
+        if (astHasMissingField(sub, inst)) return false;
         const s2 = new Set(seen || []); s2.add(name);
         return evalAst(sub, inst, s2);
       } catch (e) { return false; } // @regla que no es expresión booleana
@@ -3069,7 +3108,10 @@ function ruleWhenTrue(rule, inst) {
   if (typeof rule.whenExpr === "string") {
     const src = rule.whenExpr.trim();
     if (!src) return false;
-    try { return evalAst(parseExpr(src), inst); }
+    try {
+      const ast = parseExpr(src);
+      return !astHasMissingField(ast, inst) && evalAst(ast, inst);
+    }
     catch (e) { return false; } // expresión inválida: la regla no aplica
   }
   if (rule.when) return evalCondition(rule.when, inst);
@@ -3077,9 +3119,16 @@ function ruleWhenTrue(rule, inst) {
 }
 
 // Valida una expresión; devuelve "" si es válida o el mensaje de error.
-function exprError(src) {
+function exprError(src, form) {
   if (!String(src || "").trim()) return "";
-  try { parseExpr(String(src)); return ""; }
+  try {
+    const ast = parseExpr(String(src));
+    if (form) {
+      const missing = exprFieldRefs(src).find(id => !getField(form, id));
+      if (missing) return `El campo «${missing}» no existe en este formulario`;
+    }
+    return "";
+  }
   catch (e) { return e.message || "Expresión inválida"; }
 }
 
@@ -3099,6 +3148,8 @@ function exprFieldRefs(src) {
 }
 
 function evalCondition(when, inst) {
+  const form = getForm(inst.formId);
+  if (!form || !getField(form, when.field)) return false;
   const v = String(inst.values[when.field] == null ? "" : inst.values[when.field]).trim();
   const target = String(when.value == null ? "" : when.value).trim();
   switch (when.op) {
@@ -3111,10 +3162,12 @@ function evalCondition(when, inst) {
       catch (e) { return false; }
     // target = id de otro campo; solo cuenta si ambos tienen valor
     case "equalsField": {
+      if (!getField(form, target)) return false;
       const other = String(inst.values[target] == null ? "" : inst.values[target]).trim();
       return !!v && !!other && v.toLowerCase() === other.toLowerCase();
     }
     case "notEqualsField": {
+      if (!getField(form, target)) return false;
       const other = String(inst.values[target] == null ? "" : inst.values[target]).trim();
       return !!v && !!other && v.toLowerCase() !== other.toLowerCase();
     }
@@ -3147,6 +3200,14 @@ function evalFieldRules(form, inst) {
   return fx;
 }
 
+function parseKeywordCountRule(raw) {
+  const text = String(raw == null ? "" : raw).trim();
+  const min = text.match(/^>=\s*(\d+)$/);
+  if (min) return { mode: "min", count: +min[1] };
+  if (/^\d+$/.test(text)) return { mode: "exact", count: +text };
+  return null;
+}
+
 function revalidate(inst) {
   inst.errors = {};
   const form = getForm(inst.formId);
@@ -3167,9 +3228,11 @@ function revalidate(inst) {
 
     if (field.type === "keywords") {
       const arr = inst.values[field.id] || [];
-      const want = parseInt(resolveRef(field.kwCount || ""), 10) || 0;
-      if (want && arr.length !== want) {
-        inst.errors[field.id] = `Se necesitan exactamente ${want} (hay ${arr.length})`;
+      const countRule = parseKeywordCountRule(resolveRef(field.kwCount || ""));
+      if (countRule && countRule.mode === "min" && arr.length < countRule.count) {
+        inst.errors[field.id] = `Se necesitan al menos ${countRule.count} (hay ${arr.length})`;
+      } else if (countRule && countRule.mode === "exact" && countRule.count && arr.length !== countRule.count) {
+        inst.errors[field.id] = `Se necesitan exactamente ${countRule.count} (hay ${arr.length})`;
       } else if (new Set(arr.map(k => k.toLowerCase())).size !== arr.length) {
         inst.errors[field.id] = "Los valores deben ser únicos";
       } else if (field.kwOverlap) {
@@ -3239,10 +3302,10 @@ function reflectErrors(inst) {
 }
 
 /* ---------- Tiles personalizados (definidos por el usuario) ----------
-   Cada form puede tener form.tiles = [ { text, whenExpr, color, group,
-   severity, field } ]. Son independientes de los campos: aparecen cuando su
-   condición es verdadera (o siempre, si la condición está vacía). Reutilizan
-   el motor de expresiones (parseExpr/evalAst) y exprFieldRefs. */
+   Cada form puede tener form.tiles = [ { text, message, whenExpr, color,
+   group, severity, field } ]. Son independientes de los campos: aparecen
+   cuando su condición es verdadera (o siempre, si la condición está vacía).
+   Reutilizan el motor de expresiones (parseExpr/evalAst) y exprFieldRefs. */
 function getFormTiles(form) { return (form && form.tiles) || []; }
 
 // Rellena valores por defecto de cada tile (configs viejas / import de CSV).
@@ -3250,6 +3313,7 @@ function normalizeTiles(form) {
   if (!Array.isArray(form.tiles)) { form.tiles = form.tiles == null ? [] : []; }
   form.tiles.forEach(t => {
     t.text = typeof t.text === "string" ? t.text : (t.text == null ? "" : String(t.text));
+    t.message = typeof t.message === "string" ? t.message : (t.message == null ? "" : String(t.message));
     t.whenExpr = typeof t.whenExpr === "string" ? t.whenExpr : (t.whenExpr == null ? "" : String(t.whenExpr));
     t.severity = ["error", "warn", "info"].includes(t.severity) ? t.severity : "info";
     if (!TILE_COLOR_MAP[t.color]) t.color = TILE_SEV_COLOR[t.severity] || "slate";
@@ -3289,8 +3353,18 @@ function evalTiles(form, inst) {
     const src = String(tile.whenExpr || "").trim();
     let active;
     if (!src) active = true;
-    else { try { active = evalAst(parseExpr(src), inst); } catch (e) { active = false; } }
-    if (active) out.push({ tile, idx, text: interpolateTileText(tile.text || tile.group || "(tile)", inst) });
+    else {
+      try {
+        const ast = parseExpr(src);
+        active = !astHasMissingField(ast, inst) && evalAst(ast, inst);
+      } catch (e) { active = false; }
+    }
+    if (active) out.push({
+      tile,
+      idx,
+      text: interpolateTileText(tile.text || tile.group || "(tile)", inst),
+      message: interpolateTileText(tile.message || "", inst)
+    });
   });
   return out;
 }
@@ -3356,13 +3430,13 @@ function renderTiles(inst) {
   // Banda 2 (personalizados).
   let band2 = "";
   if (active.length) {
-    band2 = active.map(({ tile, text }) => {
+    band2 = active.map(({ tile, text, message }) => {
       const col = tileColor(tile.color);
       const refs = tileFieldRefs(tile);
       const target = tile.field || refs[0] || "";
       const cls = "tile sev-" + tile.severity + (target ? "" : " no-target");
       const style = `background:${col.bg};color:${col.fg};border-color:${col.border}`;
-      const tip = tile.whenExpr ? "Cuando: " + tile.whenExpr : "";
+      const tip = message || (tile.whenExpr ? "Cuando: " + tile.whenExpr : "");
       return `<span class="${cls}" style="${style}"${target ? ` data-target="${escapeHtml(target)}"` : ""}`
         + ` data-fields="${escapeHtml(refs.join(" "))}"${tip ? ` title="${escapeHtml(tip)}"` : ""}>${escapeHtml(text)}</span>`;
     }).join("");
@@ -4116,14 +4190,16 @@ function addDataRow() {
   if (isChildList(sel.key)) {
     const c = config.data.childLists[sel.key];
     const parentVals = listValues(c.parent);
-    showPromptModal({
+    if (!parentVals.length) {
+      flashBanner(`Agrega primero valores a «${listLabel(c.parent)}».`, true);
+      return;
+    }
+    showSelectModal({
       title: "Nuevo " + listLabel(sel.key),
-      body: `¿A qué ${listLabel(c.parent).toLowerCase()} pertenece? Opciones: ` + parentVals.join(", "),
-      placeholder: listLabel(c.parent),
+      body: `Selecciona el ${listLabel(c.parent).toLowerCase()} al que pertenece.`,
+      options: parentVals,
       confirmText: "Agregar",
       onConfirm: (m) => {
-        m = (m || "").trim();
-        if (!parentVals.includes(m)) { flashBanner(`Ese ${listLabel(c.parent).toLowerCase()} no existe.`, true); return; }
         c.values[m] = c.values[m] || [];
         c.values[m].push("Nuevo" + listLabel(sel.key).replace(/\s+/g, ""));
         renderDataTable();
@@ -4250,7 +4326,7 @@ function renderRulesTab() {
       const thenPh = r.then.action === "error" ? "mensaje de error" : "valor o @regla";
       const k = form.id + "|" + i;
       const expr = r.whenExpr || "";
-      const err = exprError(expr);
+      const err = exprError(expr, form);
       return `<tr>
         <td class="cond-then">Si</td>
         <td class="cond-expr-cell"><input type="text" class="cond-expr${err ? " cond-bad" : ""}"
@@ -4281,19 +4357,20 @@ function renderRulesTab() {
     const rows = tiles.map((t, i) => {
       const k = form.id + "|" + i;
       const expr = t.whenExpr || "";
-      const err = exprError(expr);
+      const err = exprError(expr, form);
       const col = tileColor(t.color);
       const sevOpts = TILE_SEVERITIES.map(([v, l]) =>
         `<option value="${v}"${t.severity === v ? " selected" : ""}>${escapeHtml(l)}</option>`).join("");
       return `<tr>
-        <td><input type="text" data-tr="${k}|text" value="${escapeHtml(t.text)}" placeholder="texto (admite {campo})" style="min-width:150px" /></td>
+        <td><input type="text" data-tr="${k}|text" value="${escapeHtml(t.text)}" placeholder="texto" style="width:110px" /></td>
+        <td><input type="text" data-tr="${k}|message" value="${escapeHtml(t.message || "")}" placeholder="instrucción o detalle (admite {campo})" style="min-width:190px" /></td>
         <td class="cond-expr-cell"><input type="text" class="cond-expr${err ? " cond-bad" : ""}"
              data-tr="${k}|whenExpr" value="${escapeHtml(expr)}"
              placeholder="vacío = siempre. ej. bugType = Crash AND consoleLog empty" />
           <div class="cond-err" data-tr-err="${k}">${err ? escapeHtml(err) : ""}</div></td>
         <td><select data-tr="${k}|color" class="tile-color-sel" style="background:${col.bg};color:${col.fg}">${tileColorOptions(t.color)}</select></td>
         <td><select data-tr="${k}|severity">${sevOpts}</select></td>
-        <td><select data-tr="${k}|field">${fieldOptsT(t.field)}</select></td>
+        <td><select data-tr="${k}|field" style="max-width:150px">${fieldOptsT(t.field)}</select></td>
         <td style="white-space:nowrap">
           <button class="tool-btn" data-tr-move="${k}|-1" title="Subir (aparece antes)"${i === 0 ? " disabled" : ""}>▲</button>
           <button class="tool-btn" data-tr-move="${k}|1" title="Bajar (aparece después)"${i === tiles.length - 1 ? " disabled" : ""}>▼</button>
@@ -4303,8 +4380,8 @@ function renderRulesTab() {
     }).join("");
     return `<h4 style="margin:10px 0 4px;font-size:12px;">${escapeHtml(form.label)}</h4>
       <table class="data-table cond-table tile-table">
-        <thead><tr><th>Texto</th><th>Cuándo aparece</th><th>Color</th><th>Tipo</th><th>Salta a</th><th>Orden</th><th></th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="7" style="color:#9ca3af;font-style:italic;">Sin tiles todavía.</td></tr>`}</tbody>
+        <thead><tr><th>Texto</th><th>Mensaje si se cumple</th><th>Cuándo aparece</th><th>Color</th><th>Tipo</th><th>Salta a</th><th>Orden</th><th></th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="8" style="color:#9ca3af;font-style:italic;">Sin tiles todavía.</td></tr>`}</tbody>
       </table>
       <button data-tr-add="${escapeHtml(form.id)}" style="margin-top:6px;">+ Agregar tile a ${escapeHtml(form.label)}</button>`;
   }).join("");
@@ -4331,8 +4408,9 @@ function renderRulesTab() {
       <h3>Reglas globales (viven en DATA → Reglas)</h3>
       <p class="rules-intro">
         Se comparten entre campos y se editan aquí o en la pestaña Data. Las
-        reglas especiales que usa la herramienta: <code>kw_count</code> (cantidad de
-        palabras clave), <code>default_tz</code> y <code>default_executable</code>
+        reglas especiales que usa la herramienta: <code>kw_count</code> (cantidad
+        exacta como <code>5</code> o mínima como <code>&gt;=5</code>),
+        <code>default_tz</code> y <code>default_executable</code>
         (valores por defecto via @).
       </p>
       <table class="data-table" style="max-width:760px">
@@ -4366,8 +4444,9 @@ function renderRulesTab() {
         Tiles propios que aparecen en la <strong>segunda línea</strong> de la barra
         de arriba, independientes de los campos y <strong>en el orden de esta
         tabla</strong> (usa ▲▼ para reordenarlos). Cada uno tiene un
-        <strong>texto</strong> (admite <code>{idCampo}</code> para intercalar el
-        valor de un campo), una <strong>condición</strong> que decide cuándo se
+        <strong>texto</strong> corto y un <strong>mensaje si se cumple</strong>
+        que aparece al pasar el mouse (ambos admiten <code>{idCampo}</code> para
+        intercalar el valor de un campo), una <strong>condición</strong> que decide cuándo se
         muestra (mismo motor que las condiciones de arriba;
         <em>vacía = siempre visible</em>), un <strong>color</strong> y un
         <strong>tipo</strong>: <em>Error</em> bloquea el "listo para copiar" (como
@@ -4467,7 +4546,8 @@ function renderRulesTab() {
   c.querySelectorAll(".cond-expr[data-cr]").forEach(inp => {
     inp.addEventListener("input", () => {
       const k = inp.dataset.cr.split("|").slice(0, 2).join("|");
-      const err = exprError(inp.value);
+      const [formId] = inp.dataset.cr.split("|");
+      const err = exprError(inp.value, getForm(formId));
       inp.classList.toggle("cond-bad", !!err);
       const box = c.querySelector(`[data-cr-err="${k}"]`);
       if (box) box.textContent = err;
@@ -4523,7 +4603,8 @@ function renderRulesTab() {
   c.querySelectorAll(".cond-expr[data-tr]").forEach(inp => {
     inp.addEventListener("input", () => {
       const k = inp.dataset.tr.split("|").slice(0, 2).join("|");
-      const err = exprError(inp.value);
+      const [formId] = inp.dataset.tr.split("|");
+      const err = exprError(inp.value, getForm(formId));
       inp.classList.toggle("cond-bad", !!err);
       const box = c.querySelector(`[data-tr-err="${k}"]`);
       if (box) box.textContent = err;
@@ -4534,7 +4615,7 @@ function renderRulesTab() {
       const form = getForm(btn.dataset.trAdd);
       if (!form) return;
       form.tiles = form.tiles || [];
-      form.tiles.push({ text: "Nuevo tile", whenExpr: "", color: TILE_SEV_COLOR.info,
+      form.tiles.push({ text: "Nuevo tile", message: "", whenExpr: "", color: TILE_SEV_COLOR.info,
                         group: "", severity: "info", field: "" });
       renderRulesTab();
       scheduleSave();
@@ -4609,24 +4690,24 @@ function csvTruthy(v) {
   return ["1", "true", "yes", "si", "sí", "x"].includes(String(v || "").trim().toLowerCase());
 }
 
-// ---- bug_data.csv (category,key,value) ----
+// ---- bug_data.csv (category,key,value,child) ----
 // Categorías: `list` (valor de una raíz), `childlist` (declara id→padre),
-// `childval` (id → "padre :: valor"), `listlabel` (id→etiqueta) y `rule`.
+// `childval` (id, padre, hijo), `listlabel` (id→etiqueta) y `rule`.
 // El formato viejo (map/poi/link/linkparent/linkchild) se sigue LEYENDO al
-// importar (se migra al árbol); al exportar ya se escribe el formato nuevo.
+// importar, igual que el CSV de 3 columnas con "padre :: hijo".
 function exportDataCsv() {
-  const rows = [["category", "key", "value"]];
+  const rows = [["category", "key", "value", "child"]];
   Object.entries(config.data.lists).forEach(([k, arr]) =>
-    (arr || []).forEach(v => rows.push(["list", k, v])));
+    (arr || []).forEach(v => rows.push(["list", k, v, ""])));
   Object.entries(config.data.childLists || {}).forEach(([id, c]) => {
-    rows.push(["childlist", id, c.parent]);
+    rows.push(["childlist", id, c.parent, ""]);
     Object.entries(c.values || {}).forEach(([par, kids]) =>
-      (kids || []).forEach(v => rows.push(["childval", id, par + " :: " + v])));
+      (kids || []).forEach(v => rows.push(["childval", id, par, v])));
   });
   Object.entries(config.data.listMeta || {}).forEach(([id, meta]) => {
-    if (meta && meta.label && meta.label !== id) rows.push(["listlabel", id, meta.label]);
+    if (meta && meta.label && meta.label !== id) rows.push(["listlabel", id, meta.label, ""]);
   });
-  Object.entries(config.data.rules).forEach(([k, v]) => rows.push(["rule", k, v]));
+  Object.entries(config.data.rules).forEach(([k, v]) => rows.push(["rule", k, v, ""]));
   downloadFile("bug_data.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
   flashBanner("bug_data.csv descargado. Ponlo en el sharefolder para compartirlo.");
 }
@@ -4635,8 +4716,9 @@ function importDataCsv(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith("#"));
   if (!lines.length) throw new Error("Archivo vacío");
   const header = parseCsvLine(lines[0]).map(s => s.toLowerCase());
-  if (header.join(",") !== "category,key,value") {
-    throw new Error("El encabezado debe ser: category,key,value");
+  const isLegacyHeader = header.join(",") === "category,key,value";
+  if (!isLegacyHeader && header.join(",") !== "category,key,value,child") {
+    throw new Error("El encabezado debe ser: category,key,value,child (también se acepta el formato anterior de 3 columnas)");
   }
   const data = { lists: {}, rules: {}, childLists: {}, listMeta: {}, linkedLists: {} };
   const splitPair = (v) => {
@@ -4649,11 +4731,12 @@ function importDataCsv(text) {
   for (let i = 1; i < lines.length; i++) {
     const row = parseCsvLine(lines[i]);
     if (row.length < 3) continue;
-    const [cat, key, value] = row;
+    const [cat, key, value, childValue] = row;
     if (cat === "list") { (data.lists[key] = data.lists[key] || []).push(value); }
     else if (cat === "childlist") { ensureChild(key).parent = value; }
     else if (cat === "childval") {
-      const [par, child] = splitPair(value);
+      // También tolera una fila antigua mezclada en un archivo de 4 columnas.
+      const [par, child] = childValue ? [value, childValue] : splitPair(value);
       const c = ensureChild(key);
       c.values[par] = c.values[par] || [];
       if (child) c.values[par].push(child);
@@ -4730,7 +4813,7 @@ function exportFieldsCsv() {
     });
     // Tiles personalizados (type="tile"). Mapeo de columnas (README):
     //   label=texto · source=expresión (whenExpr) · regex=severidad ·
-    //   regexmsg=campo destino · default=color · emptyas=grupo.
+    //   regexmsg=campo destino · default=color · emptyas=grupo · help=mensaje.
     getFormTiles(form).forEach(t => {
       const tr = empty();
       tr[0] = form.id; tr[4] = "tile";
@@ -4740,6 +4823,7 @@ function exportFieldsCsv() {
       tr[14] = t.field || "";
       tr[15] = t.color || "";
       tr[16] = t.group || "";
+      tr[19] = t.message || "";
       rows.push(tr);
     });
   });
@@ -4801,7 +4885,7 @@ function importFieldsCsv(text) {
       });
     } else if (type === "tile") {
       // Tile personalizado. label=texto · source=expresión · regex=severidad ·
-      // regexmsg=campo destino · default=color · emptyas=grupo.
+      // regexmsg=campo destino · default=color · emptyas=grupo · help=mensaje.
       const form = forms.find(f => f.id === formId);
       if (!form) { errors.push(`Línea ${lineNo}: tile sin formulario «${formId}» previo`); continue; }
       const exErr = exprError(source || "");
@@ -4812,7 +4896,8 @@ function importFieldsCsv(text) {
       form.tiles = form.tiles || [];
       form.tiles.push({
         text: label || "", whenExpr: source || "", severity: regex || "info",
-        field: regexmsg || "", color: def || "", group: emptyas || ""
+        field: regexmsg || "", color: def || "", group: emptyas || "",
+        message: help || ""
       });
     } else if (type === "section") {
       const form = forms.find(f => f.id === formId);
@@ -5073,6 +5158,35 @@ function showPromptModal({ title, body, placeholder, confirmText, onConfirm }) {
   }, 50);
 }
 
+// Selector simple para decisiones cerradas (mismo <select> nativo de RULES).
+function showSelectModal({ title, body, options, confirmText, onConfirm }) {
+  $("modalBox").classList.remove("wide");
+  $("modalTitle").textContent = title || "Selecciona un valor";
+  $("modalBody").innerHTML =
+    (body ? `<div style="margin-bottom:8px;">${escapeHtml(body)}</div>` : "")
+    + `<select id="modalSelectInput" style="width:100%">${
+      options.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("")
+    }</select>`;
+  const actions = $("modalActions");
+  actions.innerHTML = "";
+  const cancel = document.createElement("button");
+  cancel.textContent = "Cancelar";
+  cancel.addEventListener("click", closeModal);
+  actions.appendChild(cancel);
+  const ok = document.createElement("button");
+  ok.textContent = confirmText || "OK";
+  ok.classList.add("primary");
+  const submit = () => {
+    const v = $("modalSelectInput").value;
+    closeModal();
+    onConfirm(v);
+  };
+  ok.addEventListener("click", submit);
+  actions.appendChild(ok);
+  $("modal").classList.add("open");
+  setTimeout(() => $("modalSelectInput").focus(), 50);
+}
+
 // Modal genérico para los editores de sección/campo.
 // onConfirm devuelve false para mantener el modal abierto (error).
 function showEditorModal({ title, bodyHtml, wide, onOpen, onConfirm }) {
@@ -5254,8 +5368,9 @@ function wireStaticControls() {
     setSaveIndicator("saved");
   });
 
-  // Modal: click fuera o Escape para cerrar
-  $("modal").addEventListener("click", (e) => {
+  // Modal: doble click fuera o Escape para cerrar. El doble click evita perder
+  // cambios cuando una selección de texto termina accidentalmente en el fondo.
+  $("modal").addEventListener("dblclick", (e) => {
     if (e.target.id === "modal") closeModal();
   });
   document.addEventListener("keydown", (e) => {

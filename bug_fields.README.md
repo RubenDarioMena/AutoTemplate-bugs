@@ -57,7 +57,7 @@ Cinco tipos de fila, identificados por la columna `type`:
 | nogap     | color del tile de error de ese campo (rojo por defecto; ver paleta abajo) | `yes` = sin línea en blanco después de la sección |
 | help      | texto de ayuda bajo el campo                              | (vacío)                        |
 | hidden    | `yes` = oculto por defecto (aparece solo por una condición) | (vacío)                     |
-| kwcount   | solo chips: cantidad exacta, número o `@regla` (vacío = sin límite) | (vacío)             |
+| kwcount   | solo chips: cantidad exacta (`5`) o mínima (`>=5`), directa o con `@regla` | (vacío)             |
 | kwoverlap | solo chips: `yes` = prohibir que aparezcan en el cuerpo del bug | (vacío)                 |
 
 En `template`, `sep` y el encabezado de sección se puede escribir
@@ -71,7 +71,7 @@ En `template`, `sep` y el encabezado de sección se puede escribir
                      de `source`. El dropdown tiene "+ Agregar..." al
                      final y una ✕ por opción para borrarla.
   - `keywords`     — chips (etiquetas). La validación es POR CAMPO:
-                     `kwcount` = cantidad exacta (vacío = libre) y
+                     `kwcount` = cantidad exacta o mínima (vacío = libre) y
                      `kwoverlap` = prohibir que aparezcan en el
                      cuerpo del bug. Un campo chips nuevo sin esas
                      columnas no exige nada.
@@ -133,6 +133,7 @@ CSV viajan con este mapeo de columnas (el resto quedan vacías):
   | regexmsg | campo al que salta el click (vacío = 1er campo de la condición) |
   | default  | color: red, orange, amber, yellow, lime, green, emerald, teal, cyan, blue, indigo, violet, pink, slate, stone |
   | emptyas  | grupo (dato reservado; hoy no cambia la vista)                  |
+  | help     | mensaje al pasar el mouse; admite `{idCampo}`                   |
 
 **La barra tiene dos líneas (bandas):** la 1ª son los tiles automáticos
 (un error por campo, en el orden del formulario; su color se edita en la

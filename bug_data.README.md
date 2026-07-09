@@ -29,16 +29,20 @@ cargar (se migran solos al árbol); al exportar se escribe el formato nuevo.
 
 ## Estructura
 
-El archivo tiene **3 columnas**:
+El archivo tiene **4 columnas**. `child` solo se usa en las filas
+`childval`; queda vacío en las demás:
 
-  | category  | key        | value                          |
-  |-----------|------------|--------------------------------|
-  | list      | regions    | NA                             |
-  | list      | map        | Highrise                       |
-  | childlist | poi        | map                            |
-  | childval  | poi        | Highrise :: Office A           |
-  | listlabel | poi        | POI                            |
-  | rule      | kw_count   | 5                              |
+  | category  | key        | value    | child    |
+  |-----------|------------|----------|----------|
+  | list      | regions    | NA       |          |
+  | list      | map        | Highrise |          |
+  | childlist | poi        | map      |          |
+  | childval  | poi        | Highrise | Office A |
+  | listlabel | poi        | POI      |          |
+  | rule      | kw_count   | >=5      |          |
+
+La importación también acepta archivos anteriores de tres columnas, donde
+`childval` guardaba `padre :: hijo` dentro de `value`.
 
 ## Categorías y cómo editarlas
 
@@ -60,12 +64,12 @@ lista `map` sería `childlist,map,region` y `poi` seguiría siendo
 `childlist,poi,map`.
 
 ### `childval` — valores de una lista dependiente
-`key` = id de la lista hija. `value` = `padre :: valor` (el nombre del
-valor del padre, luego ` :: `, luego el valor hijo).
+`key` = id de la lista hija, `value` = nombre del valor padre y
+`child` = valor hijo.
 
-| childval | poi | Highrise :: Office A |
-| childval | poi | Highrise :: Helipad  |
-| childval | poi | Skyline :: Rooftop   |
+| childval | poi | Highrise | Office A |
+| childval | poi | Highrise | Helipad  |
+| childval | poi | Skyline  | Rooftop  |
 
 Si borras un valor del padre, sus hijos quedan *huérfanos* y se marcan
 en rojo en la pestaña Data de la herramienta. Borrar el padre entero
@@ -82,7 +86,7 @@ Si no hay `listlabel`, se muestra el id tal cual.
 Pares `key` (nombre de la regla) y `value` (valor).
 
 Las reglas disponibles son:
-  - `kw_count`        — número de keywords (por defecto 5)
+  - `kw_count`        — cantidad exacta (`5`) o mínima (`>=5`) de keywords
   - `coord_fmt`       — texto de ayuda para el campo coordenadas
   - `coord_re`        — regex de validación de coordenadas
   - `repro_re`        — regex de tasa de reproducción (ej. 5/5)
@@ -95,7 +99,7 @@ Las reglas disponibles son:
   1. Abrir `bug_data.csv` con doble click. Se abrirá en Excel.
   2. Agregar, borrar o editar filas. **No cambiar los encabezados
      de columna** (la primera fila debe ser siempre
-     `category,key,value`).
+     `category,key,value,child`).
   3. **No usar comas dentro de los valores** a menos que el valor
      esté entre comillas dobles (ej. `"value, with comma"`).
   4. **No usar comillas dobles dentro de los valores** a menos que
@@ -122,13 +126,12 @@ avisará a las demás al intentar guardar. La convención es:
 
 Antes de sobrescribir, abrir en un editor de texto plano
 (TextEdit, Notepad, VSCode) y confirmar que:
-  - La primera línea es exactamente: `category,key,value`
-  - Cada fila tiene exactamente 2 comas separadoras
+  - La primera línea es exactamente: `category,key,value,child`
+  - Cada fila tiene exactamente 3 comas separadoras
   - No hay líneas en blanco
-  - No hay filas con celdas vacías (todas las categorías usan la
-    columna `key`: el id de la lista o de la regla)
-  - En `childval`, el `value` lleva el separador ` :: ` entre el
-    valor del padre y el del hijo
+  - `category`, `key` y `value` no están vacíos; `child` solo tiene
+    contenido en las filas `childval`
+  - En `childval`, `value` contiene el padre y `child` contiene el hijo
 
 ## Respaldo
 
