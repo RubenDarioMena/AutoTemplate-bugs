@@ -93,11 +93,15 @@ CSV viajan con este mapeo de columnas (el resto quedan vacías):
   | regexmsg | campo destino (el "entonces")                               |
   | emptyas  | valor de la acción (default a poner, o mensaje de error)    |
 
-La **expresión** (columna `source`) es texto y admite `AND`, `OR`,
-`NOT` y paréntesis, anidados a cualquier profundidad. Comparaciones:
+La **expresión** (columna `source`) es texto y admite `AND`/`&&`,
+`OR`/`||`, `NOT`/`!` y paréntesis, anidados a cualquier profundidad.
+Comparaciones:
 
   - `campo empty` / `campo notEmpty`
   - `campo = "valor"` / `campo != "valor"`
+  - `campo in ("uno", "dos", empty)` / `campo not in ("uno", "dos", empty)`
+    — compara contra varios literales; `empty` sin comillas representa un
+    campo vacío
   - `campo matches @regla` (o una regex directa)
   - `campoA = campoB` — compara dos campos por id (ambos no vacíos)
   - `@regla` suelta = evalúa esa regla booleana; se pueden concatenar

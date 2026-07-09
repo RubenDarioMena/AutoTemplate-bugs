@@ -370,33 +370,30 @@ resaltado de paréntesis o palabras especiales.
 
 #### 3-A-1 · Autocompletado (dropdown de IDs de campo y operadores)
 
-**Plan:**
-1. Crear un componente `CondExprInput` que reemplace al `<input>`
-   plano. Reutilizar el patrón del autocomplete existente (líneas
-   ~2295–2490) pero con una lista de sugerencias contextuales:
-   - Al inicio de una palabra: nombres de campo (`field.id`) +
-     `@reglas` + operadores (`empty`, `notEmpty`, `equals`, `not`,
-     `matches`, `AND`, `OR`).
-   - Después de un operador binario (`=`, `!=`, `~`): IDs de campo
-     (como operandos) o literales (strings con comillas).
-   - Después de `@`: nombres de reglas de `config.data.rules`.
-2. Implementar un `input` listener que:
-   a. Obtiene el texto desde el cursor hacia atrás hasta el último
-      espacio o `(`.
-   b. Filtra las sugerencias relevantes.
-   c. Muestra un dropdown absoluto bajo el input (reuse el CSS de
-      `.autocomplete-list`).
-   d. Tab/Enter inserta la sugerencia seleccionada.
-3. Necesitar interceptar `keydown` para Tab/Arrow/Enter sin romper
-   el comportamiento normal del input.
+**Implementado:**
+1. Se conserva el `<input>` y se le añade un dropdown especializado;
+   reutiliza los estilos y la navegación del autocomplete de campos,
+   pero no sus acciones de agregar/borrar valores.
+2. Las sugerencias dependen de la posición gramatical:
+   - Al iniciar una expresión, después de `AND`/`OR`/`NOT` o `(`:
+     IDs de campo, `@reglas` y `NOT`.
+   - Después de un campo: `empty`, `notEmpty`, `=`, `!=`, `matches`,
+     `in` y `not in`.
+   - Después de `=`/`!=`: valores configurados para el campo y otros
+     IDs de campo.
+   - Después de `matches` o `@`: reglas de `config.data.rules`.
+   - Dentro de `in (...)`/`not in (...)`: valores configurados para
+     el campo y la palabra reservada `empty`.
+   - Después de una comparación: `AND` y `OR`.
+3. El análisis usa los tokens y la posición del cursor; reconoce
+   paréntesis, comas y strings abiertos en vez de cortar únicamente
+   por espacios.
+4. Flechas navegan, `Enter`/`Tab` insertan la sugerencia seleccionada
+   y `Escape` cierra el dropdown. Se muestra el label como ayuda pero
+   siempre se inserta el `field.id`.
 
-**Código a agregar:** ~80–120 líneas (componente nuevo reutilizando
-patrones existentes).
-**Riesgo:** Medio — el parser de expresiones es sensible al texto
-exacto; el autocompletado debe insertar IDs de campo (no labels) para
-que `tokenizeExpr` los reconozca.
-**Complejidad:** Alta por la detección de contexto (¿qué espera el
-parser en esta posición?).
+**Riesgo:** Bajo — es una mejora progresiva sobre el input existente;
+el texto continúa validándose y evaluándose con el mismo parser.
 
 #### 3-A-2 · Resaltado de sintaxis (paren matching, colores)
 
@@ -406,7 +403,8 @@ parser en esta posición?).
    El `<input>` tiene color transparente (solo el caret visible) y
    el overlay pinta el texto con colores por categoría:
    - **Campos**: color cyan (usando el design system del proyecto).
-   - **Operadores** (`=`, `!=`, `~`, `AND`, `OR`, `NOT`): naranja.
+   - **Operadores** (`=`, `!=`, `~`, `in`, `not in`, `AND`, `OR`, `NOT`):
+     naranja.
    - **@reglas**: verde.
    - **Paréntesis**: matching resaltado en bold/cuando el cursor
      está sobre uno, su par se ilumina.

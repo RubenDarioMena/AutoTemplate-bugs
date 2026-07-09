@@ -679,6 +679,28 @@
       min-height: 12px;
       white-space: normal;
     }
+    .cond-expr-ac .autocomplete-list {
+      right: auto;
+      width: max-content;
+      min-width: 100%;
+      max-width: 520px;
+      border-top: 1px solid #c7ccd1;
+      border-radius: 3px;
+    }
+    .cond-expr-ac .autocomplete-item code {
+      color: inherit;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .cond-expr-detail {
+      color: #6b7280;
+      font-size: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cond-expr-ac .autocomplete-item.active .cond-expr-detail,
+    .cond-expr-ac .autocomplete-item:hover .cond-expr-detail { color: #4b6b9b; }
 
     /* ---------- Autocomplete ---------- */
     .autocomplete { position: relative; }
@@ -2617,16 +2639,135 @@ function moveField(form, fieldId, dir) {
   scheduleSave();
 }
 
+// Referencias de campo usadas realmente por una expresión, incluyendo el
+// operando derecho campo-a-campo y las @reglas booleanas que ésta reutiliza.
+function expressionAllFieldRefs(src, seenRules) {
+  const refs = new Set();
+  const seen = seenRules || new Set();
+  const walk = (node) => {
+    if (!node) return;
+    if (node.type === "cmp") {
+      refs.add(node.field);
+      const o = node.operand;
+      if (o && o.kind === "word" && anyFieldHasId(o.v)) refs.add(o.v);
+    } else if (node.type === "not") {
+      walk(node.item);
+    } else if (node.type === "or" || node.type === "and") {
+      node.items.forEach(walk);
+    } else if (node.type === "ref" && !seen.has(node.name)) {
+      seen.add(node.name);
+      const nested = config.data.rules[node.name];
+      if (nested != null) {
+        try { walk(parseExpr(String(nested))); } catch (e) {}
+      }
+    }
+  };
+  try { walk(parseExpr(String(src || ""))); } catch (e) {}
+  return [...refs];
+}
+
+function templateFieldRefs(text) {
+  const refs = new Set();
+  String(text || "").replace(/\{([A-Za-z0-9_\-.]+)\}/g, (m, id) => {
+    refs.add(id);
+    return m;
+  });
+  return [...refs];
+}
+
+function fieldRemovalImpact(form, initialIds) {
+  const removedIds = new Set(initialIds);
+
+  // Una copia sin origen no tiene utilidad: se elimina junto con su fuente.
+  let added;
+  do {
+    added = false;
+    allFields(form).forEach(({ field }) => {
+      if (field.type === "mirror" && removedIds.has(field.source) && !removedIds.has(field.id)) {
+        removedIds.add(field.id);
+        added = true;
+      }
+    });
+  } while (added);
+
+  const referencesRemoved = (ids) => ids.some(id => removedIds.has(id));
+  const rules = getFormRules(form).filter(rule => {
+    const refs = typeof rule.whenExpr === "string"
+      ? expressionAllFieldRefs(rule.whenExpr)
+      : [
+          rule.when && rule.when.field,
+          rule.when && ["equalsField", "notEqualsField"].includes(rule.when.op) ? rule.when.value : ""
+        ].filter(Boolean);
+    if (rule.then && rule.then.field) refs.push(rule.then.field);
+    return referencesRemoved(refs);
+  });
+  const tiles = getFormTiles(form).filter(tile => referencesRemoved([
+    ...expressionAllFieldRefs(tile.whenExpr || ""),
+    ...templateFieldRefs(tile.text),
+    ...templateFieldRefs(tile.message),
+    tile.field
+  ].filter(Boolean)));
+  const dependents = allFields(form).filter(({ field }) => {
+    if (removedIds.has(field.id) || field.type === "mirror") return false;
+    const src = String(field.source || "");
+    const match = /^child:[^:]+:(.+)$/.exec(src) || /^pois:(.+)$/.exec(src);
+    return !!(match && removedIds.has(match[1]));
+  }).map(x => x.field);
+  const mirrors = allFields(form).filter(({ field }) =>
+    field.type === "mirror" && removedIds.has(field.id) && !initialIds.includes(field.id)
+  ).map(x => x.field);
+
+  return { removedIds, rules, tiles, dependents, mirrors };
+}
+
+function applyFieldRemoval(form, impact) {
+  form.sections.forEach(sec => {
+    sec.fields = sec.fields.filter(field => !impact.removedIds.has(field.id));
+  });
+  const removedRules = new Set(impact.rules);
+  const removedTiles = new Set(impact.tiles);
+  form.rules = getFormRules(form).filter(rule => !removedRules.has(rule));
+  form.tiles = getFormTiles(form).filter(tile => !removedTiles.has(tile));
+
+  // El campo dependiente se conserva para que pueda reconfigurarse, pero deja
+  // de apuntar al id borrado y pierde cualquier selección derivada del padre.
+  const dependentIds = new Set(impact.dependents.map(field => field.id));
+  impact.dependents.forEach(field => delete field.source);
+  state.instances.filter(inst => inst.formId === form.id).forEach(inst => {
+    impact.removedIds.forEach(id => {
+      delete inst.values[id];
+      delete inst.errors[id];
+    });
+    dependentIds.forEach(id => {
+      inst.values[id] = "";
+      delete inst.errors[id];
+    });
+    revalidate(inst, false);
+    markInstanceDirty(inst);
+  });
+}
+
+function fieldRemovalWarning(impact) {
+  const parts = [];
+  if (impact.rules.length) parts.push(`${impact.rules.length} condición(es)`);
+  if (impact.tiles.length) parts.push(`${impact.tiles.length} tile(s)`);
+  if (impact.mirrors.length) parts.push(`${impact.mirrors.length} campo(s) copia`);
+  if (impact.dependents.length) parts.push(`${impact.dependents.length} dropdown(s) dependiente(s)`);
+  if (!parts.length) return "";
+  return `<br /><br /><strong>También se limpiarán:</strong> ${parts.join(", ")}.`;
+}
+
 function deleteField(form, fieldId) {
   const found = getField(form, fieldId);
   if (!found) return;
+  const impact = fieldRemovalImpact(form, [fieldId]);
   showConfirmModal({
     title: "Borrar campo",
-    body: `¿Borrar definitivamente el campo «${escapeHtml(found.field.label)}»? Dejará de aparecer en el formulario y en el output.`,
+    body: `¿Borrar definitivamente el campo «${escapeHtml(found.field.label)}»? Dejará de aparecer en el formulario y en el output.${fieldRemovalWarning(impact)}`,
     confirmText: "Borrar",
     confirmClass: "danger",
     onConfirm: () => {
-      found.sec.fields = found.sec.fields.filter(f => f.id !== fieldId);
+      applyFieldRemoval(form, impact);
       renderForm();
       scheduleSave();
     }
@@ -2636,12 +2777,15 @@ function deleteField(form, fieldId) {
 function deleteSection(form, secId) {
   const sec = getSection(form, secId);
   if (!sec) return;
+  const fieldIds = sec.fields.map(field => field.id);
+  const impact = fieldRemovalImpact(form, fieldIds);
   showConfirmModal({
     title: "Borrar sección",
-    body: `¿Borrar definitivamente la sección «${escapeHtml(sec.label)}» y sus ${sec.fields.length} campo(s)?`,
+    body: `¿Borrar definitivamente la sección «${escapeHtml(sec.label)}» y sus ${sec.fields.length} campo(s)?${fieldRemovalWarning(impact)}`,
     confirmText: "Borrar todo",
     confirmClass: "danger",
     onConfirm: () => {
+      applyFieldRemoval(form, impact);
       form.sections = form.sections.filter(s => s.id !== secId);
       renderForm();
       scheduleSave();
@@ -2933,11 +3077,16 @@ function getFormRules(form) {
      comparación := campo ( "empty" | "notEmpty"
                           | ("="|"==") operando       // igual
                           | ("!="|"<>") operando       // distinto
-                          | ("matches"|"~") operando ) // cumple regex/@regla
+                          | ("matches"|"~") operando   // cumple regex/@regla
+                          | ("in"|"not in") lista )    // pertenece/no pertenece
      operando := "texto"  |  "@"nombre  |  palabra
+     lista    := "(" miembro ("," miembro)* ")"
+     miembro  := "texto" | "empty"
 
    - operando entre comillas → literal;  @nombre → @regla;  palabra suelta →
      id de campo (compara valor contra valor: equalsField/notEqualsField).
+   - Los miembros de `in`/`not in` son literales entre comillas; `empty` sin
+     comillas representa la ausencia de valor.
    - "@nombre" suelto = evalúa esa @regla como sub-expresión booleana
      (permite reutilizar/concatenar reglas: «@esLod OR @esVlod»).
    Retrocompatible: una `when` vieja { field, op, value } sigue evaluándose. */
@@ -2949,7 +3098,7 @@ function tokenizeExpr(src) {
   while (i < src.length) {
     const c = src[i];
     if (/\s/.test(c)) { i++; continue; }
-    if (c === "(" || c === ")") { toks.push({ t: c }); i++; continue; }
+    if (c === "(" || c === ")" || c === ",") { toks.push({ t: c }); i++; continue; }
     if (c === '"' || c === "'") {
       let j = i + 1, s = "";
       while (j < src.length && src[j] !== c) { s += src[j]; j++; }
@@ -3014,7 +3163,32 @@ function parseExpr(src) {
     // operador postfijo empty/notEmpty
     if (isKw("empty")) { p++; return { type: "cmp", field, op: "empty" }; }
     if (isKw("notempty")) { p++; return { type: "cmp", field, op: "notEmpty" }; }
-    // operador binario
+    // Operadores de pertenencia. `not in` se reconoce aquí para que NOT/!
+    // conserve su papel de negación prefija en el resto de la gramática.
+    if (isKw("in") ||
+        (isKw("not") && toks[p + 1] && toks[p + 1].t === "word" &&
+         toks[p + 1].v.toLowerCase() === "in")) {
+      const op = isKw("in") ? "in" : "notIn";
+      p += op === "in" ? 1 : 2;
+      if (!peek() || peek().t !== "(") throw new Error(`Se esperaba «(» después de «${op === "in" ? "in" : "not in"}»`);
+      p++;
+      const members = [];
+      if (peek() && peek().t === ")") throw new Error("La lista de valores no puede estar vacía");
+      while (true) {
+        const tk = peek();
+        if (!tk) throw new Error("Falta cerrar «)» en la lista de valores");
+        if (tk.t === "str") members.push({ kind: "lit", v: tk.v });
+        else if (tk.t === "word" && tk.v.toLowerCase() === "empty") members.push({ kind: "empty" });
+        else throw new Error("Los valores de la lista deben ir entre comillas; usa empty sin comillas");
+        p++;
+        if (peek() && peek().t === ")") { p++; break; }
+        if (!peek() || peek().t !== ",") throw new Error("Se esperaba «,» o «)» en la lista de valores");
+        p++;
+        if (!peek() || peek().t === ")") throw new Error("Falta un valor después de «,»");
+      }
+      return { type: "cmp", field, op, members };
+    }
+    // Operador binario
     let op;
     if (isOp("=", "==")) op = "eq";
     else if (isOp("!=", "<>")) op = "ne";
@@ -3068,6 +3242,7 @@ function astHasMissingField(ast, inst) {
     if (!node) return false;
     if (node.type === "cmp") {
       if (!getField(form, node.field)) return true;
+      if (node.op === "in" || node.op === "notIn") return false;
       const w = cmpToWhen(node);
       return ["equalsField", "notEqualsField"].includes(w.op) && !getField(form, w.value);
     }
@@ -3085,7 +3260,18 @@ function evalAst(ast, inst, seen) {
     case "or":  return ast.items.some(x => evalAst(x, inst, seen));
     case "and": return ast.items.every(x => evalAst(x, inst, seen));
     case "not": return !evalAst(ast.item, inst, seen);
-    case "cmp": return evalCondition(cmpToWhen(ast), inst);
+    case "cmp":
+      if (ast.op === "in" || ast.op === "notIn") {
+        const form = getForm(inst.formId);
+        if (!form || !getField(form, ast.field)) return false;
+        const value = String(inst.values[ast.field] == null ? "" : inst.values[ast.field]).trim();
+        const found = (ast.members || []).some(member =>
+          member.kind === "empty"
+            ? !value
+            : value.toLowerCase() === String(member.v).trim().toLowerCase());
+        return ast.op === "in" ? found : !found;
+      }
+      return evalCondition(cmpToWhen(ast), inst);
     case "ref": {
       const name = ast.name;
       if (seen && seen.has(name)) return false; // ciclo
@@ -3145,6 +3331,282 @@ function exprFieldRefs(src) {
   };
   try { walk(parseExpr(String(src || ""))); } catch (e) {}
   return ids;
+}
+
+// Valores configurados para un campo autocomplete. En listas dependientes no
+// hay una instancia concreta en RULES, así que se reúnen todos los buckets.
+function condExprFieldValues(field) {
+  if (!field || field.type !== "autocomplete") return [];
+  const s = parseSource(field.source);
+  let values = [];
+  if (s.kind === "child") {
+    const child = config.data.childLists && config.data.childLists[s.link];
+    if (child) Object.values(child.values || {}).forEach(arr => values.push(...(arr || [])));
+  } else {
+    values = (config.data.lists && config.data.lists[s.list]) || [];
+  }
+  const seen = new Set();
+  return values.map(String).filter(value => {
+    const key = value.toLowerCase();
+    if (!value || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function condExprQuoted(value) {
+  value = String(value);
+  if (!value.includes('"')) return `"${value}"`;
+  if (!value.includes("'")) return `'${value}'`;
+  return ""; // el lenguaje todavía no admite escapes dentro de strings
+}
+
+// Devuelve el fragmento editable bajo el cursor. Si hay una comilla abierta,
+// reemplaza desde esa comilla para completar el literal entero.
+function condExprFragment(src, cursor) {
+  const before = src.slice(0, cursor);
+  let quote = "", quoteAt = -1;
+  for (let i = 0; i < before.length; i++) {
+    if (!quote && (before[i] === '"' || before[i] === "'")) {
+      quote = before[i]; quoteAt = i;
+    } else if (quote && before[i] === quote) {
+      quote = ""; quoteAt = -1;
+    }
+  }
+  if (quote) {
+    const closingAt = src.indexOf(quote, cursor);
+    return {
+      from: quoteAt,
+      to: closingAt >= 0 ? closingAt + 1 : cursor,
+      query: before.slice(quoteAt + 1),
+      atRule: false
+    };
+  }
+  const m = /[@A-Za-z0-9_.-]+$/.exec(before);
+  const tail = /^[A-Za-z0-9_.-]+/.exec(src.slice(cursor));
+  return {
+    from: m ? cursor - m[0].length : cursor,
+    to: cursor + (tail ? tail[0].length : 0),
+    query: m ? m[0] : "",
+    atRule: !!(m && m[0].startsWith("@"))
+  };
+}
+
+function condExprSuggestionState(src, cursor, form) {
+  const fragment = condExprFragment(src, cursor);
+  const base = src.slice(0, fragment.from);
+  let toks;
+  try { toks = tokenizeExpr(base); }
+  catch (e) { return { ...fragment, kind: "none", field: null }; }
+  const last = toks[toks.length - 1];
+  const prev = toks[toks.length - 2];
+  const word = tk => tk && tk.t === "word" ? tk.v.toLowerCase() : "";
+  const op = tk => tk && tk.t === "op" ? tk.v : "";
+
+  // Detecta si el cursor está dentro de la lista de un in/not in y conserva
+  // el campo izquierdo para poder sugerir sus valores configurados.
+  const stack = [];
+  toks.forEach((tk, i) => {
+    if (tk.t === "(") {
+      const before = toks[i - 1];
+      const before2 = toks[i - 2];
+      const before3 = toks[i - 3];
+      let fieldId = "";
+      if (word(before) === "in" && before2 && before2.t === "word") {
+        fieldId = word(before2) === "not" && before3 && before3.t === "word"
+          ? before3.v : before2.v;
+      }
+      stack.push({ membership: !!fieldId, fieldId });
+    } else if (tk.t === ")" && stack.length) stack.pop();
+  });
+  const listCtx = stack.length && stack[stack.length - 1].membership
+    ? stack[stack.length - 1] : null;
+  if (listCtx) {
+    const fieldRef = getField(form, listCtx.fieldId);
+    const kind = !last || last.t === "(" || last.t === "," ? "member" : "listSep";
+    return { ...fragment, kind, field: fieldRef && fieldRef.field };
+  }
+
+  if (word(last) === "not" && prev && prev.t === "word" && getField(form, prev.v)) {
+    return { ...fragment, kind: "notInOpen", field: getField(form, prev.v).field };
+  }
+  if (!last || last.t === "(" || ["!", "&&", "||"].includes(op(last)) ||
+      ["and", "or", "not"].includes(word(last))) {
+    return { ...fragment, kind: "lhs", field: null };
+  }
+  if (last.t === ")") return { ...fragment, kind: "logical", field: null };
+  if (last.t === "ref" || last.t === "str") return { ...fragment, kind: "logical", field: null };
+  if (["=", "==", "!=", "<>", "~"].includes(op(last)) || word(last) === "matches") {
+    const fieldTk = prev;
+    const fieldRef = fieldTk && fieldTk.t === "word" ? getField(form, fieldTk.v) : null;
+    return {
+      ...fragment,
+      kind: op(last) === "~" || word(last) === "matches" ? "matchesOperand" : "operand",
+      field: fieldRef && fieldRef.field
+    };
+  }
+  if (word(last) === "in") {
+    const fieldTk = word(prev) === "not" ? toks[toks.length - 3] : prev;
+    const fieldRef = fieldTk && fieldTk.t === "word" ? getField(form, fieldTk.v) : null;
+    return { ...fragment, kind: "listOpen", field: fieldRef && fieldRef.field };
+  }
+  if (last.t === "word") {
+    if (["empty", "notempty"].includes(word(last))) {
+      return { ...fragment, kind: "logical", field: null };
+    }
+    // Una palabra tras un operador es un operando ya completo; en cualquier
+    // otra posición, si es un id válido, es el lado izquierdo.
+    if (prev && (["=", "==", "!=", "<>", "~"].includes(op(prev)) || word(prev) === "matches")) {
+      return { ...fragment, kind: "logical", field: null };
+    }
+    const fieldRef = getField(form, last.v);
+    if (fieldRef) return { ...fragment, kind: "operator", field: fieldRef.field };
+  }
+  return { ...fragment, kind: "logical", field: null };
+}
+
+function condExprSuggestions(src, cursor, form) {
+  const state = condExprSuggestionState(src, cursor, form);
+  const fields = allFields(form).filter(x => x.field.type !== "mirror").map(x => x.field);
+  const rules = Object.keys(config.data.rules || {});
+  const item = (insert, label, detail) => ({ insert, label: label || insert.trim(), detail: detail || "" });
+  const fieldItems = () => fields.map(field => item(field.id + " ", field.id, field.label));
+  const ruleItems = () => rules.map(name => item("@" + name + " ", "@" + name, "regla global"));
+  const valueItems = field => condExprFieldValues(field)
+    .map(value => {
+      const quoted = condExprQuoted(value);
+      return quoted ? item(quoted + " ", quoted, "valor de " + field.label) : null;
+    }).filter(Boolean);
+  let items = [];
+  switch (state.kind) {
+    case "lhs":
+      items = state.atRule
+        ? ruleItems()
+        : fieldItems().concat(ruleItems(), [item("NOT ", "NOT", "negación · alias !")]);
+      break;
+    case "operator":
+      items = [
+        item("empty ", "empty", "está vacío"),
+        item("notEmpty ", "notEmpty", "tiene valor"),
+        item("= ", "=", "igual a"),
+        item("!= ", "!=", "distinto de"),
+        item("matches ", "matches", "cumple regex o @regla"),
+        item("in (", "in (...)", "coincide con alguno"),
+        item("not in (", "not in (...)", "no coincide con ninguno")
+      ];
+      break;
+    case "operand":
+      items = state.atRule ? [] : valueItems(state.field).concat(fieldItems());
+      break;
+    case "matchesOperand":
+      items = ruleItems();
+      break;
+    case "listOpen":
+      items = [item("(", "(", "abre la lista")];
+      break;
+    case "notInOpen":
+      items = [item("in (", "in (...)", "completa not in")];
+      break;
+    case "member":
+      items = valueItems(state.field).concat([item("empty", "empty", "ausencia de valor")]);
+      break;
+    case "listSep":
+      items = [item(", ", ",", "otro valor"), item(") ", ")", "terminar lista")];
+      break;
+    case "logical":
+      items = [
+        item("AND ", "AND", "alias &&"),
+        item("OR ", "OR", "alias ||")
+      ];
+      break;
+  }
+  const query = state.query.replace(/^@/, "").toLowerCase();
+  if (query) {
+    items = items.filter(s =>
+      s.label.replace(/^@/, "").toLowerCase().includes(query) ||
+      s.detail.toLowerCase().includes(query));
+  }
+  return { from: state.from, to: state.to == null ? cursor : state.to, items: items.slice(0, 50) };
+}
+
+function wireCondExprAutocomplete(input, form) {
+  const wrap = input.closest(".cond-expr-ac");
+  const list = wrap && wrap.querySelector(".autocomplete-list");
+  if (!wrap || !list) return;
+  let activeIdx = -1;
+  let current = { from: 0, to: 0, items: [] };
+
+  const accept = idx => {
+    const suggestion = current.items[idx];
+    if (!suggestion) return;
+    const before = input.value.slice(0, current.from);
+    const after = input.value.slice(current.to);
+    input.value = before + suggestion.insert + after;
+    const caret = before.length + suggestion.insert.length;
+    input.setSelectionRange(caret, caret);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+  const render = () => {
+    current = condExprSuggestions(input.value, input.selectionStart || 0, form);
+    activeIdx = -1;
+    if (!current.items.length) {
+      wrap.classList.remove("open");
+      list.innerHTML = "";
+      return;
+    }
+    list.innerHTML = current.items.map((suggestion, idx) =>
+      `<div class="autocomplete-item" data-cond-suggestion="${idx}">
+        <code>${escapeHtml(suggestion.label)}</code>
+        <span class="cond-expr-detail">${escapeHtml(suggestion.detail)}</span>
+      </div>`).join("");
+    list.querySelectorAll("[data-cond-suggestion]").forEach(el => {
+      el.addEventListener("mousedown", e => {
+        e.preventDefault();
+        accept(+el.dataset.condSuggestion);
+      });
+    });
+    wrap.classList.add("open");
+    positionAutocomplete(wrap, list);
+  };
+
+  input.addEventListener("focus", render);
+  input.addEventListener("click", render);
+  input.addEventListener("input", render);
+  input.addEventListener("blur", () => setTimeout(() => {
+    wrap.classList.remove("open");
+    activeIdx = -1;
+  }, 150));
+  input.addEventListener("keydown", e => {
+    let items = list.querySelectorAll("[data-cond-suggestion]");
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!wrap.classList.contains("open")) {
+        render();
+        items = list.querySelectorAll("[data-cond-suggestion]");
+      }
+      if (e.key === "ArrowDown") activeIdx = Math.min(items.length - 1, activeIdx + 1);
+      else activeIdx = Math.max(0, activeIdx - 1);
+    } else if ((e.key === "Enter" || e.key === "Tab") &&
+               wrap.classList.contains("open") && activeIdx >= 0) {
+      e.preventDefault();
+      accept(activeIdx);
+      return;
+    } else if (e.key === "Escape") {
+      wrap.classList.remove("open");
+      activeIdx = -1;
+      return;
+    } else {
+      return;
+    }
+    items.forEach((el, idx) => el.classList.toggle("active", idx === activeIdx));
+    if (activeIdx >= 0 && items[activeIdx]) {
+      const el = items[activeIdx];
+      if (el.offsetTop < list.scrollTop) list.scrollTop = el.offsetTop;
+      else if (el.offsetTop + el.offsetHeight > list.scrollTop + list.clientHeight)
+        list.scrollTop = el.offsetTop + el.offsetHeight - list.clientHeight;
+    }
+  });
 }
 
 function evalCondition(when, inst) {
@@ -3208,7 +3670,8 @@ function parseKeywordCountRule(raw) {
   return null;
 }
 
-function revalidate(inst) {
+function revalidate(inst, paint) {
+  if (paint === undefined) paint = true;
   inst.errors = {};
   const form = getForm(inst.formId);
   if (!form) return;
@@ -3268,8 +3731,10 @@ function revalidate(inst) {
     }
   });
 
-  reflectErrors(inst);
-  renderTiles(inst);
+  if (paint) {
+    reflectErrors(inst);
+    renderTiles(inst);
+  }
 }
 
 // Pinta los errores en los campos sin re-renderizar el formulario.
@@ -4329,9 +4794,12 @@ function renderRulesTab() {
       const err = exprError(expr, form);
       return `<tr>
         <td class="cond-then">Si</td>
-        <td class="cond-expr-cell"><input type="text" class="cond-expr${err ? " cond-bad" : ""}"
+        <td class="cond-expr-cell"><div class="autocomplete cond-expr-ac">
+          <input type="text" class="cond-expr${err ? " cond-bad" : ""}"
              data-cr="${k}|whenExpr" value="${escapeHtml(expr)}"
              placeholder="ej. shortDescription matches @lod AND NOT poi empty" />
+          <div class="autocomplete-list"></div>
+        </div>
           <div class="cond-err" data-cr-err="${k}">${err ? escapeHtml(err) : ""}</div></td>
         <td class="cond-then">entonces</td>
         <td><select data-cr="${k}|then.action">${actOpts}</select></td>
@@ -4364,9 +4832,12 @@ function renderRulesTab() {
       return `<tr>
         <td><input type="text" data-tr="${k}|text" value="${escapeHtml(t.text)}" placeholder="texto" style="width:110px" /></td>
         <td><input type="text" data-tr="${k}|message" value="${escapeHtml(t.message || "")}" placeholder="instrucción o detalle (admite {campo})" style="min-width:190px" /></td>
-        <td class="cond-expr-cell"><input type="text" class="cond-expr${err ? " cond-bad" : ""}"
+        <td class="cond-expr-cell"><div class="autocomplete cond-expr-ac">
+          <input type="text" class="cond-expr${err ? " cond-bad" : ""}"
              data-tr="${k}|whenExpr" value="${escapeHtml(expr)}"
-             placeholder="vacío = siempre. ej. bugType = Crash AND consoleLog empty" />
+             placeholder="vacío = siempre. ej. bugType in (&quot;Crash&quot;, &quot;Freeze&quot;)" />
+          <div class="autocomplete-list"></div>
+        </div>
           <div class="cond-err" data-tr-err="${k}">${err ? escapeHtml(err) : ""}</div></td>
         <td><select data-tr="${k}|color" class="tile-color-sel" style="background:${col.bg};color:${col.fg}">${tileColorOptions(t.color)}</select></td>
         <td><select data-tr="${k}|severity">${sevOpts}</select></td>
@@ -4423,10 +4894,13 @@ function renderRulesTab() {
       <p class="rules-intro">
         Reglas del tipo <em>SI (expresión) ENTONCES (acción sobre un campo)</em>.
         La <strong>expresión</strong> se escribe como texto y admite
-        <code>AND</code>, <code>OR</code>, <code>NOT</code> y paréntesis, anidados
-        a cualquier profundidad. Comparaciones por campo:
+        <code>AND</code>/<code>&amp;&amp;</code>, <code>OR</code>/<code>||</code>,
+        <code>NOT</code>/<code>!</code> y paréntesis, anidados a cualquier
+        profundidad. Comparaciones por campo:
         <code>campo empty</code>, <code>campo notEmpty</code>,
         <code>campo = "valor"</code>, <code>campo != "valor"</code>,
+        <code>campo in ("uno", "dos", empty)</code>,
+        <code>campo not in ("uno", "dos", empty)</code>,
         <code>campo matches @regla</code> (o una regex), y
         <code>campoA = campoB</code> (compara dos campos). Puedes referenciar otra
         <code>@regla</code> booleana suelta y concatenarlas
@@ -4544,9 +5018,10 @@ function renderRulesTab() {
   });
   // Validación en vivo de la expresión mientras se teclea (sin re-render).
   c.querySelectorAll(".cond-expr[data-cr]").forEach(inp => {
+    const [formId] = inp.dataset.cr.split("|");
+    wireCondExprAutocomplete(inp, getForm(formId));
     inp.addEventListener("input", () => {
       const k = inp.dataset.cr.split("|").slice(0, 2).join("|");
-      const [formId] = inp.dataset.cr.split("|");
       const err = exprError(inp.value, getForm(formId));
       inp.classList.toggle("cond-bad", !!err);
       const box = c.querySelector(`[data-cr-err="${k}"]`);
@@ -4601,9 +5076,10 @@ function renderRulesTab() {
   });
   // Validación en vivo de la expresión del tile (sin re-render).
   c.querySelectorAll(".cond-expr[data-tr]").forEach(inp => {
+    const [formId] = inp.dataset.tr.split("|");
+    wireCondExprAutocomplete(inp, getForm(formId));
     inp.addEventListener("input", () => {
       const k = inp.dataset.tr.split("|").slice(0, 2).join("|");
-      const [formId] = inp.dataset.tr.split("|");
       const err = exprError(inp.value, getForm(formId));
       inp.classList.toggle("cond-bad", !!err);
       const box = c.querySelector(`[data-tr-err="${k}"]`);
