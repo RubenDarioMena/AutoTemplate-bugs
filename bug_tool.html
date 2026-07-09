@@ -615,6 +615,7 @@
 
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .row-3 > .field.span-2 { grid-column: span 2; }
 
     /* ---------- Controles del modo edición ---------- */
     /* Ocultos por defecto; body.editing los muestra. */
@@ -1023,11 +1024,16 @@
     .fe-grid label { margin-top: 4px; }
     .fe-grid label.checkbox { margin-top: 2px; }
     .fe-readonly {
-      background: #f3f4f6;
+      background: #eceff3;
       color: #6b7280;
       border-color: #d1d5db;
-      box-shadow: inset 0 -2px 0 #e5e7eb;
+      box-shadow: inset 0 0 0 999px #eceff3, inset 0 -2px 0 #dde3ea;
       cursor: default;
+    }
+    .fe-readonly:focus {
+      background: #eceff3;
+      border-color: #cbd5e1;
+      box-shadow: inset 0 0 0 999px #eceff3, 0 0 0 2px rgba(148, 163, 184, 0.18);
     }
     .fe-sep {
       grid-column: 1 / -1;
@@ -1469,7 +1475,8 @@ const FIELD_TYPES = [
 const FIELD_SIZES = [
   { id: "full",  label: "Ancho completo" },
   { id: "half",  label: "1/2 de fila" },
-  { id: "third", label: "1/3 de fila" }
+  { id: "third", label: "1/3 de fila" },
+  { id: "twoThirds", label: "2/3 de fila" }
 ];
 
 // Paleta de colores con nombre para los tiles personalizados. Cada uno trae
@@ -2160,22 +2167,45 @@ function sectionHtml(sec, inst, fx, form) {
   // marcados, para poder seguir editándolos).
   const visibleFields = sec.fields.filter(f =>
     state.editMode || !(fx[f.id] && fx[f.id].hidden));
-  // Agrupar campos consecutivos del mismo tamaño en filas de 2 o 3
+  // Agrupa medios en filas de 2 y tercios/2-3 en filas de 3 columnas.
   const rows = [];
   let group = null;
+  const flush = () => {
+    if (group && group.items.length) rows.push(group);
+    group = null;
+  };
   visibleFields.forEach(f => {
-    const size = f.size === "half" ? 2 : f.size === "third" ? 3 : 1;
-    if (group && group.size === size && size > 1 && group.items.length < size) {
-      group.items.push(f);
-    } else {
-      group = { size, items: [f] };
-      rows.push(group);
+    const mode = f.size === "half" ? "half"
+      : (f.size === "third" || f.size === "twoThirds") ? "thirds"
+      : "full";
+    if (mode === "full") {
+      flush();
+      rows.push({ layout: "full", items: [f] });
+      return;
     }
+    if (mode === "half") {
+      if (!group || group.layout !== "row-2" || group.items.length >= 2) {
+        flush();
+        group = { layout: "row-2", items: [] };
+      }
+      group.items.push(f);
+      if (group.items.length >= 2) flush();
+      return;
+    }
+    const units = f.size === "twoThirds" ? 2 : 1;
+    if (!group || group.layout !== "row-3" || (group.units + units) > 3) {
+      flush();
+      group = { layout: "row-3", items: [], units: 0 };
+    }
+    group.items.push(f);
+    group.units += units;
+    if (group.units >= 3) flush();
   });
+  flush();
   const body = rows.map(g => {
     const cells = g.items.map(f => fieldHtml(f, inst, fx)).join("");
-    if (g.size === 2) return `<div class="row-2">${cells}</div>`;
-    if (g.size === 3) return `<div class="row-3">${cells}</div>`;
+    if (g.layout === "row-2") return `<div class="row-2">${cells}</div>`;
+    if (g.layout === "row-3") return `<div class="row-3">${cells}</div>`;
     return cells;
   }).join("");
   const collapsed = !!uiCollapse.sections[sectionCollapseKey(form, sec.id)];
@@ -2206,23 +2236,24 @@ function fieldHtml(field, inst, fx) {
   const helpHtml = field.help ? `<div class="field-help">${escapeHtml(field.help)}</div>` : "";
   const errHtml = `<div class="field-error">${escapeHtml(err)}</div>`;
   const val = field.type === "mirror" ? "" : (inst.values[field.id] != null ? inst.values[field.id] : "");
+  const sizeClass = field.size === "twoThirds" ? " span-2" : "";
 
   if (field.type === "mirror") {
     // Solo visible en modo edición: no se llena, copia otro campo en el output.
-    return `<div class="field mirror-field" data-field="${escapeHtml(field.id)}">
+    return `<div class="field mirror-field${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="mirror-note">= copia del campo «${escapeHtml(field.source || "?")}» (solo aparece en el output)</div>
     </div>`;
   }
   if (field.type === "textarea") {
-    return `<div class="field${invalid}" data-field="${escapeHtml(field.id)}">
+    return `<div class="field${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <textarea data-bind="${escapeHtml(field.id)}" rows="${field.rows || 3}"${dis}>${escapeHtml(val)}</textarea>
       ${errHtml}${helpHtml}
     </div>`;
   }
   if (field.type === "autocomplete") {
-    return `<div class="field autocomplete${invalid}" data-field="${escapeHtml(field.id)}">
+    return `<div class="field autocomplete${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="autocomplete-input-wrap">
         <input type="text" data-bind="${escapeHtml(field.id)}" data-ac="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
@@ -2234,7 +2265,7 @@ function fieldHtml(field, inst, fx) {
   }
   if (field.type === "keywords") {
     const kws = Array.isArray(val) ? val : [];
-    return `<div class="field" data-field="${escapeHtml(field.id)}">
+    return `<div class="field${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="chips${err ? " invalid" : ""}" data-kw-chips="${escapeHtml(field.id)}">
         ${kws.map(k => `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`).join("")}
@@ -2245,7 +2276,7 @@ function fieldHtml(field, inst, fx) {
     </div>`;
   }
   // text (default)
-  return `<div class="field${invalid}" data-field="${escapeHtml(field.id)}">
+  return `<div class="field${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
     ${labelHtml}
     <input type="text" data-bind="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
     ${errHtml}${helpHtml}
