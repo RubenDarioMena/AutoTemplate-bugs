@@ -456,18 +456,6 @@
       box-shadow: inset 0 2px 0 var(--primary);
     }
     .sub-tab .label { overflow: hidden; text-overflow: ellipsis; }
-    .sub-tab .tab-action {
-      width: 16px; height: 16px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 2px;
-      font-size: 11px;
-      line-height: 1;
-      color: var(--text-3);
-      flex: 0 0 auto;
-    }
-    .sub-tab .tab-action:hover { background: var(--surface-3); color: var(--text); }
     .sub-tab .close {
       width: 16px; height: 16px;
       display: inline-flex;
@@ -1153,21 +1141,6 @@
       letter-spacing: 0;
       font-weight: 400;
     }
-    /* Campo tipo casilla sí/no en el formulario */
-    .field.checkbox-field { display: flex; flex-direction: column; justify-content: center; }
-    .field.checkbox-field label.cb-inline {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text);
-      text-transform: none;
-      letter-spacing: 0;
-      margin: 6px 0 2px;
-    }
-    .field.checkbox-field input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary); }
     .fe-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1647,7 +1620,6 @@ const FIELD_TYPES = [
   { id: "textarea",     label: "Texto (varias líneas)" },
   { id: "autocomplete", label: "Texto + dropdown autocompletable" },
   { id: "keywords",     label: "Palabras clave (chips)" },
-  { id: "checkbox",     label: "Casilla sí/no (para RULES, sin output)" },
   { id: "mirror",       label: "Copia de otro campo (solo output)" }
 ];
 const FIELD_SIZES = [
@@ -2104,18 +2076,6 @@ function getActiveInstance() {
   return state.instances.find(i => i.id === state.activeInstanceId) || null;
 }
 
-function nextInstanceTitle(formId, preferredTitle) {
-  const form = getForm(formId);
-  const base = String(preferredTitle || (form ? form.label : "Instancia")).trim() || "Instancia";
-  const titles = new Set(state.instances
-    .filter(i => i.formId === formId)
-    .map(i => String(i.title || "").trim()));
-  if (!titles.has(base)) return base;
-  let n = 2;
-  while (titles.has(`${base} (${n})`)) n++;
-  return `${base} (${n})`;
-}
-
 // ---- Guardado en localStorage (debounced) ----
 let saveTimer = null;
 // true mientras se ejecuta "Borrar todo lo local": bloquea cualquier
@@ -2176,40 +2136,6 @@ function markInstanceDirty(inst) {
   if (!inst.dirty) { inst.dirty = true; refreshSubTabs(); }
 }
 
-function renameInstance(id) {
-  const inst = state.instances.find(i => i.id === id);
-  if (!inst) return;
-  showPromptModal({
-    title: "Renombrar pestaña",
-    body: "Escribe el nombre que quieres mostrar en esta pestaña.",
-    placeholder: "Nombre de la pestaña",
-    initialValue: inst.title || "",
-    confirmText: "Guardar",
-    onConfirm: (value) => {
-      const title = String(value || "").trim();
-      if (!title) { flashBanner("La pestaña necesita un nombre.", true); return; }
-      inst.title = title;
-      markInstanceDirty(inst);
-      refreshAll();
-      scheduleSave();
-    }
-  });
-}
-
-function duplicateInstance(id) {
-  const inst = state.instances.find(i => i.id === id);
-  if (!inst) return;
-  const copy = deepClone(inst);
-  const form = getForm(inst.formId);
-  copy.id = newId();
-  copy.title = nextInstanceTitle(inst.formId, inst.title || (form ? form.label : "Instancia"));
-  copy.dirty = true;
-  state.instances.push(copy);
-  state.activeInstanceId = copy.id;
-  refreshAll();
-  scheduleSave();
-}
-
 /* ================================================================
    [6] RENDER: PESTAÑAS SUPERIORES Y SUB-PESTAÑAS
    ================================================================ */
@@ -2253,17 +2179,9 @@ function refreshSubTabs() {
                  + (inst.dirty ? " dirty" : "");
     el.innerHTML = `<span class="dirty-dot"></span>
                     <span class="label">${escapeHtml(inst.title)}</span>
-                    <span class="tab-action" data-tab-rename title="Renombrar pestaña">✎</span>
-                    <span class="tab-action" data-tab-duplicate title="Duplicar esta pestaña">⧉</span>
                     <span class="close" title="Cerrar">×</span>`;
     el.addEventListener("click", e => {
-      if (e.target.closest("[data-tab-rename]")) {
-        e.stopPropagation();
-        renameInstance(inst.id);
-      } else if (e.target.closest("[data-tab-duplicate]")) {
-        e.stopPropagation();
-        duplicateInstance(inst.id);
-      } else if (e.target.closest(".close")) {
+      if (e.target.classList.contains("close")) {
         e.stopPropagation();
         closeInstance(inst.id);
       } else if (inst.id !== state.activeInstanceId) {
@@ -2271,11 +2189,6 @@ function refreshSubTabs() {
         refreshAll();
         scheduleSave();
       }
-    });
-    el.addEventListener("dblclick", (e) => {
-      if (e.target.closest(".close") || e.target.closest("[data-tab-duplicate]")) return;
-      e.preventDefault();
-      renameInstance(inst.id);
     });
     bar.appendChild(el);
   });
@@ -2290,8 +2203,11 @@ function refreshSubTabs() {
 function addInstance() {
   const form = getForm(state.topTab);
   if (!form) return;
+  let count = 1;
+  const existing = state.instances.filter(i => i.formId === state.topTab);
+  while (existing.some(i => i.title === form.label + " " + count)) count++;
   const inst = makeInstance(state.topTab);
-  inst.title = nextInstanceTitle(state.topTab, form.label + " 1");
+  inst.title = form.label + " " + count;
   inst.dirty = true;
   state.instances.push(inst);
   state.activeInstanceId = inst.id;
@@ -2356,7 +2272,7 @@ function renderForm() {
   const panel = $("formPanel");
   if (!inst || !form) { panel.innerHTML = "<p>No hay instancia activa.</p>"; return; }
   ensureInstanceFields(inst);
-  $("formTitle").textContent = inst.title || form.label;
+  $("formTitle").textContent = form.label;
   const toggle = $("editToggle");
   toggle.classList.toggle("active", state.editMode);
   toggle.textContent = state.editMode ? "✓ Terminar edición" : "✎ Editar formulario";
@@ -2457,7 +2373,6 @@ function fieldHtml(field, inst, fx) {
   const invalid = err ? " invalid" : "";
   const st = (fx && fx[field.id]) || { hidden: false, disabled: false };
   const dis = st.disabled ? " disabled" : "";
-  const readonlyCls = (st.disabled && !st.hidden) ? " fe-readonly" : "";
   const tools = `
     <span class="fld-tools">
       <button class="tool-btn" data-fld-up="${field.id}" title="Subir campo (sube en el output)">▲</button>
@@ -2480,19 +2395,10 @@ function fieldHtml(field, inst, fx) {
       <div class="mirror-note">= copia del campo «${escapeHtml(field.source || "?")}» (solo aparece en el output)</div>
     </div>`;
   }
-  if (field.type === "checkbox") {
-    // Casilla sí/no: no imprime nada en el output. Sirve como interruptor
-    // para RULES (marcada = "yes" → notEmpty / equals yes).
-    const checked = String(val == null ? "" : val).trim() ? " checked" : "";
-    return `<div class="field checkbox-field${sizeClass}" data-field="${escapeHtml(field.id)}">
-      <div class="field-head"><label class="cb-inline"><input type="checkbox" data-bind="${escapeHtml(field.id)}"${checked}${dis} /> ${escapeHtml(field.label)}${stateTag}</label>${tools}</div>
-      ${helpHtml}
-    </div>`;
-  }
   if (field.type === "textarea") {
     return `<div class="field${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
-      <textarea class="${readonlyCls.trim()}" data-bind="${escapeHtml(field.id)}" rows="${field.rows || 3}"${dis}>${escapeHtml(val)}</textarea>
+      <textarea data-bind="${escapeHtml(field.id)}" rows="${field.rows || 3}"${dis}>${escapeHtml(val)}</textarea>
       ${errHtml}${helpHtml}
     </div>`;
   }
@@ -2500,7 +2406,7 @@ function fieldHtml(field, inst, fx) {
     return `<div class="field autocomplete${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="autocomplete-input-wrap">
-        <input type="text" class="${readonlyCls.trim()}" data-bind="${escapeHtml(field.id)}" data-ac="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
+        <input type="text" data-bind="${escapeHtml(field.id)}" data-ac="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
         <span class="autocomplete-arrow" data-ac-toggle title="Ver todas las opciones">▼</span>
       </div>
       <div class="autocomplete-list"></div>
@@ -2513,7 +2419,7 @@ function fieldHtml(field, inst, fx) {
       ${labelHtml}
       <div class="chips${err ? " invalid" : ""}" data-kw-chips="${escapeHtml(field.id)}">
         ${kws.map(k => `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`).join("")}
-        <input type="text" class="${readonlyCls.trim()}" data-kw-input="${escapeHtml(field.id)}" placeholder="Escribe y presiona Enter..."${dis} />
+        <input type="text" data-kw-input="${escapeHtml(field.id)}" placeholder="Escribe y presiona Enter..."${dis} />
       </div>
       ${err ? `<div class="chips-error">${escapeHtml(err)}</div>` : ""}
       ${helpHtml}
@@ -2522,7 +2428,7 @@ function fieldHtml(field, inst, fx) {
   // text (default)
   return `<div class="field${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
     ${labelHtml}
-    <input type="text" class="${readonlyCls.trim()}" data-bind="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
+    <input type="text" data-bind="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
     ${errHtml}${helpHtml}
   </div>`;
 }
@@ -2534,11 +2440,8 @@ function wireFormEvents(inst, form) {
   //      trabajo pesado (validar, output, guardar) ocurre en blur. ----
   panel.querySelectorAll("[data-bind]").forEach(el => {
     const name = el.dataset.bind;
-    // Las casillas sí/no guardan "yes" / "" para que RULES pueda usar
-    // notEmpty / empty / equals yes sobre ellas.
-    const readVal = () => el.type === "checkbox" ? (el.checked ? "yes" : "") : el.value;
     el.addEventListener("input", () => {
-      inst.values[name] = readVal();
+      inst.values[name] = el.value;
       clearDependents(form, name, inst, panel);
       markInstanceDirty(inst);
     });
@@ -2553,7 +2456,7 @@ function wireFormEvents(inst, form) {
       rerenderIfRulesChanged(form, inst);
     });
     el.addEventListener("change", () => {
-      inst.values[name] = readVal();
+      inst.values[name] = el.value;
       clearDependents(form, name, inst, panel);
       revalidate(inst);
       renderOutput();
@@ -3144,7 +3047,7 @@ function showFieldEditor(form, sec, field) {
     label: "", type: "text", size: "full", source: "", template: "{value}",
     sep: null, rows: 3, required: false, regex: "", regexMsg: "",
     default: "", emptyAs: "", omitValue: "", help: "",
-    joinPrev: false, perLine: false, perLineHeader: ""
+    joinPrev: false, perLine: false
   };
   const typeOpts = FIELD_TYPES.map(t =>
     `<option value="${t.id}"${f.type === t.id ? " selected" : ""}>${t.label}</option>`).join("");
@@ -3167,7 +3070,7 @@ function showFieldEditor(form, sec, field) {
         <label>Tipo de campo</label>
         <select id="fe_type">${typeOpts}</select>
       </div>
-      <div data-cbhide>
+      <div>
         <label>Fuente (para dropdown / copia)</label>
         <select id="fe_source"></select>
         <div class="field-help">Dropdown: qué lista muestra. Copia: qué campo copia.</div>
@@ -3176,12 +3079,12 @@ function showFieldEditor(form, sec, field) {
         <label>Tamaño en el formulario</label>
         <select id="fe_size">${sizeOpts}</select>
       </div>
-      <div data-cbhide>
+      <div>
         <label>Valor por defecto</label>
         <input type="text" id="fe_default" value="${escapeHtml(f.default || "")}" />
         <div class="field-help">Acepta @regla, p. ej. @default_tz</div>
       </div>
-      <div data-cbhide>
+      <div>
         <label>Renglones (solo texto multilínea)</label>
         <input type="number" id="fe_rows" value="${f.rows || 3}" min="1" max="20" />
       </div>
@@ -3190,58 +3093,53 @@ function showFieldEditor(form, sec, field) {
         <input type="text" id="fe_help" value="${escapeHtml(f.help || "")}" />
       </div>
 
-      <div class="fe-sep" data-cbhide>Cómo sale en el output</div>
-      <div class="fe-full" data-cbhide>
+      <div class="fe-sep">Cómo sale en el output</div>
+      <div class="fe-full">
         <label>Plantilla</label>
         <input type="text" id="fe_template" value="${escapeHtml(f.template || "{value}")}" />
         <div class="field-help">{value} se reemplaza por lo escrito. Ej.: "* *Perfil:* {value}" o "# {value}" para pasos numerados.</div>
       </div>
-      <div data-cbhide>
+      <div>
         <label>Separador antes del campo</label>
         <input type="text" id="fe_sep" value="${escapeHtml(f.sep != null && f.sep !== "" ? f.sep : "")}" />
         <div class="field-help">Solo en secciones "unidas". Vacío = usar el de la sección.</div>
         <label class="checkbox"><input type="checkbox" id="fe_glue"${f.sep === "" ? " checked" : ""} /> Pegado al campo anterior (sin separador)</label>
       </div>
-      <div data-cbhide>
+      <div>
         <label>Si está vacío, mostrar</label>
         <input type="text" id="fe_emptyAs" value="${escapeHtml(f.emptyAs || "")}" />
         <div class="field-help">P. ej. "N/A". Vacío = omitir la línea.</div>
       </div>
-      <div data-cbhide>
+      <div>
         <label>Omitir si el valor es</label>
         <input type="text" id="fe_omitValue" value="${escapeHtml(f.omitValue || "")}" />
         <div class="field-help">P. ej. "N/A" para no imprimir BSP CL: N/A</div>
       </div>
-      <div data-cbhide style="display:flex;flex-direction:column;gap:2px;justify-content:end;">
+      <div style="display:flex;flex-direction:column;gap:2px;justify-content:end;">
         <label class="checkbox"><input type="checkbox" id="fe_joinPrev"${f.joinPrev ? " checked" : ""} /> Continúa en la línea anterior</label>
         <label class="checkbox"><input type="checkbox" id="fe_perLine"${f.perLine ? " checked" : ""} /> Aplicar plantilla a cada línea escrita</label>
       </div>
-      <div class="fe-full" data-cbhide id="fe_perLineHeaderWrap">
-        <label>Encabezado (solo con plantilla por línea)</label>
-        <input type="text" id="fe_perLineHeader" value="${escapeHtml(f.perLineHeader || "")}" />
-        <div class="field-help">Línea fija que se imprime ANTES de las líneas. Ej.: "* *Material:*" y abajo "** {value}" por cada línea. Vacío = sin encabezado.</div>
-      </div>
 
-      <div class="fe-sep" data-cbhide>Validación</div>
+      <div class="fe-sep">Validación</div>
       <div class="fe-full" style="display:flex;gap:16px;">
-        <label class="checkbox" data-cbhide><input type="checkbox" id="fe_required"${f.required ? " checked" : ""} /> Obligatorio</label>
+        <label class="checkbox"><input type="checkbox" id="fe_required"${f.required ? " checked" : ""} /> Obligatorio</label>
         <label class="checkbox"><input type="checkbox" id="fe_hidden"${f.hidden ? " checked" : ""} /> Oculto por defecto (aparece solo por una condición de RULES)</label>
       </div>
-      <div data-cbhide>
+      <div>
         <label>REGEX</label>
         <input type="text" id="fe_regex" value="${escapeHtml(f.regex || "")}" />
         <div class="field-help">Expresión regular o @regla de DATA (ej. @coord_re)</div>
       </div>
-      <div data-cbhide>
+      <div>
         <label>Mensaje si no cumple</label>
         <input type="text" id="fe_regexMsg" value="${escapeHtml(f.regexMsg || "")}" />
       </div>
-      <div data-cbhide>
+      <div>
         <label>Chips: cantidad</label>
         <input type="text" id="fe_kwCount" value="${escapeHtml(f.kwCount || "")}" />
         <div class="field-help">Número exacto, mínimo con &gt;= (ej. &gt;=5) o @regla. Vacío = sin límite.</div>
       </div>
-      <div data-cbhide style="display:flex;align-items:end;">
+      <div style="display:flex;align-items:end;">
         <label class="checkbox"><input type="checkbox" id="fe_kwOverlap"${f.kwOverlap ? " checked" : ""} /> Chips: prohibir que aparezcan en el cuerpo del bug</label>
       </div>
     </div>`;
@@ -3266,7 +3164,7 @@ function showFieldEditor(form, sec, field) {
         let opts = [];
         if (t === "autocomplete") opts = sourceOptions(form);
         else if (t === "mirror") {
-          opts = allFields(form).filter(x => x.field.type !== "mirror" && x.field.type !== "checkbox" && x.field.id !== f.id)
+          opts = allFields(form).filter(x => x.field.type !== "mirror" && x.field.id !== f.id)
                                  .map(x => ({ value: x.field.id, label: x.field.label }));
         }
         srcSel.disabled = !opts.length;
@@ -3276,20 +3174,6 @@ function showFieldEditor(form, sec, field) {
       };
       typeSel.addEventListener("change", fillSources);
       fillSources();
-      // Casilla sí/no: nada de plantillas, separadores ni validación de
-      // texto. Se esconden esas opciones para simplificar la experiencia.
-      // El encabezado por línea solo aplica si perLine está activo.
-      const perLineChk = $("fe_perLine");
-      const updateTypeUi = () => {
-        const isCb = typeSel.value === "checkbox";
-        $("modalBody").querySelectorAll("[data-cbhide]").forEach(el => {
-          el.style.display = isCb ? "none" : "";
-        });
-        $("fe_perLineHeaderWrap").style.display = (!isCb && perLineChk.checked) ? "" : "none";
-      };
-      typeSel.addEventListener("change", updateTypeUi);
-      perLineChk.addEventListener("change", updateTypeUi);
-      updateTypeUi();
     },
     onConfirm: () => {
       const label = $("fe_label").value.trim();
@@ -3322,8 +3206,6 @@ function showFieldEditor(form, sec, field) {
       setOrDel("omitValue", $("fe_omitValue").value.trim(), "");
       if ($("fe_joinPrev").checked) target.joinPrev = true; else delete target.joinPrev;
       if ($("fe_perLine").checked) target.perLine = true; else delete target.perLine;
-      setOrDel("perLineHeader", $("fe_perLineHeader").value, "");
-      if (!target.perLine) delete target.perLineHeader;
       if ($("fe_required").checked) target.required = true; else delete target.required;
       if ($("fe_hidden").checked) target.hidden = true; else delete target.hidden;
       setOrDel("regex", regexTxt, "");
@@ -3332,13 +3214,6 @@ function showFieldEditor(form, sec, field) {
       if ($("fe_kwOverlap").checked) target.kwOverlap = true; else delete target.kwOverlap;
       if (target.type !== "keywords") { delete target.kwCount; delete target.kwOverlap; }
       if (target.type === "mirror") { delete target.required; delete target.regex; }
-      if (target.type === "checkbox") {
-        // Una casilla sí/no no imprime ni valida texto: se limpian esas
-        // propiedades para que el schema quede legible.
-        ["source", "default", "rows", "template", "sep", "emptyAs", "omitValue",
-         "joinPrev", "perLine", "perLineHeader", "required", "regex", "regexMsg"]
-          .forEach(k => delete target[k]);
-      }
       if (isNew) sec.fields.push(target);
       state.instances.forEach(ensureInstanceFields);
       renderForm();
@@ -3991,7 +3866,7 @@ function revalidate(inst, paint) {
     .toLowerCase();
 
   allFields(form).forEach(({ field }) => {
-    if (field.type === "mirror" || field.type === "checkbox") return;
+    if (field.type === "mirror") return;
     // Un campo oculto o bloqueado por condición no puede exigirse
     if (fx[field.id].hidden || fx[field.id].disabled) return;
 
@@ -4328,8 +4203,6 @@ function wireTileInteractions() {
 
 // Texto de un campo listo para el output, o null si se omite.
 function fieldOutputPart(field, inst) {
-  // Las casillas sí/no nunca imprimen: solo alimentan RULES y tiles.
-  if (field.type === "checkbox") return null;
   let raw;
   if (field.type === "mirror") raw = inst.values[field.source];
   else raw = inst.values[field.id];
@@ -4351,11 +4224,7 @@ function fieldOutputPart(field, inst) {
   if (field.perLine) {
     const lines = value.split("\n").map(l => l.trim()).filter(Boolean);
     if (!lines.length) return null;
-    const out = lines.map(l => tpl.replace("{value}", l));
-    // Encabezado opcional: una línea fija antes de las líneas plantillada,
-    // p. ej. "* *Material:*" seguido de "** mp/asset01", "** mp/asset02"...
-    if (field.perLineHeader) out.unshift(unescapeNl(field.perLineHeader));
-    return out;
+    return lines.map(l => tpl.replace("{value}", l));
   }
   return tpl.replace("{value}", value);
 }
@@ -5068,8 +4937,7 @@ function renderRulesTab() {
   getForms().forEach(form => {
     form.sections.forEach(sec => {
       sec.fields.forEach(f => {
-        // mirror no se llena y checkbox no valida texto: fuera de esta tabla
-        if (f.type === "mirror" || f.type === "checkbox") return;
+        if (f.type === "mirror") return;
         const key = form.id + "|" + f.id;
         const ecid = TILE_COLOR_MAP[f.errColor] ? f.errColor : "red";
         const ecol = tileColor(ecid);
@@ -5349,7 +5217,7 @@ function renderRulesTab() {
       if (!first) { flashBanner("El formulario no tiene campos.", true); return; }
       form.rules = form.rules || [];
       form.rules.push({
-        whenExpr: "",
+        whenExpr: `${first.field.id} notEmpty`,
         then: { action: "hide", field: first.field.id, value: "" }
       });
       renderRulesTab();
@@ -5587,11 +5455,7 @@ function exportFieldsCsv() {
           f.required ? "yes" : "", f.regex || "", f.regexMsg || "",
           f.default || "", f.emptyAs || "", f.omitValue || "",
           (f.errColor && f.errColor !== "red") ? f.errColor : "", f.help || "",
-          f.hidden ? "yes" : "",
-          // La columna kwcount se reutiliza: en campos de chips es la
-          // cantidad; en campos con perLine es el encabezado opcional.
-          f.type === "keywords" ? (f.kwCount || "") : (f.perLineHeader || ""),
-          f.kwOverlap ? "yes" : ""
+          f.hidden ? "yes" : "", f.kwCount || "", f.kwOverlap ? "yes" : ""
         ]);
       });
     });
@@ -5743,10 +5607,6 @@ function importFieldsCsv(text) {
       if (type === "keywords") {
         if (kwcount) f.kwCount = kwcount;
         if (csvTruthy(kwoverlap)) f.kwOverlap = true;
-      } else if (f.perLine && kwcount) {
-        // Columna reutilizada: fuera de chips, kwcount lleva el
-        // encabezado opcional de los campos "plantilla por línea".
-        f.perLineHeader = kwcount;
       }
       sec.fields.push(f);
     }
@@ -5925,12 +5785,12 @@ function showConfirmModal({ title, body, confirmText, cancelText, confirmClass, 
   $("modal").classList.add("open");
 }
 
-function showPromptModal({ title, body, placeholder, initialValue, confirmText, onConfirm }) {
+function showPromptModal({ title, body, placeholder, confirmText, onConfirm }) {
   $("modalBox").classList.remove("wide");
   $("modalTitle").textContent = title || "Escribe un valor";
   $("modalBody").innerHTML =
     (body ? `<div style="margin-bottom:8px;">${escapeHtml(body)}</div>` : "")
-    + `<input type="text" id="modalPromptInput" placeholder="${escapeHtml(placeholder || "")}" value="${escapeHtml(initialValue || "")}" />`;
+    + `<input type="text" id="modalPromptInput" placeholder="${escapeHtml(placeholder || "")}" />`;
   const actions = $("modalActions");
   actions.innerHTML = "";
   const cancel = document.createElement("button");
