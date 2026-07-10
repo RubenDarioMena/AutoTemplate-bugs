@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "bug-tool",
+      "name": "bugtool",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8321"],
-      "port": 8321
+      "runtimeArgs": ["-m", "http.server", "8642"],
+      "port": 8642
     }
   ]
 }

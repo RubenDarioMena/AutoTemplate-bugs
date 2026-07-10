@@ -1827,6 +1827,7 @@ function listLabel(id) {
   return (m && m.label) || id;
 }
 function isChildList(id) { return !!(config.data.childLists && config.data.childLists[id]); }
+function listExists(id) { return !!(config.data.lists[id] || isChildList(id)); }
 
 // Valores que puede tomar una lista (para usarlos como claves de sus hijas).
 // Raíz → su arreglo; dependiente → unión ordenada y sin repetir de sus buckets.
@@ -2072,7 +2073,7 @@ function makeInstance(formId) {
     title: form.label + " 1",
     values: values,
     ticketKey: "",
-    media: [defaultMediaType(form)],
+    media: [defaultMediaType()],
     output: "",
     outputEdited: false,
     errors: {},
@@ -2095,7 +2096,7 @@ function ensureInstanceFields(inst) {
     }
   });
   if (inst.ticketKey === undefined) inst.ticketKey = "";
-  if (!Array.isArray(inst.media)) inst.media = [defaultMediaType(form)];
+  if (!Array.isArray(inst.media)) inst.media = [defaultMediaType()];
   if (!inst.errors) inst.errors = {};
 }
 
@@ -2160,28 +2161,6 @@ function loadSession() {
   } catch (e) {
     console.error("loadSession", e);
     return false;
-  }
-}
-
-// Ajusta la sesión al schema actual: quita instancias de formularios que ya
-// no existen, completa campos nuevos, corrige la pestaña activa y garantiza
-// que el formulario visible tenga una instancia activa válida. Se usa tras
-// el boot, importar bug_fields.csv, restaurar vanilla o cargar una sesión.
-function ensureSessionConsistency() {
-  state.instances = state.instances.filter(i => getForm(i.formId));
-  state.instances.forEach(ensureInstanceFields);
-  if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
-    state.topTab = getForms()[0].id;
-  }
-  if (getForm(state.topTab)) {
-    const mine = state.instances.filter(i => i.formId === state.topTab);
-    if (!mine.length) {
-      const inst = makeInstance(state.topTab);
-      state.instances.push(inst);
-      state.activeInstanceId = inst.id;
-    } else if (!mine.some(i => i.id === state.activeInstanceId)) {
-      state.activeInstanceId = mine[0].id;
-    }
   }
 }
 
@@ -2256,9 +2235,10 @@ function renderTopTabs() {
 function switchToForm(formId) {
   state.topTab = formId;
   const existing = state.instances.find(i => i.formId === formId);
-  if (!existing) { addInstance(); return; } // addInstance ya re-pinta y guarda
-  const active = getActiveInstance();
-  if (!active || active.formId !== formId) state.activeInstanceId = existing.id;
+  if (!existing) addInstance();
+  else if (!getActiveInstance() || getActiveInstance().formId !== formId) {
+    state.activeInstanceId = existing.id;
+  }
   refreshAll();
   scheduleSave();
 }
@@ -2293,7 +2273,7 @@ function refreshSubTabs() {
       }
     });
     el.addEventListener("dblclick", (e) => {
-      if (e.target.closest(".close") || e.target.closest(".tab-action")) return;
+      if (e.target.closest(".close") || e.target.closest("[data-tab-duplicate]")) return;
       e.preventDefault();
       renameInstance(inst.id);
     });
@@ -2409,14 +2389,13 @@ const uiCollapse = { sections: Object.create(null), form: false, media: false, a
 function sectionCollapseKey(form, secId) { return form.id + ":" + secId; }
 
 function sectionHtml(sec, inst, fx, form) {
-  const sid = escapeHtml(sec.id);
   const tools = `
     <span class="sec-tools">
-      <button class="tool-btn" data-sec-add="${sid}" title="Agregar campo a esta sección">+ campo</button>
-      <button class="tool-btn" data-sec-up="${sid}" title="Subir sección">▲</button>
-      <button class="tool-btn" data-sec-down="${sid}" title="Bajar sección">▼</button>
-      <button class="tool-btn" data-sec-edit="${sid}" title="Editar sección">✎</button>
-      <button class="tool-btn del" data-sec-del="${sid}" title="Borrar sección">✕</button>
+      <button class="tool-btn" data-sec-add="${sec.id}" title="Agregar campo a esta sección">+ campo</button>
+      <button class="tool-btn" data-sec-up="${sec.id}" title="Subir sección">▲</button>
+      <button class="tool-btn" data-sec-down="${sec.id}" title="Bajar sección">▼</button>
+      <button class="tool-btn" data-sec-edit="${sec.id}" title="Editar sección">✎</button>
+      <button class="tool-btn del" data-sec-del="${sec.id}" title="Borrar sección">✕</button>
     </span>`;
   // Los campos ocultos por condición no se pintan (en modo edición sí,
   // marcados, para poder seguir editándolos).
@@ -2464,9 +2443,9 @@ function sectionHtml(sec, inst, fx, form) {
     return cells;
   }).join("");
   const collapsed = !!uiCollapse.sections[sectionCollapseKey(form, sec.id)];
-  return `<div class="form-section${collapsed ? " collapsed" : ""}" data-section="${sid}">
+  return `<div class="form-section${collapsed ? " collapsed" : ""}" data-section="${escapeHtml(sec.id)}">
     <h4>
-      <button class="sec-collapse" data-sec-collapse="${sid}" title="Colapsar / expandir sección"><span class="chev">▾</span></button>
+      <button class="sec-collapse" data-sec-collapse="${sec.id}" title="Colapsar / expandir sección"><span class="chev">▾</span></button>
       <span class="sec-label">${escapeHtml(sec.label)}</span>${tools}
     </h4>
     <div class="form-section-body"><div class="form-section-body-inner">${body}</div></div>
@@ -2479,13 +2458,12 @@ function fieldHtml(field, inst, fx) {
   const st = (fx && fx[field.id]) || { hidden: false, disabled: false };
   const dis = st.disabled ? " disabled" : "";
   const readonlyCls = (st.disabled && !st.hidden) ? " fe-readonly" : "";
-  const fid = escapeHtml(field.id);
   const tools = `
     <span class="fld-tools">
-      <button class="tool-btn" data-fld-up="${fid}" title="Subir campo (sube en el output)">▲</button>
-      <button class="tool-btn" data-fld-down="${fid}" title="Bajar campo (baja en el output)">▼</button>
-      <button class="tool-btn" data-fld-edit="${fid}" title="Editar campo">✎</button>
-      <button class="tool-btn del" data-fld-del="${fid}" title="Borrar campo definitivamente">✕</button>
+      <button class="tool-btn" data-fld-up="${field.id}" title="Subir campo (sube en el output)">▲</button>
+      <button class="tool-btn" data-fld-down="${field.id}" title="Bajar campo (baja en el output)">▼</button>
+      <button class="tool-btn" data-fld-edit="${field.id}" title="Editar campo">✎</button>
+      <button class="tool-btn del" data-fld-del="${field.id}" title="Borrar campo definitivamente">✕</button>
     </span>`;
   const stateTag = st.hidden ? '<span class="hidden-tag">(oculto)</span>'
                  : st.disabled ? '<span class="hidden-tag">(bloqueado)</span>' : "";
@@ -2534,7 +2512,8 @@ function fieldHtml(field, inst, fx) {
     return `<div class="field${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="chips${err ? " invalid" : ""}" data-kw-chips="${escapeHtml(field.id)}">
-        ${kwChipsInnerHtml(field.id, kws, readonlyCls.trim(), dis)}
+        ${kws.map(k => `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`).join("")}
+        <input type="text" class="${readonlyCls.trim()}" data-kw-input="${escapeHtml(field.id)}" placeholder="Escribe y presiona Enter..."${dis} />
       </div>
       ${err ? `<div class="chips-error">${escapeHtml(err)}</div>` : ""}
       ${helpHtml}
@@ -2558,12 +2537,12 @@ function wireFormEvents(inst, form) {
     // Las casillas sí/no guardan "yes" / "" para que RULES pueda usar
     // notEmpty / empty / equals yes sobre ellas.
     const readVal = () => el.type === "checkbox" ? (el.checked ? "yes" : "") : el.value;
-    const syncModel = () => {
+    el.addEventListener("input", () => {
       inst.values[name] = readVal();
       clearDependents(form, name, inst, panel);
       markInstanceDirty(inst);
-    };
-    const commit = () => {
+    });
+    el.addEventListener("blur", () => {
       revalidate(inst);
       renderOutput();
       renderMediaPanel();
@@ -2572,21 +2551,29 @@ function wireFormEvents(inst, form) {
       // Si alguna condición mostró/ocultó/bloqueó campos, re-pintar.
       // Va al final: el usuario ya salió del campo, no roba el foco.
       rerenderIfRulesChanged(form, inst);
-    };
-    el.addEventListener("input", syncModel);
-    el.addEventListener("blur", commit);
-    el.addEventListener("change", () => { syncModel(); commit(); });
+    });
+    el.addEventListener("change", () => {
+      inst.values[name] = readVal();
+      clearDependents(form, name, inst, panel);
+      revalidate(inst);
+      renderOutput();
+      renderMediaPanel();
+      markInstanceDirty(inst);
+      saveAll();
+      setSaveIndicator("saved");
+      rerenderIfRulesChanged(form, inst);
+    });
   });
 
   // ---- Autocompletes ----
   panel.querySelectorAll("input[data-ac]").forEach(input => {
     const found = getField(form, input.dataset.ac);
-    if (found) wireAutocomplete(input, inst, found.field);
+    if (found) wireAutocomplete(input, inst, form, found.field);
   });
 
   // ---- Palabras clave ----
   panel.querySelectorAll("[data-kw-chips]").forEach(chips => {
-    wireKeywords(chips, inst);
+    wireKeywords(chips, inst, form);
   });
 
   // ---- Controles del modo edición ----
@@ -2663,7 +2650,7 @@ function positionAutocomplete(wrap, list) {
   if (spaceBelow < listH && spaceAbove > spaceBelow) wrap.classList.add("drop-up");
 }
 
-function wireAutocomplete(input, inst, field) {
+function wireAutocomplete(input, inst, form, field) {
   const wrap = input.closest(".autocomplete");
   const list = wrap.querySelector(".autocomplete-list");
   const arrow = wrap.querySelector("[data-ac-toggle]");
@@ -2745,13 +2732,10 @@ function wireAutocomplete(input, inst, field) {
   }, 150));
 
   input.addEventListener("keydown", (e) => {
-    let items = list.querySelectorAll(".autocomplete-item");
+    const items = list.querySelectorAll(".autocomplete-item");
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      if (!wrap.classList.contains("open")) {
-        renderList(false);
-        items = list.querySelectorAll(".autocomplete-item"); // la lista se re-pintó
-      }
+      if (!wrap.classList.contains("open")) renderList(false);
       activeIdx = Math.min(items.length - 1, activeIdx + 1);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
@@ -2836,41 +2820,30 @@ function confirmDeleteOption(field, inst, value, after) {
   });
 }
 
-// Markup interno del widget de chips (chips + input). Compartido entre el
-// render del formulario (fieldHtml) y el refresh in situ de wireKeywords.
-function kwChipsInnerHtml(fieldId, kws, inputCls, inputDis) {
-  return kws.map(k =>
-    `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`
-  ).join("")
-  + `<input type="text" class="${inputCls || ""}" data-kw-input="${escapeHtml(fieldId)}" placeholder="Escribe y presiona Enter..."${inputDis || ""} />`;
-}
-
-function wireKeywords(chips, inst) {
+function wireKeywords(chips, inst, form) {
   const fieldId = chips.dataset.kwChips;
   const getInput = () => chips.querySelector("[data-kw-input]");
 
   const refresh = () => {
     const cur = getInput().value;
-    chips.innerHTML = kwChipsInnerHtml(fieldId, inst.values[fieldId] || []);
+    chips.innerHTML = (inst.values[fieldId] || []).map(k =>
+      `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`
+    ).join("") + `<input type="text" data-kw-input="${escapeHtml(fieldId)}" placeholder="Escribe y presiona Enter..." />`;
     const inp = getInput();
     inp.value = cur;
     inp.addEventListener("keydown", keyHandler);
     inp.focus();
     bindRemoves();
   };
-  // Cambió la lista de chips: valida, regenera el output y re-pinta.
-  const commit = () => {
-    markInstanceDirty(inst);
-    revalidate(inst);
-    renderOutput();
-    refresh();
-    saveAll();
-  };
   const bindRemoves = () => {
     chips.querySelectorAll("[data-kw-remove]").forEach(btn => {
       btn.addEventListener("click", () => {
         inst.values[fieldId] = (inst.values[fieldId] || []).filter(k => k !== btn.dataset.kwRemove);
-        commit();
+        markInstanceDirty(inst);
+        revalidate(inst);
+        renderOutput();
+        refresh();
+        saveAll();
       });
     });
   };
@@ -2884,13 +2857,21 @@ function wireKeywords(chips, inst) {
         arr.push(v);
         inst.values[fieldId] = arr;
         inp.value = "";
-        commit();
+        markInstanceDirty(inst);
+        revalidate(inst);
+        renderOutput();
+        refresh();
+        saveAll();
       } else if (v) {
         inp.value = "";
       }
     } else if (e.key === "Backspace" && !inp.value && (inst.values[fieldId] || []).length) {
       inst.values[fieldId].pop();
-      commit();
+      markInstanceDirty(inst);
+      revalidate(inst);
+      renderOutput();
+      refresh();
+      saveAll();
     }
   };
 
@@ -4100,20 +4081,22 @@ function getFormTiles(form) { return (form && form.tiles) || []; }
 
 // Rellena valores por defecto de cada tile (configs viejas / import de CSV).
 function normalizeTiles(form) {
-  if (!Array.isArray(form.tiles)) form.tiles = [];
-  const str = (v) => v == null ? "" : String(v);
+  if (!Array.isArray(form.tiles)) { form.tiles = form.tiles == null ? [] : []; }
   form.tiles.forEach(t => {
-    t.text = str(t.text);
-    t.message = str(t.message);
-    t.whenExpr = str(t.whenExpr);
+    t.text = typeof t.text === "string" ? t.text : (t.text == null ? "" : String(t.text));
+    t.message = typeof t.message === "string" ? t.message : (t.message == null ? "" : String(t.message));
+    t.whenExpr = typeof t.whenExpr === "string" ? t.whenExpr : (t.whenExpr == null ? "" : String(t.whenExpr));
     t.severity = ["error", "warn", "info"].includes(t.severity) ? t.severity : "info";
-    if (!TILE_COLOR_MAP[t.color]) t.color = TILE_SEV_COLOR[t.severity];
-    t.group = str(t.group);
-    t.field = str(t.field);
+    if (!TILE_COLOR_MAP[t.color]) t.color = TILE_SEV_COLOR[t.severity] || "slate";
+    t.group = typeof t.group === "string" ? t.group : (t.group == null ? "" : String(t.group));
+    t.field = typeof t.field === "string" ? t.field : (t.field == null ? "" : String(t.field));
   });
 }
 function ensureTiles(cfg) {
-  (cfg.schema.forms || []).forEach(normalizeTiles);
+  (cfg.schema.forms || []).forEach(form => {
+    if (!Array.isArray(form.tiles)) form.tiles = [];
+    normalizeTiles(form);
+  });
 }
 
 // Campos a los que "toca" un tile: los que menciona su condición más el campo
@@ -4155,6 +4138,13 @@ function evalTiles(form, inst) {
     });
   });
   return out;
+}
+
+// ¿Hay algo que impida el estado "listo para copiar"? Errores de campo o un
+// tile personalizado activo de severidad "error".
+function hasBlockingState(form, inst) {
+  if (Object.keys(inst.errors || {}).length) return true;
+  return evalTiles(form, inst).some(a => a.tile.severity === "error");
 }
 
 // Salta y enfoca un campo por id.
@@ -4356,21 +4346,18 @@ function fieldOutputPart(field, inst) {
   }
   if (field.omitValue && value.trim() === field.omitValue) return null;
 
-  // \n y <br> en la plantilla se convierten en saltos de línea reales.
-  // El reemplazo usa una función para que $&, $' etc. en lo escrito
-  // por el tester salgan literales, y cubre todos los {value}.
+  // \n y <br> en la plantilla se convierten en saltos de línea reales
   const tpl = unescapeNl(field.template || "{value}");
-  const fill = (v) => tpl.replace(/\{value\}/g, () => v);
   if (field.perLine) {
     const lines = value.split("\n").map(l => l.trim()).filter(Boolean);
     if (!lines.length) return null;
-    const out = lines.map(fill);
+    const out = lines.map(l => tpl.replace("{value}", l));
     // Encabezado opcional: una línea fija antes de las líneas plantillada,
     // p. ej. "* *Material:*" seguido de "** mp/asset01", "** mp/asset02"...
     if (field.perLineHeader) out.unshift(unescapeNl(field.perLineHeader));
     return out;
   }
-  return fill(value);
+  return tpl.replace("{value}", value);
 }
 
 function buildOutput(inst) {
@@ -4543,9 +4530,8 @@ function mediaTypes(form) {
 }
 
 // Tipo con el que nace una fila de media nueva (el primero de la lista).
-// Recibe el formulario dueño de la instancia; sin él usa el de la pestaña.
-function defaultMediaType(form) {
-  const t = mediaTypes(form);
+function defaultMediaType() {
+  const t = mediaTypes();
   return t.length ? t[0] : "Pic";
 }
 
@@ -4583,7 +4569,7 @@ function renderMediaPanel() {
   if (!inst) return;
   const mform = currentMediaForm();
   if (inst.ticketKey === undefined) inst.ticketKey = "";
-  if (!Array.isArray(inst.media)) inst.media = [defaultMediaType(mform)];
+  if (!Array.isArray(inst.media)) inst.media = [defaultMediaType()];
   $("mediaFmtHint").textContent = "Formato (regla media_fmt): " + mediaFormat(mform);
   const cfgBtn = $("mediaConfigBtn");
   if (cfgBtn) cfgBtn.onclick = () => showMediaConfigEditor();
@@ -4648,7 +4634,7 @@ function renderMediaPanel() {
       refreshRowName(i);
     });
     inp.addEventListener("blur", () => { saveAll(); setSaveIndicator("saved"); });
-    wireAutocomplete(inp, inst, mediaTypeField);
+    wireAutocomplete(inp, inst, null, mediaTypeField);
   });
   rows.querySelectorAll("[data-media-copy]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -4667,7 +4653,7 @@ function renderMediaPanel() {
     });
   });
   $("addMediaBtn").addEventListener("click", () => {
-    inst.media.push(defaultMediaType(mform));
+    inst.media.push(defaultMediaType());
     markInstanceDirty(inst);
     renderMediaPanel();
     saveAll();
@@ -4911,16 +4897,11 @@ function renderDataTable() {
       if (isParent) renderDataTable(); // refresca closures tras el arrastre
     });
   });
-  // Valor de lista dependiente. La clave es "padre|índice"; se corta por el
-  // ÚLTIMO | porque el valor del padre es texto libre y puede contener |.
-  const childKey = (raw) => {
-    const cut = raw.lastIndexOf("|");
-    return [raw.slice(0, cut), +raw.slice(cut + 1)];
-  };
+  // Valor de lista dependiente.
   wrap.querySelectorAll("[data-childc-edit]").forEach(inp => {
     inp.addEventListener("input", () => {
-      const [par, j] = childKey(inp.dataset.childcEdit);
-      config.data.childLists[sel.key].values[par][j] = inp.value;
+      const [par, j] = inp.dataset.childcEdit.split("|");
+      config.data.childLists[sel.key].values[par][+j] = inp.value;
       scheduleSave();
     });
   });
@@ -4949,9 +4930,9 @@ function renderDataTable() {
   });
   wrap.querySelectorAll("[data-childc-del]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const [par, j] = childKey(btn.dataset.childcDel);
-      confirmRowDelete(`«${escapeHtml(config.data.childLists[sel.key].values[par][j])}» de ${escapeHtml(par)}`,
-        () => config.data.childLists[sel.key].values[par].splice(j, 1));
+      const [par, j] = btn.dataset.childcDel.split("|");
+      confirmRowDelete(`«${escapeHtml(config.data.childLists[sel.key].values[par][+j])}» de ${escapeHtml(par)}`,
+        () => config.data.childLists[sel.key].values[par].splice(+j, 1));
     });
   });
   wrap.querySelectorAll("[data-rule-del]").forEach(btn => {
@@ -5815,7 +5796,16 @@ function importFieldsCsv(text) {
       config.schema.forms = forms;
       normalizeFieldSources(config.schema.forms); // fuentes viejas del CSV -> árbol
       ensureTiles(config); // completa defaults de los tiles importados
-      ensureSessionConsistency();
+      state.instances = state.instances.filter(i => forms.some(f => f.id === i.formId));
+      state.instances.forEach(ensureInstanceFields);
+      if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
+        state.topTab = forms[0].id;
+      }
+      if (getForm(state.topTab) && !state.instances.some(i => i.formId === state.topTab)) {
+        const inst = makeInstance(state.topTab);
+        state.instances.push(inst);
+        state.activeInstanceId = inst.id;
+      }
       refreshAll();
       scheduleSave();
       flashBanner("Formularios actualizados desde bug_fields.csv.");
@@ -5871,19 +5861,18 @@ function loadSessionFromFile(file) {
       const snap = JSON.parse(e.target.result);
       if (!snap.session) throw new Error("El archivo no tiene 'session'");
       const apply = () => {
-        if (snap.config && snap.config.schema && snap.config.data) {
-          config = snap.config;
-          // Una sesión guardada con una versión vieja puede traer el modelo
-          // anterior de listas/reglas: se migra igual que en el boot.
-          migrateListsToTree(config);
-          migrateRulesToExpr(config);
-          ensureTiles(config);
-        }
+        if (snap.config && snap.config.schema && snap.config.data) config = snap.config;
         state.instances = snap.session.instances || [];
         state.activeInstanceId = snap.session.activeInstanceId
           || (state.instances[0] ? state.instances[0].id : null);
         state.topTab = snap.session.topTab || (getForms()[0] && getForms()[0].id);
-        ensureSessionConsistency();
+        state.instances = state.instances.filter(i => getForm(i.formId));
+        state.instances.forEach(ensureInstanceFields);
+        if (getForm(state.topTab) && !state.instances.some(i => i.formId === state.topTab)) {
+          const inst = makeInstance(state.topTab);
+          state.instances.push(inst);
+          state.activeInstanceId = inst.id;
+        }
         refreshAll();
         scheduleSave();
         flashBanner("Sesión cargada.");
@@ -5907,35 +5896,12 @@ function loadSessionFromFile(file) {
 }
 
 // ---- Modales ----
-// Cascarón común: título, cuerpo y ancho. Devuelve el contenedor de
-// acciones ya vacío para que cada modal agregue lo suyo.
-function openModalShell(title, bodyHtml, wide) {
-  $("modalBox").classList.toggle("wide", !!wide);
-  $("modalTitle").textContent = title;
-  $("modalBody").innerHTML = bodyHtml;
+function showConfirmModal({ title, body, confirmText, cancelText, confirmClass, showDontAsk, onConfirm }) {
+  $("modalBox").classList.remove("wide");
+  $("modalTitle").textContent = title || "Confirmar";
+  $("modalBody").innerHTML = body || "";
   const actions = $("modalActions");
   actions.innerHTML = "";
-  return actions;
-}
-
-// Par estándar Cancelar / botón principal, y abre el modal.
-// `onOk` decide el cierre (los modales de confirmación cierran ellos mismos
-// antes de ejecutar; el editor permanece abierto si onConfirm devuelve false).
-function addModalButtons(actions, { cancelText, okText, okClass, onOk }) {
-  const cancel = document.createElement("button");
-  cancel.textContent = cancelText || "Cancelar";
-  cancel.addEventListener("click", closeModal);
-  actions.appendChild(cancel);
-  const ok = document.createElement("button");
-  ok.textContent = okText || "OK";
-  if (okClass) ok.classList.add(okClass);
-  ok.addEventListener("click", onOk);
-  actions.appendChild(ok);
-  $("modal").classList.add("open");
-}
-
-function showConfirmModal({ title, body, confirmText, cancelText, confirmClass, showDontAsk, onConfirm }) {
-  const actions = openModalShell(title || "Confirmar", body || "", false);
   if (showDontAsk) {
     const lbl = document.createElement("label");
     lbl.className = "checkbox";
@@ -5943,29 +5909,45 @@ function showConfirmModal({ title, body, confirmText, cancelText, confirmClass, 
     lbl.innerHTML = `<input type="checkbox" id="modalDontAsk" /> No volver a preguntar`;
     actions.appendChild(lbl);
   }
-  addModalButtons(actions, {
-    cancelText,
-    okText: confirmText,
-    okClass: confirmClass,
-    onOk: () => {
-      const dontAsk = $("modalDontAsk");
-      closeModal();
-      onConfirm(dontAsk ? dontAsk.checked : false);
-    }
+  const cancel = document.createElement("button");
+  cancel.textContent = cancelText || "Cancelar";
+  cancel.addEventListener("click", closeModal);
+  actions.appendChild(cancel);
+  const ok = document.createElement("button");
+  ok.textContent = confirmText || "OK";
+  if (confirmClass) ok.classList.add(confirmClass);
+  ok.addEventListener("click", () => {
+    const dontAsk = document.getElementById("modalDontAsk");
+    closeModal();
+    onConfirm(dontAsk ? dontAsk.checked : false);
   });
+  actions.appendChild(ok);
+  $("modal").classList.add("open");
 }
 
 function showPromptModal({ title, body, placeholder, initialValue, confirmText, onConfirm }) {
-  const actions = openModalShell(title || "Escribe un valor",
+  $("modalBox").classList.remove("wide");
+  $("modalTitle").textContent = title || "Escribe un valor";
+  $("modalBody").innerHTML =
     (body ? `<div style="margin-bottom:8px;">${escapeHtml(body)}</div>` : "")
-    + `<input type="text" id="modalPromptInput" placeholder="${escapeHtml(placeholder || "")}" value="${escapeHtml(initialValue || "")}" />`,
-    false);
+    + `<input type="text" id="modalPromptInput" placeholder="${escapeHtml(placeholder || "")}" value="${escapeHtml(initialValue || "")}" />`;
+  const actions = $("modalActions");
+  actions.innerHTML = "";
+  const cancel = document.createElement("button");
+  cancel.textContent = "Cancelar";
+  cancel.addEventListener("click", closeModal);
+  actions.appendChild(cancel);
+  const ok = document.createElement("button");
+  ok.textContent = confirmText || "OK";
+  ok.classList.add("primary");
   const submit = () => {
     const v = $("modalPromptInput").value;
     closeModal();
     onConfirm(v);
   };
-  addModalButtons(actions, { okText: confirmText, okClass: "primary", onOk: submit });
+  ok.addEventListener("click", submit);
+  actions.appendChild(ok);
+  $("modal").classList.add("open");
   setTimeout(() => {
     const inp = $("modalPromptInput");
     inp.focus();
@@ -5975,33 +5957,53 @@ function showPromptModal({ title, body, placeholder, initialValue, confirmText, 
 
 // Selector simple para decisiones cerradas (mismo <select> nativo de RULES).
 function showSelectModal({ title, body, options, confirmText, onConfirm }) {
-  const actions = openModalShell(title || "Selecciona un valor",
+  $("modalBox").classList.remove("wide");
+  $("modalTitle").textContent = title || "Selecciona un valor";
+  $("modalBody").innerHTML =
     (body ? `<div style="margin-bottom:8px;">${escapeHtml(body)}</div>` : "")
     + `<select id="modalSelectInput" style="width:100%">${
       options.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("")
-    }</select>`,
-    false);
-  addModalButtons(actions, {
-    okText: confirmText,
-    okClass: "primary",
-    onOk: () => {
-      const v = $("modalSelectInput").value;
-      closeModal();
-      onConfirm(v);
-    }
-  });
+    }</select>`;
+  const actions = $("modalActions");
+  actions.innerHTML = "";
+  const cancel = document.createElement("button");
+  cancel.textContent = "Cancelar";
+  cancel.addEventListener("click", closeModal);
+  actions.appendChild(cancel);
+  const ok = document.createElement("button");
+  ok.textContent = confirmText || "OK";
+  ok.classList.add("primary");
+  const submit = () => {
+    const v = $("modalSelectInput").value;
+    closeModal();
+    onConfirm(v);
+  };
+  ok.addEventListener("click", submit);
+  actions.appendChild(ok);
+  $("modal").classList.add("open");
   setTimeout(() => $("modalSelectInput").focus(), 50);
 }
 
 // Modal genérico para los editores de sección/campo.
 // onConfirm devuelve false para mantener el modal abierto (error).
 function showEditorModal({ title, bodyHtml, wide, onOpen, onConfirm }) {
-  const actions = openModalShell(title || "", bodyHtml || "", wide);
-  addModalButtons(actions, {
-    okText: "Guardar",
-    okClass: "primary",
-    onOk: () => { if (onConfirm() !== false) closeModal(); }
+  $("modalBox").classList.toggle("wide", !!wide);
+  $("modalTitle").textContent = title || "";
+  $("modalBody").innerHTML = bodyHtml || "";
+  const actions = $("modalActions");
+  actions.innerHTML = "";
+  const cancel = document.createElement("button");
+  cancel.textContent = "Cancelar";
+  cancel.addEventListener("click", closeModal);
+  actions.appendChild(cancel);
+  const ok = document.createElement("button");
+  ok.textContent = "Guardar";
+  ok.classList.add("primary");
+  ok.addEventListener("click", () => {
+    if (onConfirm() !== false) closeModal();
   });
+  actions.appendChild(ok);
+  $("modal").classList.add("open");
   if (onOpen) onOpen();
 }
 
@@ -6117,7 +6119,11 @@ function wireStaticControls() {
       confirmClass: "danger",
       onConfirm: () => {
         config = deepClone(vanilla);
-        ensureSessionConsistency();
+        state.instances = state.instances.filter(i => getForm(i.formId));
+        state.instances.forEach(ensureInstanceFields);
+        if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
+          state.topTab = getForms()[0].id;
+        }
         refreshAll();
         scheduleSave();
       }
@@ -6197,7 +6203,21 @@ function boot() {
   loadSession();
 
   // Sanear la sesión restaurada contra el schema actual
-  ensureSessionConsistency();
+  state.instances = state.instances.filter(i => getForm(i.formId));
+  state.instances.forEach(ensureInstanceFields);
+  if (!getForm(state.topTab) && state.topTab !== "data" && state.topTab !== "rules") {
+    state.topTab = getForms()[0].id;
+  }
+  if (getForm(state.topTab)) {
+    const mine = state.instances.filter(i => i.formId === state.topTab);
+    if (!mine.length) {
+      const inst = makeInstance(state.topTab);
+      state.instances.push(inst);
+      state.activeInstanceId = inst.id;
+    } else if (!mine.some(i => i.id === state.activeInstanceId)) {
+      state.activeInstanceId = mine[0].id;
+    }
+  }
 
   wireStaticControls();
   wireMediaPanel();
