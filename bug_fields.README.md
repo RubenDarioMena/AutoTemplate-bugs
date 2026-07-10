@@ -40,7 +40,7 @@ Cinco tipos de fila, identificados por la columna `type`:
 | section   | id de la sección a la que pertenece                      | id de la sección               |
 | field     | id único del campo (sin espacios)                        | (vacío)                        |
 | label     | etiqueta que ve el tester                                 | nombre de la sección           |
-| type      | text / textarea / autocomplete / keywords / mirror       | la palabra `section`           |
+| type      | text / textarea / autocomplete / keywords / checkbox / mirror | la palabra `section`      |
 | source    | autocomplete: lista (`regions`, `maps`, `pois:map`...) — mirror: id del campo que copia | modo: `lines` o `joined` |
 | size      | ancho en el formulario: vacío(=full) / half / third      | (vacío)                        |
 | template  | cómo sale en el output; `{value}` = lo escrito. Ej: `* *Perfil:* {value}` | encabezado de la sección, ej. `+Notas:+` |
@@ -57,7 +57,7 @@ Cinco tipos de fila, identificados por la columna `type`:
 | nogap     | color del tile de error de ese campo (rojo por defecto; ver paleta abajo) | `yes` = sin línea en blanco después de la sección |
 | help      | texto de ayuda bajo el campo                              | (vacío)                        |
 | hidden    | `yes` = oculto por defecto (aparece solo por una condición) | (vacío)                     |
-| kwcount   | solo chips: cantidad exacta (`5`) o mínima (`>=5`), directa o con `@regla` | (vacío)             |
+| kwcount   | chips: cantidad exacta (`5`) o mínima (`>=5`), directa o con `@regla`. En campos con `perline=yes`: ENCABEZADO opcional que se imprime antes de las líneas (ej. `* *Material:*`) | (vacío) |
 | kwoverlap | solo chips: `yes` = prohibir que aparezcan en el cuerpo del bug | (vacío)                 |
 
 En `template`, `sep` y el encabezado de sección se puede escribir
@@ -75,6 +75,16 @@ En `template`, `sep` y el encabezado de sección se puede escribir
                      `kwoverlap` = prohibir que aparezcan en el
                      cuerpo del bug. Un campo chips nuevo sin esas
                      columnas no exige nada.
+  - `checkbox`     — casilla sí/no. NO imprime nada en el output: sirve
+                     como interruptor para las condiciones (`cond`) y
+                     tiles. Marcada vale `yes`, desmarcada vale vacío,
+                     así que en expresiones se usa `campo notEmpty`,
+                     `campo empty` o `campo = "yes"`. Ignora plantilla,
+                     separadores, regex y required. Ejemplo típico:
+                     "Múltiples models" que oculta el campo `model` de
+                     una línea y muestra un textarea `modelMulti` con
+                     `perline=yes`, plantilla `** {value}` y encabezado
+                     (columna `kwcount`) `* *Modelos:*`.
   - `mirror`       — no se llena: copia el valor de otro campo
                      (columna `source`) para repetirlo en el output
                      (ej. el CCS en el bloque de Notas).
