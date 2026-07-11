@@ -52,6 +52,7 @@
       --chip-fg: #793311;
       --shadow-pop: 0 6px 16px rgba(58, 30, 8, 0.16);
       --backdrop: rgba(30, 15, 5, 0.45);
+      --sec-glow: rgba(242, 101, 34, 0.35);
 
       --tile-ok-bg: #ecfdf5;  --tile-ok-fg: #065f46;  --tile-ok-br: #a7f3d0;
 
@@ -112,6 +113,7 @@
       --chip-fg: #ffab74;
       --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.7);
       --backdrop: rgba(0, 0, 0, 0.72);
+      --sec-glow: rgba(242, 101, 34, 0.45);
 
       /* Campos: superficie oscura elevada, texto blanco (alto contraste) */
       --field-bg: #161618;
@@ -630,6 +632,7 @@
       transition: grid-template-rows .18s ease;
     }
     .media-panel-body-inner { overflow: visible; min-height: 0; }
+    .media-panel.collapsed .media-panel-body-inner { overflow: hidden; }
     .media-panel.collapsed .media-panel-body { grid-template-rows: 0fr; }
     .media-panel.collapsed .media-panel-header { margin-bottom: 0; }
     .media-panel.collapsed #mediaCollapseBtn .chev { transform: rotate(-90deg); }
@@ -699,7 +702,16 @@
     .media-preview:empty { display: none; }
 
     /* ---------- Secciones del formulario ---------- */
-    .form-section { margin-bottom: 16px; }
+    /* Código de colores: la sección "cierra" en naranja por abajo y por la
+       derecha, con una sombra naranja ligera en esa misma dirección. */
+    .form-section {
+      margin-bottom: 18px;
+      padding: 0 10px 8px 0;
+      border-right: 2px solid var(--accent-soft-border);
+      border-bottom: 2px solid var(--accent-soft-border);
+      border-radius: 0 0 10px 0;
+      box-shadow: 6px 6px 14px -6px var(--sec-glow);
+    }
     .form-section h4 {
       font-size: 11px;
       font-weight: 700;
@@ -734,9 +746,42 @@
       grid-template-rows: 1fr;
       transition: grid-template-rows .18s ease;
     }
-    .form-section-body-inner { overflow: hidden; min-height: 0; }
+    /* visible: los dropdowns pueden salirse de su sección sin recortarse.
+       Colapsada vuelve a hidden (si no, el contenido se seguiría pintando). */
+    .form-section-body-inner { overflow: visible; min-height: 0; }
+    .form-section.collapsed .form-section-body-inner { overflow: hidden; }
     .form-section.collapsed .form-section-body { grid-template-rows: 0fr; }
     .form-section.collapsed h4 { margin-bottom: 0; }
+
+    /* Identidad visual de los campos: esquina inferior-izquierda con un color
+       por tipo (borde lateral más grueso que el inferior + gradiente sutil
+       desde esa esquina). Sin sombra: el brillo rojo de error debe dominar. */
+    #formPanel .field {
+      border-left: 3px solid transparent;
+      border-bottom: 1px solid transparent;
+      border-radius: 0 0 0 8px;
+      padding: 0 0 4px 7px;
+    }
+    #formPanel .field.ft-text         { border-color: var(--tile-blue-br);   background: linear-gradient(45deg, var(--tile-blue-bg) 0%,   transparent 30%); }
+    #formPanel .field.ft-textarea     { border-color: var(--tile-cyan-br);   background: linear-gradient(45deg, var(--tile-cyan-bg) 0%,   transparent 30%); }
+    #formPanel .field.ft-autocomplete { border-color: var(--tile-violet-br); background: linear-gradient(45deg, var(--tile-violet-bg) 0%, transparent 30%); }
+    #formPanel .field.ft-keywords     { border-color: var(--tile-pink-br);   background: linear-gradient(45deg, var(--tile-pink-bg) 0%,   transparent 30%); }
+    #formPanel .field.ft-checkbox     { border-color: var(--tile-amber-br);  background: linear-gradient(45deg, var(--tile-amber-bg) 0%,  transparent 30%); }
+    #formPanel .field.ft-checklist    { border-color: var(--tile-green-br);  background: linear-gradient(45deg, var(--tile-green-bg) 0%,  transparent 30%); }
+    #formPanel .field.ft-mirror       { border-color: var(--tile-slate-br);  background: linear-gradient(45deg, var(--tile-slate-bg) 0%,  transparent 30%); }
+    /* El rojo de alerta se impone al color del tipo. */
+    #formPanel .field.invalid,
+    #formPanel .field.rule-flag {
+      border-left-color: var(--danger);
+      border-bottom-color: var(--danger);
+      background: linear-gradient(45deg, var(--danger-soft) 0%, transparent 30%);
+    }
+    /* Campo señalado por un tile de tipo Error activo: también en rojo. */
+    .field.rule-flag input, .field.rule-flag textarea, .field.rule-flag select,
+    .field.rule-flag .chips, .field.rule-flag .checklist {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 2px var(--danger-ring);
+    }
 
     .rail-btn {
       flex: 0 0 auto;
@@ -777,6 +822,28 @@
     }
     .tool-btn:hover { color: var(--text); }
     .tool-btn.del:hover { background: var(--danger-soft); color: var(--danger); }
+    /* Código de colores de los botones de edición, según lo que hacen:
+       mover = azul · agregar = verde · editar = violeta · borrar = rojo. */
+    .tool-btn.mv  { background: var(--tile-blue-bg);   color: var(--tile-blue-fg);   border-color: var(--tile-blue-br); }
+    .tool-btn.ed  { background: var(--tile-violet-bg); color: var(--tile-violet-fg); border-color: var(--tile-violet-br); }
+    .tool-btn.add { background: var(--tile-green-bg);  color: var(--tile-green-fg);  border-color: var(--tile-green-br); font-weight: 700; }
+    .tool-btn.del { background: var(--tile-red-bg);    color: var(--tile-red-fg);    border-color: var(--tile-red-br); }
+    .tool-btn.mv:hover  { background: var(--tile-blue-bg);   color: var(--tile-blue-fg);   filter: brightness(0.94); }
+    .tool-btn.ed:hover  { background: var(--tile-violet-bg); color: var(--tile-violet-fg); filter: brightness(0.94); }
+    .tool-btn.add:hover { background: var(--tile-green-bg);  color: var(--tile-green-fg);  filter: brightness(0.94); }
+    html[data-theme="dark"] .tool-btn.mv:hover,
+    html[data-theme="dark"] .tool-btn.ed:hover,
+    html[data-theme="dark"] .tool-btn.add:hover { filter: brightness(1.35); }
+    .add-section-btn, #addSectionTopBtn {
+      background: var(--tile-green-bg);
+      color: var(--tile-green-fg);
+      border-color: var(--tile-green-br);
+      font-weight: 600;
+    }
+    .add-section-btn:hover, #addSectionTopBtn:hover {
+      background: var(--tile-green-bg);
+      border-color: var(--tile-green-fg);
+    }
     .mirror-note {
       font-size: 11px;
       color: var(--text-2);
@@ -965,6 +1032,14 @@
       line-height: 1;
     }
     .chip button:hover { color: var(--danger); }
+    /* Chip en conflicto (duplicada o presente en el cuerpo del bug): en rojo,
+       así se ven TODAS las palabras problemáticas de un vistazo. */
+    .chip.chip-bad {
+      background: var(--danger-soft);
+      color: var(--danger-text);
+      box-shadow: inset 0 0 0 1px var(--danger-border);
+    }
+    .chip.chip-bad button { color: var(--danger-text); }
     .chips input {
       border: none;
       outline: none;
@@ -1111,6 +1186,12 @@
       max-width: 760px;
     }
     td.rules-form-cell { color: var(--text-2); white-space: nowrap; }
+    /* Buscador de cada tabla de RULES: filtra filas por texto o regex. */
+    .rules-search {
+      display: block;
+      max-width: 340px;
+      margin: 2px 0 8px;
+    }
 
     /* ---------- Modal ---------- */
     .modal-backdrop {
@@ -1168,6 +1249,32 @@
       margin: 6px 0 2px;
     }
     .field.checkbox-field input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary); }
+    /* Campo checklist: un título y varias casillas, en línea o en columna. */
+    .checklist {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 16px;
+      padding: 6px 8px;
+      border: 1px solid var(--field-border);
+      border-radius: 4px;
+      background: var(--field-bg);
+    }
+    .checklist.ck-col { flex-direction: column; gap: 4px; }
+    .checklist label.ck-opt {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .checklist label.ck-opt input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--primary); }
+    .checklist label.ck-opt.ck-all { color: var(--accent-text); font-style: italic; }
+    .field.invalid .checklist { border-color: var(--danger); box-shadow: 0 0 0 2px var(--danger-ring); }
     .fe-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1647,6 +1754,7 @@ const FIELD_TYPES = [
   { id: "textarea",     label: "Texto (varias líneas)" },
   { id: "autocomplete", label: "Texto + dropdown autocompletable" },
   { id: "keywords",     label: "Palabras clave (chips)" },
+  { id: "checklist",    label: "Checklist (título + varias casillas)" },
   { id: "checkbox",     label: "Casilla sí/no (para RULES, sin output)" },
   { id: "mirror",       label: "Copia de otro campo (solo output)" }
 ];
@@ -2025,23 +2133,56 @@ function sourceOptions(form) {
   return opts;
 }
 
-// Devuelve las opciones actuales de un campo autocomplete (nuevo modelo).
+function checklistSpecialValue(field) {
+  return field.allValue || "__checklist_all__";
+}
+
+function checklistNormalOptions(field, inst) {
+  return field.source ? optionsForField(field, inst) : (field.options || []);
+}
+
+// Convierte el valor de un padre escalar o multiselección en las keys que
+// alimentan una lista dependiente. Una opción especial puede representar
+// todos los padres o ninguno sin expandirse dentro del valor guardado.
+function dependentParentValues(parentField, raw, child) {
+  const values = Array.isArray(raw)
+    ? raw.map(String).filter(Boolean)
+    : (String(raw == null ? "" : raw).trim() ? [String(raw).trim()] : []);
+  if (!parentField || parentField.type !== "checklist" || !parentField.allOption) return values;
+  if (!values.includes(checklistSpecialValue(parentField))) return values;
+  if ((parentField.allDependency || "all") === "none") return [];
+  return ((config.data.lists && config.data.lists[child.parent]) || []).map(String);
+}
+
+// Devuelve las opciones actuales de un autocomplete o checklist con fuente.
 function optionsForField(field, inst) {
   const src = field.source || "";
   let m;
   if ((m = /^child:([^:]+):(.+)$/.exec(src))) {
     const c = config.data.childLists && config.data.childLists[m[1]];
     if (!c) return [];
-    const pv = inst ? String(inst.values[m[2]] || "") : "";
-    return (pv && c.values[pv]) ? c.values[pv] : [];
+    if (!inst) return [];
+    const form = getForm(inst.formId);
+    const parentFound = form && getField(form, m[2]);
+    const parents = dependentParentValues(parentFound && parentFound.field, inst.values[m[2]], c);
+    const seen = new Set();
+    const out = [];
+    parents.forEach(parent => (c.values[parent] || []).forEach(value => {
+      const key = String(value).toLowerCase();
+      if (!seen.has(key)) { seen.add(key); out.push(value); }
+    }));
+    return out;
   }
   // Compatibilidad con fuentes viejas (por si entran vía CSV sin migrar).
   if (src === "maps") return config.data.lists["map"] || [];
   if ((m = /^parent:(.+)$/.exec(src))) return config.data.lists[m[1]] || [];
   if ((m = /^pois:(.+)$/.exec(src))) {
     const c = config.data.childLists && config.data.childLists["poi"];
-    const pv = inst ? String(inst.values[m[1]] || "") : "";
-    return (c && pv && c.values[pv]) ? c.values[pv] : [];
+    if (!c || !inst) return [];
+    const form = getForm(inst.formId);
+    const parentFound = form && getField(form, m[1]);
+    const parents = dependentParentValues(parentFound && parentFound.field, inst.values[m[1]], c);
+    return [...new Set(parents.flatMap(parent => c.values[parent] || []))];
   }
   return config.data.lists[src] || [];
 }
@@ -2063,7 +2204,7 @@ function makeInstance(formId) {
   const values = {};
   allFields(form).forEach(({ field }) => {
     if (field.type === "mirror") return;
-    if (field.type === "keywords") values[field.id] = [];
+    if (field.type === "keywords" || field.type === "checklist") values[field.id] = [];
     else values[field.id] = resolveRef(field.default || "");
   });
   return {
@@ -2087,10 +2228,11 @@ function ensureInstanceFields(inst) {
   if (!form) return;
   allFields(form).forEach(({ field }) => {
     if (field.type === "mirror") return;
+    const isArrayField = field.type === "keywords" || field.type === "checklist";
     if (inst.values[field.id] === undefined) {
-      inst.values[field.id] = field.type === "keywords" ? [] : resolveRef(field.default || "");
+      inst.values[field.id] = isArrayField ? [] : resolveRef(field.default || "");
     }
-    if (field.type === "keywords" && !Array.isArray(inst.values[field.id])) {
+    if (isArrayField && !Array.isArray(inst.values[field.id])) {
       inst.values[field.id] = [];
     }
   });
@@ -2412,10 +2554,10 @@ function sectionHtml(sec, inst, fx, form) {
   const sid = escapeHtml(sec.id);
   const tools = `
     <span class="sec-tools">
-      <button class="tool-btn" data-sec-add="${sid}" title="Agregar campo a esta sección">+ campo</button>
-      <button class="tool-btn" data-sec-up="${sid}" title="Subir sección">▲</button>
-      <button class="tool-btn" data-sec-down="${sid}" title="Bajar sección">▼</button>
-      <button class="tool-btn" data-sec-edit="${sid}" title="Editar sección">✎</button>
+      <button class="tool-btn add" data-sec-add="${sid}" title="Agregar campo a esta sección">+ campo</button>
+      <button class="tool-btn mv" data-sec-up="${sid}" title="Subir sección">▲</button>
+      <button class="tool-btn mv" data-sec-down="${sid}" title="Bajar sección">▼</button>
+      <button class="tool-btn ed" data-sec-edit="${sid}" title="Editar sección">✎</button>
       <button class="tool-btn del" data-sec-del="${sid}" title="Borrar sección">✕</button>
     </span>`;
   // Los campos ocultos por condición no se pintan (en modo edición sí,
@@ -2482,9 +2624,9 @@ function fieldHtml(field, inst, fx) {
   const fid = escapeHtml(field.id);
   const tools = `
     <span class="fld-tools">
-      <button class="tool-btn" data-fld-up="${fid}" title="Subir campo (sube en el output)">▲</button>
-      <button class="tool-btn" data-fld-down="${fid}" title="Bajar campo (baja en el output)">▼</button>
-      <button class="tool-btn" data-fld-edit="${fid}" title="Editar campo">✎</button>
+      <button class="tool-btn mv" data-fld-up="${fid}" title="Subir campo (sube en el output)">▲</button>
+      <button class="tool-btn mv" data-fld-down="${fid}" title="Bajar campo (baja en el output)">▼</button>
+      <button class="tool-btn ed" data-fld-edit="${fid}" title="Editar campo">✎</button>
       <button class="tool-btn del" data-fld-del="${fid}" title="Borrar campo definitivamente">✕</button>
     </span>`;
   const stateTag = st.hidden ? '<span class="hidden-tag">(oculto)</span>'
@@ -2494,10 +2636,12 @@ function fieldHtml(field, inst, fx) {
   const errHtml = `<div class="field-error">${escapeHtml(err)}</div>`;
   const val = field.type === "mirror" ? "" : (inst.values[field.id] != null ? inst.values[field.id] : "");
   const sizeClass = field.size === "twoThirds" ? " span-2" : "";
+  // Clase por tipo: pinta la esquina inferior-izquierda del campo.
+  const ftCls = " ft-" + (field.type || "text");
 
   if (field.type === "mirror") {
     // Solo visible en modo edición: no se llena, copia otro campo en el output.
-    return `<div class="field mirror-field${sizeClass}" data-field="${escapeHtml(field.id)}">
+    return `<div class="field mirror-field${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="mirror-note">= copia del campo «${escapeHtml(field.source || "?")}» (solo aparece en el output)</div>
     </div>`;
@@ -2506,20 +2650,38 @@ function fieldHtml(field, inst, fx) {
     // Casilla sí/no: no imprime nada en el output. Sirve como interruptor
     // para RULES (marcada = "yes" → notEmpty / equals yes).
     const checked = String(val == null ? "" : val).trim() ? " checked" : "";
-    return `<div class="field checkbox-field${sizeClass}" data-field="${escapeHtml(field.id)}">
+    return `<div class="field checkbox-field${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       <div class="field-head"><label class="cb-inline"><input type="checkbox" data-bind="${escapeHtml(field.id)}"${checked}${dis} /> ${escapeHtml(field.label)}${stateTag}</label>${tools}</div>
       ${helpHtml}
     </div>`;
   }
+  if (field.type === "checklist") {
+    // Título + varias casillas. El valor es la lista de opciones marcadas.
+    const arr = Array.isArray(val) ? val : [];
+    const opts = checklistNormalOptions(field, inst);
+    const allValue = checklistSpecialValue(field);
+    const allChecked = field.allOption && arr.includes(allValue);
+    const boxes = opts.map(o =>
+      `<label class="ck-opt"><input type="checkbox" data-ck="${fid}" value="${escapeHtml(o)}"${arr.includes(o) ? " checked" : ""}${allChecked || dis ? " disabled" : ""} /> ${escapeHtml(o)}</label>`
+    ).join("");
+    const allBox = field.allOption
+      ? `<label class="ck-opt ck-all"><input type="checkbox" data-ck-all="${fid}" value="${escapeHtml(allValue)}"${allChecked ? " checked" : ""}${dis} /> ${escapeHtml(field.allLabel || "Todas las anteriores")}</label>`
+      : "";
+    return `<div class="field checklist-field${invalid}${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
+      ${labelHtml}
+      <div class="checklist${field.checkLayout === "newline" ? " ck-col" : ""}" data-ck-group="${escapeHtml(field.id)}">${boxes}${allBox}</div>
+      ${errHtml}${helpHtml}
+    </div>`;
+  }
   if (field.type === "textarea") {
-    return `<div class="field${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
+    return `<div class="field${invalid}${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <textarea class="${readonlyCls.trim()}" data-bind="${escapeHtml(field.id)}" rows="${field.rows || 3}"${dis}>${escapeHtml(val)}</textarea>
       ${errHtml}${helpHtml}
     </div>`;
   }
   if (field.type === "autocomplete") {
-    return `<div class="field autocomplete${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
+    return `<div class="field autocomplete${invalid}${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="autocomplete-input-wrap">
         <input type="text" class="${readonlyCls.trim()}" data-bind="${escapeHtml(field.id)}" data-ac="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
@@ -2531,17 +2693,17 @@ function fieldHtml(field, inst, fx) {
   }
   if (field.type === "keywords") {
     const kws = Array.isArray(val) ? val : [];
-    return `<div class="field${sizeClass}" data-field="${escapeHtml(field.id)}">
+    return `<div class="field${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="chips${err ? " invalid" : ""}" data-kw-chips="${escapeHtml(field.id)}">
-        ${kwChipsInnerHtml(field.id, kws, readonlyCls.trim(), dis)}
+        ${kwChipsInnerHtml(field.id, kws, readonlyCls.trim(), dis, keywordBadSet(inst, field))}
       </div>
       ${err ? `<div class="chips-error">${escapeHtml(err)}</div>` : ""}
       ${helpHtml}
     </div>`;
   }
   // text (default)
-  return `<div class="field${invalid}${sizeClass}" data-field="${escapeHtml(field.id)}">
+  return `<div class="field${invalid}${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
     ${labelHtml}
     <input type="text" class="${readonlyCls.trim()}" data-bind="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
     ${errHtml}${helpHtml}
@@ -2589,6 +2751,43 @@ function wireFormEvents(inst, form) {
     wireKeywords(chips, inst);
   });
 
+  // ---- Checklists ----
+  panel.querySelectorAll("[data-ck-group]").forEach(group => {
+    const fieldId = group.dataset.ckGroup;
+    const found = getField(form, fieldId);
+    const field = found && found.field;
+    const opts = field ? checklistNormalOptions(field, inst) : [];
+    const commit = () => {
+      // El valor del campo es la lista de opciones marcadas, en el orden
+      // en que están configuradas (no en el orden de los clicks).
+      const allBox = group.querySelector("input[data-ck-all]");
+      const allActive = !!(allBox && allBox.checked);
+      const checked = allActive
+        ? [checklistSpecialValue(field)]
+        : [...group.querySelectorAll("input[data-ck]")].filter(cb => cb.checked).map(cb => cb.value);
+      inst.values[fieldId] = checked;
+      group.querySelectorAll("input[data-ck]").forEach(cb => { cb.disabled = allActive; });
+      clearDependents(form, fieldId, inst, panel);
+      markInstanceDirty(inst);
+      revalidate(inst);
+      renderOutput();
+      renderMediaPanel();
+      saveAll();
+      setSaveIndicator("saved");
+      rerenderIfRulesChanged(form, inst);
+    };
+    group.querySelectorAll("input[data-ck]").forEach(cb => cb.addEventListener("change", commit));
+    const allBox = group.querySelector("input[data-ck-all]");
+    if (allBox) allBox.addEventListener("change", () => {
+      // La opción especial es exclusiva: bloquea y desmarca las normales.
+      group.querySelectorAll("input[data-ck]").forEach(cb => {
+        cb.checked = false;
+        cb.disabled = allBox.checked;
+      });
+      commit();
+    });
+  });
+
   // ---- Controles del modo edición ----
   $("addSectionBtn").addEventListener("click", () => showSectionEditor(form, null));
   panel.querySelectorAll("[data-sec-add]").forEach(b => b.addEventListener("click", () =>
@@ -2621,9 +2820,10 @@ function clearDependents(form, name, inst, panel) {
     const cm = /^child:[^:]+:(.+)$/.exec(src);
     const dependsOnName = (cm && cm[1] === name) || src === "pois:" + name;
     if (dependsOnName) {
-      inst.values[field.id] = "";
+      inst.values[field.id] = field.type === "checklist" ? [] : "";
       const el = panel.querySelector(`[data-bind="${field.id}"]`);
       if (el) el.value = "";
+      panel.querySelectorAll(`[data-ck="${field.id}"]`).forEach(cb => { cb.checked = false; });
     }
   });
 }
@@ -2836,22 +3036,51 @@ function confirmDeleteOption(field, inst, value, after) {
   });
 }
 
+// Chips problemáticas de un campo de palabras clave: duplicadas o (con
+// kwOverlap) presentes en el cuerpo del bug. Se pintan en rojo para verlas
+// TODAS de un vistazo, no solo la primera.
+function keywordBadSet(inst, field) {
+  const arr = Array.isArray(inst.values[field.id]) ? inst.values[field.id] : [];
+  const bad = new Set();
+  const seen = new Set();
+  arr.forEach(k => {
+    const lk = String(k).toLowerCase();
+    if (seen.has(lk)) bad.add(k);
+    seen.add(lk);
+  });
+  if (field.kwOverlap) {
+    const form = getForm(inst.formId);
+    if (form) {
+      const bodyText = allFields(form)
+        .filter(({ field: f }) => f.type === "text" || f.type === "textarea")
+        .map(({ field: f }) => String(inst.values[f.id] || ""))
+        .join(" ").toLowerCase();
+      arr.forEach(k => { if (bodyText.includes(String(k).toLowerCase())) bad.add(k); });
+    }
+  }
+  return bad;
+}
+
 // Markup interno del widget de chips (chips + input). Compartido entre el
 // render del formulario (fieldHtml) y el refresh in situ de wireKeywords.
-function kwChipsInnerHtml(fieldId, kws, inputCls, inputDis) {
+function kwChipsInnerHtml(fieldId, kws, inputCls, inputDis, badSet) {
   return kws.map(k =>
-    `<span class="chip">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`
+    `<span class="chip${badSet && badSet.has(k) ? " chip-bad" : ""}">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`
   ).join("")
   + `<input type="text" class="${inputCls || ""}" data-kw-input="${escapeHtml(fieldId)}" placeholder="Escribe y presiona Enter..."${inputDis || ""} />`;
 }
 
 function wireKeywords(chips, inst) {
   const fieldId = chips.dataset.kwChips;
+  const kwForm = getForm(inst.formId);
+  const kwFound = kwForm && getField(kwForm, fieldId);
+  const fieldDef = kwFound && kwFound.field;
   const getInput = () => chips.querySelector("[data-kw-input]");
 
   const refresh = () => {
     const cur = getInput().value;
-    chips.innerHTML = kwChipsInnerHtml(fieldId, inst.values[fieldId] || []);
+    chips.innerHTML = kwChipsInnerHtml(fieldId, inst.values[fieldId] || [], "", "",
+      fieldDef ? keywordBadSet(inst, fieldDef) : null);
     const inp = getInput();
     inp.value = cur;
     inp.addEventListener("keydown", keyHandler);
@@ -3169,6 +3398,13 @@ function showFieldEditor(form, sec, field) {
     `<option value="${t.id}"${f.type === t.id ? " selected" : ""}>${t.label}</option>`).join("");
   const sizeOpts = FIELD_SIZES.map(t =>
     `<option value="${t.id}"${(f.size || "full") === t.id ? " selected" : ""}>${t.label}</option>`).join("");
+  // Condición de error que ya apunta a este campo (regla action=error en
+  // form.rules): se edita desde aquí mismo, sin ir a RULES.
+  const fieldErrorRules = !isNew ? getFormRules(form).filter(r =>
+    r.then && r.then.action === "error" && r.then.field === f.id) : [];
+  const condRule = fieldErrorRules.find(r => r.editorCondition) ||
+    (fieldErrorRules.length === 1 ? fieldErrorRules[0] : null);
+  const condRuleAmbiguous = fieldErrorRules.length > 1 && !fieldErrorRules.some(r => r.editorCondition);
 
   const body = `
     <div class="fe-grid">
@@ -3187,20 +3423,20 @@ function showFieldEditor(form, sec, field) {
         <select id="fe_type">${typeOpts}</select>
       </div>
       <div data-cbhide>
-        <label>Fuente (para dropdown / copia)</label>
+        <label>Fuente (para dropdown, checklist o copia)</label>
         <select id="fe_source"></select>
-        <div class="field-help">Dropdown: qué lista muestra. Copia: qué campo copia.</div>
+        <div class="field-help">Dropdown/checklist: qué lista de DATA muestra. Copia: qué campo copia.</div>
       </div>
       <div>
         <label>Tamaño en el formulario</label>
         <select id="fe_size">${sizeOpts}</select>
       </div>
-      <div data-cbhide>
+      <div data-cbhide data-ckhide>
         <label>Valor por defecto</label>
         <input type="text" id="fe_default" value="${escapeHtml(f.default || "")}" />
         <div class="field-help">Acepta @regla, p. ej. @default_tz</div>
       </div>
-      <div data-cbhide>
+      <div data-cbhide data-ckhide>
         <label>Renglones (solo texto multilínea)</label>
         <input type="number" id="fe_rows" value="${f.rows || 3}" min="1" max="20" />
       </div>
@@ -3209,29 +3445,71 @@ function showFieldEditor(form, sec, field) {
         <input type="text" id="fe_help" value="${escapeHtml(f.help || "")}" />
       </div>
 
+      <div class="fe-sep" data-ckshow>Checklist</div>
+      <div class="fe-full" data-ckshow>
+        <label>Opciones (una por línea)</label>
+        <textarea id="fe_ckOptions" rows="4">${escapeHtml((f.options || []).join("\n"))}</textarea>
+        <div class="field-help" id="fe_ckOptionsHelp">Se usan cuando Fuente está en «opciones escritas aquí».</div>
+      </div>
+      <div data-ckshow>
+        <label>Título en el output (opcional)</label>
+        <input type="text" id="fe_ckTitle" value="${escapeHtml(f.checkTitle || "")}" />
+        <div class="field-help">Se imprime antes de las opciones marcadas.</div>
+      </div>
+      <div data-ckshow>
+        <label>Presentación</label>
+        <select id="fe_ckLayout">
+          <option value="inline"${f.checkLayout !== "newline" ? " selected" : ""}>En línea (una sola línea)</option>
+          <option value="newline"${f.checkLayout === "newline" ? " selected" : ""}>Una opción por línea</option>
+        </select>
+        <div class="field-help">Aplica al formulario y al output.</div>
+      </div>
+      <div data-ckshow>
+        <label>Separador (modo en línea)</label>
+        <input type="text" id="fe_ckSep" value="${escapeHtml(f.checkSep != null ? f.checkSep : ", ")}" />
+        <div class="field-help">Texto entre opciones marcadas, p. ej. ", "</div>
+      </div>
+      <label class="checkbox fe-full" data-ckshow><input type="checkbox" id="fe_ckAll"${f.allOption ? " checked" : ""} /> Incluir una opción especial exclusiva (bloquea las demás)</label>
+      <div data-ckshow data-ckall-config>
+        <label>Texto de la opción especial</label>
+        <input type="text" id="fe_ckAllLabel" value="${escapeHtml(f.allLabel || "Todas las anteriores")}" />
+      </div>
+      <div data-ckshow data-ckall-config>
+        <label>Texto en el output</label>
+        <input type="text" id="fe_ckAllOutput" value="${escapeHtml(f.allOutput || f.allLabel || "Todas las anteriores")}" />
+      </div>
+      <div class="fe-full" data-ckshow data-ckall-config>
+        <label>Qué significa para listas dependientes</label>
+        <select id="fe_ckAllDependency">
+          <option value="all"${f.allDependency !== "none" ? " selected" : ""}>Equivale a seleccionar todas las opciones</option>
+          <option value="none"${f.allDependency === "none" ? " selected" : ""}>Equivale a no seleccionar ninguna opción</option>
+        </select>
+        <div class="field-help">Por ejemplo, «Global» puede mostrar todos los mapas o ninguno.</div>
+      </div>
+
       <div class="fe-sep" data-cbhide>Cómo sale en el output</div>
       <div class="fe-full" data-cbhide>
         <label>Plantilla</label>
         <input type="text" id="fe_template" value="${escapeHtml(f.template || "{value}")}" />
         <div class="field-help">{value} se reemplaza por lo escrito. Ej.: "* *Perfil:* {value}" o "# {value}" para pasos numerados.</div>
       </div>
-      <div data-cbhide>
+      <div data-cbhide data-ckhide>
         <label>Separador antes del campo</label>
         <input type="text" id="fe_sep" value="${escapeHtml(f.sep != null && f.sep !== "" ? f.sep : "")}" />
         <div class="field-help">Solo en secciones "unidas". Vacío = usar el de la sección.</div>
         <label class="checkbox"><input type="checkbox" id="fe_glue"${f.sep === "" ? " checked" : ""} /> Pegado al campo anterior (sin separador)</label>
       </div>
-      <div data-cbhide>
+      <div data-cbhide data-ckhide>
         <label>Si está vacío, mostrar</label>
         <input type="text" id="fe_emptyAs" value="${escapeHtml(f.emptyAs || "")}" />
         <div class="field-help">P. ej. "N/A". Vacío = omitir la línea.</div>
       </div>
-      <div data-cbhide>
+      <div data-cbhide data-ckhide>
         <label>Omitir si el valor es</label>
         <input type="text" id="fe_omitValue" value="${escapeHtml(f.omitValue || "")}" />
         <div class="field-help">P. ej. "N/A" para no imprimir BSP CL: N/A</div>
       </div>
-      <div data-cbhide style="display:flex;flex-direction:column;gap:2px;justify-content:end;">
+      <div data-cbhide data-ckhide style="display:flex;flex-direction:column;gap:2px;justify-content:end;">
         <label class="checkbox"><input type="checkbox" id="fe_joinPrev"${f.joinPrev ? " checked" : ""} /> Continúa en la línea anterior</label>
         <label class="checkbox"><input type="checkbox" id="fe_perLine"${f.perLine ? " checked" : ""} /> Aplicar plantilla a cada línea escrita</label>
       </div>
@@ -3246,22 +3524,36 @@ function showFieldEditor(form, sec, field) {
         <label class="checkbox" data-cbhide><input type="checkbox" id="fe_required"${f.required ? " checked" : ""} /> Obligatorio</label>
         <label class="checkbox"><input type="checkbox" id="fe_hidden"${f.hidden ? " checked" : ""} /> Oculto por defecto (aparece solo por una condición de RULES)</label>
       </div>
-      <div data-cbhide>
+      <div data-cbhide data-ckhide>
         <label>REGEX</label>
         <input type="text" id="fe_regex" value="${escapeHtml(f.regex || "")}" />
         <div class="field-help">Expresión regular o @regla de DATA (ej. @coord_re)</div>
       </div>
-      <div data-cbhide>
+      <div data-cbhide data-ckhide>
         <label>Mensaje si no cumple</label>
         <input type="text" id="fe_regexMsg" value="${escapeHtml(f.regexMsg || "")}" />
       </div>
-      <div data-cbhide>
+      <div data-cbhide data-ckhide>
         <label>Chips: cantidad</label>
         <input type="text" id="fe_kwCount" value="${escapeHtml(f.kwCount || "")}" />
         <div class="field-help">Número exacto, mínimo con &gt;= (ej. &gt;=5) o @regla. Vacío = sin límite.</div>
       </div>
-      <div data-cbhide style="display:flex;align-items:end;">
+      <div data-cbhide data-ckhide style="display:flex;align-items:end;">
         <label class="checkbox"><input type="checkbox" id="fe_kwOverlap"${f.kwOverlap ? " checked" : ""} /> Chips: prohibir que aparezcan en el cuerpo del bug</label>
+      </div>
+      <div class="fe-full" data-cbhide>
+        <label>Condición de error (opcional)</label>
+        <div class="autocomplete cond-expr-ac">
+          <input type="text" id="fe_condExpr" class="cond-expr" value="${escapeHtml(condRule ? condRule.whenExpr || "" : "")}"
+            placeholder="ej. bspCl = cl — si se cumple, este campo se marca en rojo"${condRuleAmbiguous ? " disabled" : ""} />
+          <div class="autocomplete-list"></div>
+        </div>
+        <div class="cond-err" id="fe_condErr"></div>
+        <div class="field-help">${condRuleAmbiguous ? "Hay varias condiciones de error para este campo; edítalas directamente en RULES para no sobrescribir ninguna." : "Mismo lenguaje que RULES (AND / OR / NOT, =, contains, isAll, matches, in...). Queda guardada en RULES → Condiciones entre campos. Vacío = sin condición."}</div>
+      </div>
+      <div class="fe-full" data-cbhide>
+        <label>Mensaje de la condición</label>
+        <input type="text" id="fe_condMsg" value="${escapeHtml(condRule && condRule.then ? condRule.then.value || "" : "")}"${condRuleAmbiguous ? " disabled" : ""} />
       </div>
     </div>`;
 
@@ -3284,8 +3576,11 @@ function showFieldEditor(form, sec, field) {
         const t = typeSel.value;
         let opts = [];
         if (t === "autocomplete") opts = sourceOptions(form);
+        else if (t === "checklist") {
+          opts = [{ value: "", label: "(opciones escritas aquí)" }].concat(sourceOptions(form));
+        }
         else if (t === "mirror") {
-          opts = allFields(form).filter(x => x.field.type !== "mirror" && x.field.type !== "checkbox" && x.field.id !== f.id)
+          opts = allFields(form).filter(x => !["mirror", "checkbox", "checklist"].includes(x.field.type) && x.field.id !== f.id)
                                  .map(x => ({ value: x.field.id, label: x.field.label }));
         }
         srcSel.disabled = !opts.length;
@@ -3299,16 +3594,55 @@ function showFieldEditor(form, sec, field) {
       // texto. Se esconden esas opciones para simplificar la experiencia.
       // El encabezado por línea solo aplica si perLine está activo.
       const perLineChk = $("fe_perLine");
+      const updateChecklistSourceUi = () => {
+        const usesData = typeSel.value === "checklist" && !!srcSel.value;
+        $("fe_ckOptions").disabled = usesData;
+        $("fe_ckOptionsHelp").textContent = usesData
+          ? "Las opciones vienen de DATA; edítalas en esa pestaña."
+          : "Cada línea es una casilla del checklist.";
+      };
+      const updateAllOptionUi = () => {
+        const visible = typeSel.value === "checklist" && $("fe_ckAll").checked;
+        $("modalBody").querySelectorAll("[data-ckall-config]").forEach(el => {
+          el.style.display = visible ? "" : "none";
+        });
+      };
       const updateTypeUi = () => {
         const isCb = typeSel.value === "checkbox";
+        const isCk = typeSel.value === "checklist";
         $("modalBody").querySelectorAll("[data-cbhide]").forEach(el => {
           el.style.display = isCb ? "none" : "";
         });
-        $("fe_perLineHeaderWrap").style.display = (!isCb && perLineChk.checked) ? "" : "none";
+        // La checklist esconde lo que no aplica (regex, chips, separadores...)
+        // y muestra su propia sección de opciones.
+        $("modalBody").querySelectorAll("[data-ckhide]").forEach(el => {
+          if (isCk) el.style.display = "none";
+        });
+        $("modalBody").querySelectorAll("[data-ckshow]").forEach(el => {
+          el.style.display = isCk ? "" : "none";
+        });
+        $("fe_perLineHeaderWrap").style.display = (!isCb && !isCk && perLineChk.checked) ? "" : "none";
+        updateChecklistSourceUi();
+        updateAllOptionUi();
       };
       typeSel.addEventListener("change", updateTypeUi);
+      srcSel.addEventListener("change", updateChecklistSourceUi);
+      $("fe_ckAll").addEventListener("change", updateAllOptionUi);
       perLineChk.addEventListener("change", updateTypeUi);
       updateTypeUi();
+      // Condición de error: autocompletado del lenguaje de RULES y
+      // validación en vivo de la sintaxis.
+      const condInp = $("fe_condExpr");
+      if (condInp) {
+        wireCondExprAutocomplete(condInp, form);
+        const checkCond = () => {
+          const err = exprError(condInp.value, form);
+          condInp.classList.toggle("cond-bad", !!err);
+          $("fe_condErr").textContent = err;
+        };
+        condInp.addEventListener("input", checkCond);
+        checkCond();
+      }
     },
     onConfirm: () => {
       const label = $("fe_label").value.trim();
@@ -3317,6 +3651,18 @@ function showFieldEditor(form, sec, field) {
       if (regexTxt) {
         try { new RegExp(resolveRef(regexTxt)); }
         catch (e) { flashBanner("La REGEX no es válida: " + e.message, true); return false; }
+      }
+      if ($("fe_type").value === "checklist") {
+        const opts = $("fe_ckOptions").value.split("\n").map(s => s.trim()).filter(Boolean);
+        if (!$("fe_source").value && !opts.length) { flashBanner("La checklist necesita una fuente de DATA o al menos una opción.", true); return false; }
+        if ($("fe_ckAll").checked && !$("fe_ckAllLabel").value.trim()) {
+          flashBanner("La opción especial necesita un texto.", true); return false;
+        }
+      }
+      const condExpr = $("fe_condExpr") ? $("fe_condExpr").value.trim() : "";
+      if (condExpr) {
+        const condErrTxt = exprError(condExpr, form);
+        if (condErrTxt) { flashBanner("La condición de error no es válida: " + condErrTxt, true); return false; }
       }
       const target = isNew ? { id: uniqueFieldId(form, slugify(label)) } : field;
       target.label = label;
@@ -3357,6 +3703,54 @@ function showFieldEditor(form, sec, field) {
         ["source", "default", "rows", "template", "sep", "emptyAs", "omitValue",
          "joinPrev", "perLine", "perLineHeader", "required", "regex", "regexMsg"]
           .forEach(k => delete target[k]);
+      }
+      if (target.type === "checklist") {
+        const ckSource = $("fe_source").value;
+        if (ckSource) {
+          target.source = ckSource;
+          delete target.options;
+        } else {
+          target.options = $("fe_ckOptions").value.split("\n").map(s => s.trim()).filter(Boolean);
+          delete target.source;
+        }
+        setOrDel("checkTitle", $("fe_ckTitle").value.trim(), "");
+        setOrDel("checkSep", $("fe_ckSep").value, ", ");
+        if ($("fe_ckLayout").value === "newline") target.checkLayout = "newline"; else delete target.checkLayout;
+        if ($("fe_ckAll").checked) {
+          target.allOption = true;
+          setOrDel("allLabel", $("fe_ckAllLabel").value.trim(), "Todas las anteriores");
+          setOrDel("allOutput", $("fe_ckAllOutput").value.trim(), $("fe_ckAllLabel").value.trim());
+          if ($("fe_ckAllDependency").value === "none") target.allDependency = "none";
+          else delete target.allDependency;
+        } else {
+          ["allOption", "allLabel", "allOutput", "allDependency", "allValue"].forEach(k => delete target[k]);
+        }
+        // Lo que no aplica a una checklist se limpia del schema.
+        ["default", "rows", "sep", "emptyAs", "omitValue", "joinPrev",
+         "perLine", "perLineHeader", "regex", "regexMsg", "kwCount", "kwOverlap"]
+          .forEach(k => delete target[k]);
+      } else {
+        ["options", "checkTitle", "checkSep", "checkLayout", "allOption", "allLabel",
+         "allOutput", "allDependency", "allValue"].forEach(k => delete target[k]);
+      }
+      // Condición de error rápida: vive como regla normal (action=error) en
+      // form.rules, visible y editable también en RULES.
+      if (!condRuleAmbiguous && target.type !== "checkbox" && target.type !== "mirror" && $("fe_condExpr")) {
+        const condMsg = $("fe_condMsg").value.trim();
+        form.rules = form.rules || [];
+        const ci = condRule ? form.rules.indexOf(condRule) : -1;
+        if (condExpr) {
+          if (ci >= 0) {
+            form.rules[ci].whenExpr = condExpr;
+            form.rules[ci].then.value = condMsg || "Valor inválido";
+            form.rules[ci].editorCondition = true;
+          } else {
+            form.rules.push({ whenExpr: condExpr, editorCondition: true,
+              then: { action: "error", field: target.id, value: condMsg || "Valor inválido" } });
+          }
+        } else if (ci >= 0) {
+          form.rules.splice(ci, 1);
+        }
       }
       if (isNew) sec.fields.push(target);
       state.instances.forEach(ensureInstanceFields);
@@ -3488,6 +3882,7 @@ function parseExpr(src) {
     // operador postfijo empty/notEmpty
     if (isKw("empty")) { p++; return { type: "cmp", field, op: "empty" }; }
     if (isKw("notempty")) { p++; return { type: "cmp", field, op: "notEmpty" }; }
+    if (isKw("isall")) { p++; return { type: "cmp", field, op: "isAll" }; }
     // Operadores de pertenencia. `not in` se reconoce aquí para que NOT/!
     // conserve su papel de negación prefija en el resto de la gramática.
     if (isKw("in") ||
@@ -3518,6 +3913,7 @@ function parseExpr(src) {
     if (isOp("=", "==")) op = "eq";
     else if (isOp("!=", "<>")) op = "ne";
     else if (isKw("matches") || isOp("~")) op = "matches";
+    else if (isKw("contains")) op = "contains";
     else throw new Error("Se esperaba un operador después de «" + field + "»");
     p++;
     if (!peek()) throw new Error("Falta el valor de la comparación");
@@ -3539,12 +3935,13 @@ function parseExpr(src) {
 // Convierte un nodo de comparación a la forma { field, op, value } que ya
 // sabe evaluar evalCondition (reusando toda su semántica).
 function cmpToWhen(node) {
-  if (node.op === "empty" || node.op === "notEmpty") return { field: node.field, op: node.op };
+  if (["empty", "notEmpty", "isAll"].includes(node.op)) return { field: node.field, op: node.op };
   const o = node.operand || { kind: "lit", v: "" };
   if (node.op === "matches") {
     const val = o.kind === "ref" ? "@" + o.v : o.v;
     return { field: node.field, op: "matches", value: val };
   }
+  if (node.op === "contains") return { field: node.field, op: "contains", value: o.v };
   // eq/ne: palabra suelta que ES un id de campo → comparación campo-a-campo
   const isFieldRef = o.kind === "word" && anyFieldHasId(o.v);
   if (o.kind === "ref") return { field: node.field, op: node.op === "eq" ? "equals" : "notEquals", value: "@" + o.v };
@@ -3589,11 +3986,14 @@ function evalAst(ast, inst, seen) {
       if (ast.op === "in" || ast.op === "notIn") {
         const form = getForm(inst.formId);
         if (!form || !getField(form, ast.field)) return false;
-        const value = String(inst.values[ast.field] == null ? "" : inst.values[ast.field]).trim();
+        const raw = inst.values[ast.field];
+        const values = Array.isArray(raw)
+          ? raw.map(v => String(v).trim().toLowerCase()).filter(Boolean)
+          : [String(raw == null ? "" : raw).trim().toLowerCase()].filter(Boolean);
         const found = (ast.members || []).some(member =>
           member.kind === "empty"
-            ? !value
-            : value.toLowerCase() === String(member.v).trim().toLowerCase());
+            ? !values.length
+            : values.includes(String(member.v).trim().toLowerCase()));
         return ast.op === "in" ? found : !found;
       }
       return evalCondition(cmpToWhen(ast), inst);
@@ -3658,17 +4058,21 @@ function exprFieldRefs(src) {
   return ids;
 }
 
-// Valores configurados para un campo autocomplete. En listas dependientes no
-// hay una instancia concreta en RULES, así que se reúnen todos los buckets.
+// Valores configurados para un campo autocomplete o checklist. En listas
+// dependientes no hay una instancia concreta en RULES: se reúnen los buckets.
 function condExprFieldValues(field) {
-  if (!field || field.type !== "autocomplete") return [];
-  const s = parseSource(field.source);
+  if (!field || (field.type !== "autocomplete" && field.type !== "checklist")) return [];
   let values = [];
-  if (s.kind === "child") {
-    const child = config.data.childLists && config.data.childLists[s.link];
-    if (child) Object.values(child.values || {}).forEach(arr => values.push(...(arr || [])));
+  if (field.type === "checklist") {
+    values = field.options || [];
   } else {
-    values = (config.data.lists && config.data.lists[s.list]) || [];
+    const s = parseSource(field.source);
+    if (s.kind === "child") {
+      const child = config.data.childLists && config.data.childLists[s.link];
+      if (child) Object.values(child.values || {}).forEach(arr => values.push(...(arr || [])));
+    } else {
+      values = (config.data.lists && config.data.lists[s.list]) || [];
+    }
   }
   const seen = new Set();
   return values.map(String).filter(value => {
@@ -3761,7 +4165,7 @@ function condExprSuggestionState(src, cursor, form) {
   }
   if (last.t === ")") return { ...fragment, kind: "logical", field: null };
   if (last.t === "ref" || last.t === "str") return { ...fragment, kind: "logical", field: null };
-  if (["=", "==", "!=", "<>", "~"].includes(op(last)) || word(last) === "matches") {
+  if (["=", "==", "!=", "<>", "~"].includes(op(last)) || ["matches", "contains"].includes(word(last))) {
     const fieldTk = prev;
     const fieldRef = fieldTk && fieldTk.t === "word" ? getField(form, fieldTk.v) : null;
     return {
@@ -3776,12 +4180,12 @@ function condExprSuggestionState(src, cursor, form) {
     return { ...fragment, kind: "listOpen", field: fieldRef && fieldRef.field };
   }
   if (last.t === "word") {
-    if (["empty", "notempty"].includes(word(last))) {
+    if (["empty", "notempty", "isall"].includes(word(last))) {
       return { ...fragment, kind: "logical", field: null };
     }
     // Una palabra tras un operador es un operando ya completo; en cualquier
     // otra posición, si es un id válido, es el lado izquierdo.
-    if (prev && (["=", "==", "!=", "<>", "~"].includes(op(prev)) || word(prev) === "matches")) {
+    if (prev && (["=", "==", "!=", "<>", "~"].includes(op(prev)) || ["matches", "contains"].includes(word(prev)))) {
       return { ...fragment, kind: "logical", field: null };
     }
     const fieldRef = getField(form, last.v);
@@ -3819,6 +4223,11 @@ function condExprSuggestions(src, cursor, form) {
         item("in (", "in (...)", "coincide con alguno"),
         item("not in (", "not in (...)", "no coincide con ninguno")
       ];
+      if (state.field && state.field.type === "checklist") {
+        items.splice(2, 0,
+          item("contains ", "contains", "incluye esta opción"),
+          item("isAll ", "isAll", "está activa la opción especial"));
+      }
       break;
     case "operand":
       items = state.atRule ? [] : valueItems(state.field).concat(fieldItems());
@@ -3936,16 +4345,25 @@ function wireCondExprAutocomplete(input, form) {
 
 function evalCondition(when, inst) {
   const form = getForm(inst.formId);
-  if (!form || !getField(form, when.field)) return false;
-  const v = String(inst.values[when.field] == null ? "" : inst.values[when.field]).trim();
+  const found = form && getField(form, when.field);
+  if (!found) return false;
+  const raw = inst.values[when.field];
+  const values = Array.isArray(raw)
+    ? raw.map(v => String(v).trim()).filter(Boolean)
+    : (String(raw == null ? "" : raw).trim() ? [String(raw).trim()] : []);
+  const v = values.join(",");
   const target = String(when.value == null ? "" : when.value).trim();
+  const hasTarget = values.some(value => value.toLowerCase() === target.toLowerCase());
   switch (when.op) {
-    case "empty":     return !v;
-    case "notEmpty":  return !!v;
-    case "equals":    return v.toLowerCase() === target.toLowerCase();
-    case "notEquals": return v.toLowerCase() !== target.toLowerCase();
+    case "empty":     return !values.length;
+    case "notEmpty":  return !!values.length;
+    case "equals":    return Array.isArray(raw) ? hasTarget : v.toLowerCase() === target.toLowerCase();
+    case "notEquals": return Array.isArray(raw) ? !hasTarget : v.toLowerCase() !== target.toLowerCase();
+    case "contains":  return hasTarget;
+    case "isAll":     return found.field.type === "checklist" && found.field.allOption &&
+                             values.includes(checklistSpecialValue(found.field));
     case "matches":
-      try { return new RegExp(resolveRef(target), "i").test(v); }
+      try { return values.some(value => new RegExp(resolveRef(target), "i").test(value)); }
       catch (e) { return false; }
     // target = id de otro campo; solo cuenta si ambos tienen valor
     case "equalsField": {
@@ -4024,8 +4442,22 @@ function revalidate(inst, paint) {
       } else if (new Set(arr.map(k => k.toLowerCase())).size !== arr.length) {
         inst.errors[field.id] = "Los valores deben ser únicos";
       } else if (field.kwOverlap) {
-        const conflict = arr.find(k => bodyText.includes(k.toLowerCase()));
-        if (conflict) inst.errors[field.id] = `«${conflict}» aparece en el cuerpo del bug`;
+        // Se listan TODAS las que chocan (además, cada chip en conflicto
+        // se pinta en rojo en el propio widget).
+        const conflicts = arr.filter(k => bodyText.includes(k.toLowerCase()));
+        if (conflicts.length === 1) {
+          inst.errors[field.id] = `«${conflicts[0]}» aparece en el cuerpo del bug`;
+        } else if (conflicts.length) {
+          inst.errors[field.id] = `Aparecen en el cuerpo del bug: ${conflicts.map(k => "«" + k + "»").join(", ")}`;
+        }
+      }
+      return;
+    }
+
+    if (field.type === "checklist") {
+      const arr = Array.isArray(inst.values[field.id]) ? inst.values[field.id] : [];
+      if (field.required && !arr.length) {
+        inst.errors[field.id] = "Marca al menos una opción";
       }
       return;
     }
@@ -4083,6 +4515,17 @@ function reflectErrors(inst) {
       } else if (msg) {
         msg.remove();
       }
+      // Re-pinta qué chips están en conflicto sin re-renderizar el widget
+      // (el cuerpo del bug pudo cambiar desde otro campo).
+      const kwForm = getForm(inst.formId);
+      const kwFound = kwForm && getField(kwForm, name);
+      if (kwFound) {
+        const bad = keywordBadSet(inst, kwFound.field);
+        chips.querySelectorAll(".chip").forEach(ch => {
+          const btn = ch.querySelector("[data-kw-remove]");
+          ch.classList.toggle("chip-bad", !!(btn && bad.has(btn.dataset.kwRemove)));
+        });
+      }
       return;
     }
     el.classList.toggle("invalid", !!err);
@@ -4129,7 +4572,17 @@ function interpolateTileText(text, inst) {
   return String(text || "").replace(/\{([A-Za-z0-9_\-.]+)\}/g, (m, id) => {
     const v = inst.values[id];
     if (v == null) return "";
-    return Array.isArray(v) ? v.join(", ") : String(v);
+    if (Array.isArray(v)) {
+      const form = getForm(inst.formId);
+      const found = form && getField(form, id);
+      const field = found && found.field;
+      if (field && field.type === "checklist" && field.allOption &&
+          v.includes(checklistSpecialValue(field))) {
+        return field.allOutput || field.allLabel || "Todas las anteriores";
+      }
+      return v.join(", ");
+    }
+    return String(v);
   });
 }
 
@@ -4186,6 +4639,18 @@ function renderTiles(inst) {
   // Banda 2: tiles personalizados activos, en el orden de la lista de Rules.
   const active = evalTiles(form, inst);
   const blocking = fieldErrs.length > 0 || active.some(a => a.tile.severity === "error");
+
+  // Tiles de tipo Error activos: su campo destino también se resalta en
+  // rojo en el formulario (mismo tratamiento visual que un campo inválido).
+  const flagged = new Set();
+  active.forEach(({ tile }) => {
+    if (tile.severity !== "error") return;
+    const target = tile.field || tileFieldRefs(tile)[0] || "";
+    if (target) flagged.add(target);
+  });
+  document.querySelectorAll("#formPanel .field[data-field]").forEach(el => {
+    el.classList.toggle("rule-flag", flagged.has(el.dataset.field));
+  });
 
   // Nada que mostrar: verde y salir.
   if (!fieldErrs.length && !active.length) {
@@ -4348,6 +4813,25 @@ function fieldOutputPart(field, inst) {
     const arr = Array.isArray(raw) ? raw : [];
     if (!arr.length) return null;
     raw = arr.join(", ");
+  }
+  if (field.type === "checklist") {
+    // Salen solo las opciones marcadas. Inline: una línea unida por el
+    // separador. Una por línea: la plantilla se aplica a cada opción.
+    // El título opcional se imprime antes (misma línea en inline).
+    let arr = Array.isArray(raw) ? raw : [];
+    if (!arr.length) return null;
+    if (field.allOption && arr.includes(checklistSpecialValue(field))) {
+      arr = [field.allOutput || field.allLabel || "Todas las anteriores"];
+    }
+    const ckTpl = unescapeNl(field.template || "{value}");
+    const ckFill = (v) => ckTpl.replace(/\{value\}/g, () => v);
+    if (field.checkLayout === "newline") {
+      const out = arr.map(ckFill);
+      if (field.checkTitle) out.unshift(unescapeNl(field.checkTitle));
+      return out;
+    }
+    const joined = ckFill(arr.join(unescapeNl(field.checkSep != null ? field.checkSep : ", ")));
+    return field.checkTitle ? unescapeNl(field.checkTitle) + " " + joined : joined;
   }
   let value = String(raw == null ? "" : raw);
   if (!value.trim()) {
@@ -5081,14 +5565,53 @@ const COND_ACTIONS = [
   ["error",      "marcar error (mensaje)"]
 ];
 
+// Texto de búsqueda de cada tabla de RULES. Vive fuera del render para que
+// el filtro sobreviva a los re-render de la pestaña (cambiar un color, etc.).
+const rulesSearch = { fields: "", globals: "", conds: "", tiles: "" };
+
+// Filtra las filas de las tablas de un bloque de RULES: solo se muestran
+// las que coinciden. Es el buscador más simple posible reutilizando el motor
+// de regex; si lo escrito no es una regex válida, se busca tal cual.
+function applyRulesSearch(c, key) {
+  const q = String(rulesSearch[key] || "").trim();
+  let re = null;
+  if (q) {
+    try { re = new RegExp(q, "i"); }
+    catch (e) { re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"); }
+  }
+  const block = c.querySelector(`[data-rblock="${key}"]`);
+  if (!block) return;
+  block.querySelectorAll("tbody tr").forEach(tr => {
+    if (!re) { tr.style.display = ""; return; }
+    // El texto buscable incluye lo escrito y SOLO la opción elegida de cada
+    // select. No usamos tr.textContent directamente porque incluye todas las
+    // <option> (Mapa, Modo, BSP...) y provocaba falsos positivos.
+    let text = "";
+    tr.querySelectorAll("input, select, textarea").forEach(el => {
+      if (el.type === "checkbox") return;
+      if (el.tagName === "SELECT") {
+        const o = el.selectedOptions && el.selectedOptions[0];
+        text += " " + (o ? o.textContent : "");
+      } else {
+        text += " " + el.value;
+      }
+    });
+    const staticClone = tr.cloneNode(true);
+    staticClone.querySelectorAll("input, select, textarea, button").forEach(el => el.remove());
+    text += " " + staticClone.textContent;
+    tr.style.display = re.test(text) ? "" : "none";
+  });
+}
+
 function renderRulesTab() {
   const c = $("rulesContainer");
   let fieldRows = "";
   getForms().forEach(form => {
     form.sections.forEach(sec => {
       sec.fields.forEach(f => {
-        // mirror no se llena y checkbox no valida texto: fuera de esta tabla
-        if (f.type === "mirror" || f.type === "checkbox") return;
+        // mirror no se llena y checkbox/checklist no validan texto: fuera
+        // de esta tabla (su "obligatorio" se edita en el propio campo).
+        if (f.type === "mirror" || f.type === "checkbox" || f.type === "checklist") return;
         const key = form.id + "|" + f.id;
         const ecid = TILE_COLOR_MAP[f.errColor] ? f.errColor : "red";
         const ecol = tileColor(ecid);
@@ -5175,8 +5698,8 @@ function renderRulesTab() {
         <td><select data-tr="${k}|severity">${sevOpts}</select></td>
         <td><select data-tr="${k}|field" style="max-width:150px">${fieldOptsT(t.field)}</select></td>
         <td style="white-space:nowrap">
-          <button class="tool-btn" data-tr-move="${k}|-1" title="Subir (aparece antes)"${i === 0 ? " disabled" : ""}>▲</button>
-          <button class="tool-btn" data-tr-move="${k}|1" title="Bajar (aparece después)"${i === tiles.length - 1 ? " disabled" : ""}>▼</button>
+          <button class="tool-btn mv" data-tr-move="${k}|-1" title="Subir (aparece antes)"${i === 0 ? " disabled" : ""}>▲</button>
+          <button class="tool-btn mv" data-tr-move="${k}|1" title="Bajar (aparece después)"${i === tiles.length - 1 ? " disabled" : ""}>▼</button>
         </td>
         <td><button class="row-del" data-tr-del="${k}" title="Borrar tile">✕</button></td>
       </tr>`;
@@ -5190,7 +5713,7 @@ function renderRulesTab() {
   }).join("");
 
   c.innerHTML = `
-    <div class="rules-block">
+    <div class="rules-block" data-rblock="fields">
       <h3>Validaciones por campo</h3>
       <p class="rules-intro">
         Cada campo puede ser <strong>obligatorio</strong> y/o validarse con una
@@ -5202,12 +5725,13 @@ function renderRulesTab() {
         (en el orden del formulario). La columna <strong>Color</strong> cambia el
         color de ese tile (por defecto rojo).
       </p>
+      <input type="text" class="rules-search" data-rsearch="fields" placeholder="Filtrar filas... (texto o regex)" />
       <table class="data-table">
         <thead><tr><th>Formulario · Sección</th><th>Campo</th><th>Oblig.</th><th>Regex</th><th>Mensaje de error</th><th>Default</th><th>Color</th></tr></thead>
         <tbody>${fieldRows}</tbody>
       </table>
     </div>
-    <div class="rules-block">
+    <div class="rules-block" data-rblock="globals">
       <h3>Reglas globales (viven en DATA → Reglas)</h3>
       <p class="rules-intro">
         Se comparten entre campos y se editan aquí o en la pestaña Data. Las
@@ -5216,12 +5740,13 @@ function renderRulesTab() {
         <code>default_tz</code> y <code>default_executable</code>
         (valores por defecto via @).
       </p>
+      <input type="text" class="rules-search" data-rsearch="globals" placeholder="Filtrar filas... (texto o regex)" />
       <table class="data-table" style="max-width:760px">
         <thead><tr><th>Regla</th><th>Valor</th></tr></thead>
         <tbody>${globalRows}</tbody>
       </table>
     </div>
-    <div class="rules-block">
+    <div class="rules-block" data-rblock="conds">
       <h3>Condiciones entre campos</h3>
       <p class="rules-intro">
         Reglas del tipo <em>SI (expresión) ENTONCES (acción sobre un campo)</em>.
@@ -5231,6 +5756,7 @@ function renderRulesTab() {
         profundidad. Comparaciones por campo:
         <code>campo empty</code>, <code>campo notEmpty</code>,
         <code>campo = "valor"</code>, <code>campo != "valor"</code>,
+        <code>checklist contains "valor"</code>, <code>checklist isAll</code>,
         <code>campo in ("uno", "dos", empty)</code>,
         <code>campo not in ("uno", "dos", empty)</code>,
         <code>campo matches @regla</code> (o una regex), y
@@ -5242,9 +5768,10 @@ function renderRulesTab() {
         rellena el campo destino sin pisar lo ya escrito. Se aplican al salir de
         cada campo.
       </p>
+      <input type="text" class="rules-search" data-rsearch="conds" placeholder="Filtrar filas... (texto o regex)" />
       ${condsHtml}
     </div>
-    <div class="rules-block">
+    <div class="rules-block" data-rblock="tiles">
       <h3>Tiles personalizados</h3>
       <p class="rules-intro">
         Tiles propios que aparecen en la <strong>segunda línea</strong> de la barra
@@ -5263,6 +5790,7 @@ function renderRulesTab() {
         <code>bugType = Crash AND consoleLog empty</code> (error: falta el log) o
         texto fijo <code>Mapa: {map}</code> con condición <code>map notEmpty</code>.
       </p>
+      <input type="text" class="rules-search" data-rsearch="tiles" placeholder="Filtrar filas... (texto o regex)" />
       ${tilesHtml}
     </div>
     <div class="rules-future">
@@ -5280,6 +5808,27 @@ function renderRulesTab() {
     inp.setAttribute("autocomplete", "off");
     inp.setAttribute("name", "rr_" + i);
   });
+
+  // ---- Buscador de cada tabla (filtra filas en vivo) ----
+  c.querySelectorAll("[data-rsearch]").forEach(inp => {
+    const key = inp.dataset.rsearch;
+    inp.value = rulesSearch[key] || "";
+    inp.addEventListener("input", () => {
+      rulesSearch[key] = inp.value;
+      applyRulesSearch(c, key);
+    });
+    applyRulesSearch(c, key); // re-aplica el filtro tras cada re-render
+  });
+  // Si una fila se edita mientras hay un filtro activo, vuelve a evaluar su
+  // visibilidad sin obligar a tocar de nuevo el buscador.
+  const refreshActiveSearches = e => {
+    if (e.target && e.target.matches("[data-rsearch]")) return;
+    Object.keys(rulesSearch).forEach(key => {
+      if (rulesSearch[key]) applyRulesSearch(c, key);
+    });
+  };
+  c.addEventListener("input", refreshActiveSearches);
+  c.addEventListener("change", refreshActiveSearches);
 
   const findTarget = (key) => {
     const [formId, fieldId] = key.split("|");
@@ -5570,8 +6119,10 @@ const FIELDS_CSV_HEADER = [
   "form", "section", "field", "label", "type", "source", "size", "template",
   "sep", "joinprev", "perline", "rows", "required", "regex", "regexmsg",
   "default", "emptyas", "omitvalue", "nogap", "help",
-  "hidden", "kwcount", "kwoverlap"
+  "hidden", "kwcount", "kwoverlap",
+  "ckoptions", "ckalllabel", "ckalloutput", "ckalldependency", "ckallvalue"
 ];
+const FIELDS_CSV_LEGACY_HEADER = FIELDS_CSV_HEADER.slice(0, 23);
 // En la columna sep, la palabra NONE significa "sin separador"
 // (pegar al campo anterior); vacío significa "usar el de la sección".
 const SEP_NONE = "NONE";
@@ -5599,18 +6150,32 @@ function exportFieldsCsv() {
       sr[18] = sec.noGap ? "yes" : "";
       rows.push(sr);
       sec.fields.forEach(f => {
+        const isCk = f.type === "checklist";
         rows.push([
-          form.id, sec.id, f.id, f.label, f.type || "text", f.source || "",
-          f.size || "", f.template || "", sepOut(f.sep),
-          f.joinPrev ? "yes" : "", f.perLine ? "yes" : "", f.rows || "",
+          form.id, sec.id, f.id, f.label, f.type || "text",
+          f.source || "",
+          f.size || "", f.template || "",
+          sepOut(isCk ? f.checkSep : f.sep),
+          f.joinPrev ? "yes" : "",
+          // perline se reutiliza en checklist: yes = "una opción por línea".
+          (isCk ? f.checkLayout === "newline" : f.perLine) ? "yes" : "",
+          f.rows || "",
           f.required ? "yes" : "", f.regex || "", f.regexMsg || "",
           f.default || "", f.emptyAs || "", f.omitValue || "",
           (f.errColor && f.errColor !== "red") ? f.errColor : "", f.help || "",
           f.hidden ? "yes" : "",
-          // La columna kwcount se reutiliza: en campos de chips es la
-          // cantidad; en campos con perLine es el encabezado opcional.
-          f.type === "keywords" ? (f.kwCount || "") : (f.perLineHeader || ""),
-          f.kwOverlap ? "yes" : ""
+          // La columna kwcount se reutiliza: chips = cantidad · perLine =
+          // encabezado opcional · checklist = título en el output.
+          f.type === "keywords" ? (f.kwCount || "")
+            : isCk ? (f.checkTitle || "")
+            : (f.perLineHeader || ""),
+          // kwoverlap se reutiliza en checklist: «Todas las anteriores».
+          (isCk ? f.allOption : f.kwOverlap) ? "yes" : "",
+          isCk && f.options ? JSON.stringify(f.options) : "",
+          isCk ? (f.allLabel || "") : "",
+          isCk ? (f.allOutput || "") : "",
+          isCk ? (f.allDependency || "") : "",
+          isCk ? (f.allValue || "") : ""
         ]);
       });
     });
@@ -5621,6 +6186,7 @@ function exportFieldsCsv() {
       cr[0] = form.id; cr[4] = "cond";
       cr[5] = r.whenExpr || whenToExpr(r.when) || "";
       cr[13] = r.then.action; cr[14] = r.then.field; cr[16] = r.then.value || "";
+      cr[23] = r.editorCondition ? "fieldEditor" : "";
       rows.push(cr);
     });
     // Tiles personalizados (type="tile"). Mapeo de columnas (README):
@@ -5647,8 +6213,9 @@ function importFieldsCsv(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith("#"));
   if (!lines.length) throw new Error("Archivo vacío");
   const header = parseCsvLine(lines[0]).map(s => s.toLowerCase());
-  if (header.join(",") !== FIELDS_CSV_HEADER.join(",")) {
-    throw new Error("El encabezado no coincide. Debe ser: " + FIELDS_CSV_HEADER.join(","));
+  const isLegacyHeader = header.join(",") === FIELDS_CSV_LEGACY_HEADER.join(",");
+  if (!isLegacyHeader && header.join(",") !== FIELDS_CSV_HEADER.join(",")) {
+    throw new Error("El encabezado no coincide. Debe ser: " + FIELDS_CSV_HEADER.join(",") + " (también se acepta el formato anterior de 23 columnas)");
   }
   const errors = [];
   const forms = [];
@@ -5660,7 +6227,8 @@ function importFieldsCsv(text) {
     const [formId, secId, fieldId, label, type, source, size, template,
            sep, joinprev, perline, rowsN, required, regex, regexmsg,
            def, emptyas, omitvalue, nogap, help,
-           hidden, kwcount, kwoverlap] = r;
+           hidden, kwcount, kwoverlap,
+           ckoptions, ckalllabel, ckalloutput, ckalldependency, ckallvalue] = r;
     const lineNo = i + 1;
 
     if (type === "form") {
@@ -5693,6 +6261,7 @@ function importFieldsCsv(text) {
       form.rules = form.rules || [];
       form.rules.push({
         whenExpr: whenExpr,
+        editorCondition: ckoptions === "fieldEditor",
         then: { action: regex, field: regexmsg, value: emptyas || "" }
       });
     } else if (type === "tile") {
@@ -5762,6 +6331,36 @@ function importFieldsCsv(text) {
       if (type === "keywords") {
         if (kwcount) f.kwCount = kwcount;
         if (csvTruthy(kwoverlap)) f.kwOverlap = true;
+      } else if (type === "checklist") {
+        // CSV anterior: source contenía opciones separadas por |. En v2,
+        // source vuelve a ser una fuente DATA y ckoptions guarda JSON robusto.
+        if (isLegacyHeader) {
+          f.options = (source || "").split("|").map(x => x.trim()).filter(Boolean);
+          delete f.source;
+        } else if (ckoptions) {
+          try {
+            const parsed = JSON.parse(ckoptions);
+            if (!Array.isArray(parsed)) throw new Error("no es un array");
+            f.options = parsed.map(String).map(x => x.trim()).filter(Boolean);
+          } catch (e) {
+            errors.push(`Línea ${lineNo}: ckoptions debe ser un array JSON`);
+            continue;
+          }
+        }
+        if (!f.source && !(f.options || []).length) {
+          errors.push(`Línea ${lineNo}: checklist sin source ni opciones`);
+          continue;
+        }
+        if (f.sep != null) { f.checkSep = f.sep; delete f.sep; }
+        if (f.perLine) { f.checkLayout = "newline"; delete f.perLine; }
+        if (kwcount) f.checkTitle = kwcount;
+        if (csvTruthy(kwoverlap)) {
+          f.allOption = true;
+          if (ckalllabel) f.allLabel = ckalllabel;
+          if (ckalloutput) f.allOutput = ckalloutput;
+          if (ckalldependency === "none") f.allDependency = "none";
+          if (ckallvalue) f.allValue = ckallvalue;
+        }
       } else if (f.perLine && kwcount) {
         // Columna reutilizada: fuera de chips, kwcount lleva el
         // encabezado opcional de los campos "plantilla por línea".

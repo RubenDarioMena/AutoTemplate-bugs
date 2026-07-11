@@ -40,8 +40,8 @@ Cinco tipos de fila, identificados por la columna `type`:
 | section   | id de la sección a la que pertenece                      | id de la sección               |
 | field     | id único del campo (sin espacios)                        | (vacío)                        |
 | label     | etiqueta que ve el tester                                 | nombre de la sección           |
-| type      | text / textarea / autocomplete / keywords / checkbox / mirror | la palabra `section`      |
-| source    | autocomplete: lista (`regions`, `maps`, `pois:map`...) — mirror: id del campo que copia | modo: `lines` o `joined` |
+| type      | text / textarea / autocomplete / keywords / checklist / checkbox / mirror | la palabra `section` |
+| source    | autocomplete/checklist: lista (`regions`, `maps`, `child:map:mode`...) — mirror: id del campo que copia | modo: `lines` o `joined` |
 | size      | ancho en el formulario: vacío(=full) / half / third      | (vacío)                        |
 | template  | cómo sale en el output; `{value}` = lo escrito. Ej: `* *Perfil:* {value}` | encabezado de la sección, ej. `+Notas:+` |
 | sep       | separador ANTES del campo (secciones joined). `NONE` = pegado sin separador | separador por defecto de la sección |
@@ -57,8 +57,13 @@ Cinco tipos de fila, identificados por la columna `type`:
 | nogap     | color del tile de error de ese campo (rojo por defecto; ver paleta abajo) | `yes` = sin línea en blanco después de la sección |
 | help      | texto de ayuda bajo el campo                              | (vacío)                        |
 | hidden    | `yes` = oculto por defecto (aparece solo por una condición) | (vacío)                     |
-| kwcount   | chips: cantidad exacta (`5`) o mínima (`>=5`), directa o con `@regla`. En campos con `perline=yes`: ENCABEZADO opcional que se imprime antes de las líneas (ej. `* *Material:*`) | (vacío) |
-| kwoverlap | solo chips: `yes` = prohibir que aparezcan en el cuerpo del bug | (vacío)                 |
+| kwcount   | chips: cantidad exacta (`5`) o mínima (`>=5`), directa o con `@regla`. En campos con `perline=yes`: ENCABEZADO opcional que se imprime antes de las líneas (ej. `* *Material:*`). En checklist: TÍTULO opcional que se imprime antes de las opciones | (vacío) |
+| kwoverlap | chips: `yes` = prohibir que aparezcan en el cuerpo del bug. En checklist: `yes` = incluir la casilla «Todas las anteriores» | (vacío) |
+| ckoptions | checklist sin fuente DATA: array JSON de opciones, p. ej. `["Logs","Video"]` | (vacío) |
+| ckalllabel | texto visible de la opción especial del checklist, p. ej. `Global` | (vacío) |
+| ckalloutput | texto que imprime esa opción especial | (vacío) |
+| ckalldependency | `all` = alimenta listas hijas como todos los valores; `none` = como ningún valor | (vacío) |
+| ckallvalue | valor interno opcional de la opción especial | (vacío) |
 
 En `template`, `sep` y el encabezado de sección se puede escribir
 `\n` o `<br>` para forzar un salto de línea en el output.
@@ -75,6 +80,21 @@ En `template`, `sep` y el encabezado de sección se puede escribir
                      `kwoverlap` = prohibir que aparezcan en el
                      cuerpo del bug. Un campo chips nuevo sin esas
                      columnas no exige nada.
+  - `checklist`    — un título y varias casillas; el output lleva SOLO
+                     las opciones marcadas. `source` puede apuntar a la
+                     misma clase de lista DATA que un autocomplete. Si no
+                     usa DATA, `ckoptions` contiene un array JSON,
+                     `sep` = separador entre opciones en modo en línea
+                     (vacío = `", "`), `perline=yes` = una opción por
+                     línea (en el formulario y en el output),
+                     `kwcount` = título opcional que se imprime antes,
+                     `kwoverlap=yes` agrega una opción especial exclusiva:
+                     al activarla desmarca y bloquea las opciones normales.
+                     Su etiqueta, output y efecto sobre listas dependientes
+                     se configuran con las columnas `ckall*`.
+                     La plantilla (`template`) se aplica al conjunto en
+                     modo en línea o a CADA opción en modo por línea.
+                     `required=yes` = exige al menos una marcada.
   - `checkbox`     — casilla sí/no. NO imprime nada en el output: sirve
                      como interruptor para las condiciones (`cond`) y
                      tiles. Marcada vale `yes`, desmarcada vale vacío,
@@ -109,6 +129,7 @@ Comparaciones:
 
   - `campo empty` / `campo notEmpty`
   - `campo = "valor"` / `campo != "valor"`
+  - checklist: `campo contains "valor"` y `campo isAll`
   - `campo in ("uno", "dos", empty)` / `campo not in ("uno", "dos", empty)`
     — compara contra varios literales; `empty` sin comillas representa un
     campo vacío
@@ -169,13 +190,21 @@ Ejemplos:
 > una versión antigua de la herramienta, así que reparte el HTML nuevo
 > junto con el CSV.
 
-## Valores de `source` para autocomplete
+## Valores de `source` para autocomplete y checklist
 
   - nombre de una lista de `bug_data.csv` (ej. `regions`, `platforms`,
     o cualquier lista nueva que crees en la pestaña Data)
   - `maps` — la lista de mapas
   - `pois:<idDeCampo>` — POIs filtrados por el mapa elegido en el
     campo indicado (ej. `pois:map`)
+  - `child:<listaHija>:<idDeCampo>` — lista dependiente moderna. Si el
+    campo padre es checklist, se unen sin duplicados los hijos de todas
+    sus opciones seleccionadas.
+
+Los CSV anteriores de 23 columnas siguen importándose. En ellos, un
+checklist conserva el formato histórico de opciones separadas por `|`
+en `source`; al volver a exportar se convierte automáticamente al formato
+nuevo.
 
 ## Consejos al editar en Excel
 

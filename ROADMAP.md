@@ -37,11 +37,32 @@ equipo):
   - Validar la Key del ticket con una REGEX (formato de la
     plataforma de issues del cliente).
 
-## 3. Ideas menores anotadas
+## 3. Batch de feedback — HECHO (iteración 8, 2026-07-10)
+
+Implementado: fix del dropdown recortado (overflow de la sección);
+código de colores de secciones (borde+sombra naranja inferior/derecha)
+y de campos (esquina inferior-izquierda con un color por tipo, el rojo
+de error se impone); botones de edición coloreados por función (mover
+azul, agregar verde, editar violeta, borrar rojo); nuevo tipo de campo
+**checklist** (título + casillas, inline o por línea, separador
+configurable y opción «Todas las anteriores»); **condición de error**
+editable desde el propio editor de campo (sección Validación, con
+autocompletado); los tiles de tipo Error resaltan su campo en rojo en
+el formulario; las chips en conflicto se pintan TODAS de rojo y el
+mensaje las lista completas; y buscador (texto o regex) en cada tabla
+de RULES.
+
+Corrección posterior: el buscador ya no toma todas las opciones ocultas
+de los selects; checklist puede usar listas DATA y alimentar listas hijas
+desde varias selecciones; su opción especial es exclusiva, configurable
+y puede equivaler a todos o a ningún padre. RULES añade `contains` e
+`isAll`, y el CSV nuevo conserva estas propiedades sin dejar de importar
+el encabezado anterior de 23 columnas.
+
+## 4. Ideas menores anotadas
 
   - Botón de copia por sección (hoy: todo / summary / description).
   - Duplicar un formulario o una sección completa en modo edición.
-  - Duplicar una instancia (mismo bug para otra plataforma).
   - Aviso al abrir si el HTML del sharefolder es más nuevo que la
     config local (hoy solo existe el chip "Config modificada").
 
