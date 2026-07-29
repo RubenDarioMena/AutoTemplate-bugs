@@ -34,6 +34,7 @@ dependencias.
   1. Botón **"✎ Editar formulario"** (arriba del formulario).
   2. Aparecen los controles en cada sección y campo:
      - **▲ ▼** cambia el orden (el orden visual ES el orden del output)
+     - En computadora también puedes mantener presionada el asa **⠿** y arrastrar el campo antes o después de otro
      - **✎** edita etiqueta, tipo, plantilla de salida, validación...
      - **✕** borra (siempre pide confirmación)
      - **+ campo** / **+ Agregar sección** para crecer el formulario

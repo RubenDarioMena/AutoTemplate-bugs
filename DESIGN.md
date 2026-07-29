@@ -669,7 +669,10 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
 
 ## UI nueva respecto a v1
 
-  * Modo edición (toggle "✎ Editar formulario"): ▲▼ para reordenar
+  * Modo edición (toggle "✎ Editar formulario"): ▲▼ para reordenar;
+    en escritorio, arrastre con Pointer Events desde un asa ⠿. Durante el
+    gesto sólo cambia el preview; al soltar, ambos caminos mutan
+    `section.fields` mediante la misma función por ID/posición
     (= orden del output), ✎ editor de campo/sección en modal, ✕ con
     confirmación, "+ campo" y "+ Agregar sección".
   * Dropdowns: fila "+ Agregar «...»" para sumar opciones y ✕ por

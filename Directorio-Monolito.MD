@@ -47,9 +47,9 @@ instancias + config <-> localStorage / archivo de sesión
 | `04-schema-helpers` | `config.schema`, `config.data` e instancia activa cuando aplica. | Lectura de formularios/campos y opciones disponibles para formulario, widgets y editores. |
 | `05-instances-persistence` | Schema, configuración y sesión guardada en `localStorage`. | Objeto global `state`, instancias coherentes, guardado diferido y pestañas actualizadas. |
 | `06-tabs-navigation` | `state`, formularios e instancias. | Pestañas renderizadas y llamadas a formulario, DATA o RULES mediante `refreshAll`. |
-| `07-form-rendering` | Formulario del schema, instancia activa y resultado de reglas. | DOM del formulario, cambios de valores, revalidación, output, media y persistencia. |
+| `07-form-rendering` | Formulario del schema, instancia activa, resultado de reglas y gestos Pointer Events de escritorio. | DOM y preview del arrastre, cambios de valores, solicitudes de reordenamiento por ID/posición, revalidación, output, media y persistencia. |
 | `08-field-widgets` | Definición del campo, instancia y listas de `config.data`. | Autocomplete, chips y listas dependientes; actualiza valores y llama a render/guardado. |
-| `09-schema-editor` | Formularios, secciones, campos y dependencias entre campos. | Schema modificado, consistencia de instancias, formulario re-renderizado y persistencia. |
+| `09-schema-editor` | Formularios, secciones, campos, posiciones solicitadas por botones o drag-and-drop y dependencias entre campos. | Arrays `section.fields` reordenados, schema modificado, consistencia de instancias, formulario re-renderizado y persistencia. |
 | `10-validation-rules-tiles` | Campos, reglas del formulario, reglas globales e instancia activa. | Errores de instancia, estado de campos y tiles de la barra superior. |
 | `11-output-generator` | Schema, valores de la instancia y condiciones evaluadas. | Texto completo, summary y description; textarea y botones de copia. |
 | `12-media-panel` | Configuración de media, instancia, reglas y valores de campos. | Nombres de media mostrados y valores `ticketKey`/`media` de la instancia. |

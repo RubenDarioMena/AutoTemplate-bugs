@@ -813,6 +813,37 @@
     body.editing .fld-tools { display: inline-flex; gap: 2px; margin-left: auto; }
     body.editing .add-section-btn { display: block; width: 100%; margin-top: 8px; }
     body.editing .mirror-field { display: block; }
+    @media (hover: hover) and (pointer: fine) {
+      body.editing .fld-drag-handle { cursor: grab; touch-action: none; }
+      body.editing .fld-drag-handle.is-pressed,
+      body.field-pointer-dragging,
+      body.field-pointer-dragging * { cursor: grabbing !important; user-select: none; }
+      body.editing .field { transition: opacity .12s ease, box-shadow .12s ease; }
+      body.editing .field.field-dragging { opacity: .48; }
+      body.editing .field.field-dragging::after {
+        content: "Moviendo…";
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px dashed var(--primary);
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--surface) 78%, transparent);
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .3px;
+        pointer-events: none;
+        z-index: 4;
+      }
+      body.editing .field.field-drop-before { box-shadow: inset 0 3px 0 var(--primary); }
+      body.editing .field.field-drop-after  { box-shadow: inset 0 -3px 0 var(--primary); }
+      body.editing .form-section.field-drop-at-end {
+        outline: 2px dashed var(--primary);
+        outline-offset: 2px;
+      }
+    }
     .tool-btn {
       padding: 0 5px;
       font-size: 11px;
@@ -2571,8 +2602,9 @@ function refreshAll() {
    [7] RENDER: FORMULARIO (NORMAL + MODO EDICIÓN)
    ================================================================
    Todo el formulario se pinta a partir del schema. En modo edición
-   aparecen los controles ↑ ↓ ✎ ✕ en secciones y campos. El orden
-   visual de arriba hacia abajo ES el orden del output. */
+   aparecen los controles ↑ ↓ ✎ ✕ en secciones y campos. En escritorio,
+   el asa ⠿ de cada campo también permite arrastrarlo. El orden visual de
+   arriba hacia abajo ES el orden del output. */
 function renderForm() {
   const inst = getActiveInstance();
   const form = getForm(state.topTab);
@@ -2685,6 +2717,7 @@ function fieldHtml(field, inst, fx) {
   const fid = escapeHtml(field.id);
   const tools = `
     <span class="fld-tools">
+      <button type="button" class="tool-btn mv fld-drag-handle" data-fld-drag="${fid}" title="Mantén presionado y arrastra para reordenar" aria-label="Arrastrar campo">⠿</button>
       <button class="tool-btn mv" data-fld-up="${fid}" title="Subir campo (sube en el output)">▲</button>
       <button class="tool-btn mv" data-fld-down="${fid}" title="Bajar campo (baja en el output)">▼</button>
       <button class="tool-btn ed" data-fld-edit="${fid}" title="Editar campo">✎</button>
@@ -2769,6 +2802,110 @@ function fieldHtml(field, inst, fx) {
     <input type="text" class="${readonlyCls.trim()}" data-bind="${escapeHtml(field.id)}" value="${escapeHtml(val)}"${dis} />
     ${errHtml}${helpHtml}
   </div>`;
+}
+
+// Reordenamiento de escritorio con Pointer Events. Evita DataTransfer y el
+// comportamiento inconsistente del DnD HTML nativo al abrir el monolito desde
+// file://. El schema sigue siendo la fuente de verdad y sólo cambia al soltar.
+const fieldDragState = {
+  fieldId: "", targetSectionId: "", targetIndex: -1,
+  pointerId: null, sourceEl: null, handleEl: null
+};
+
+function fieldDragEnabled() {
+  return state.editMode && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
+function clearFieldDropTarget(panel) {
+  panel.querySelectorAll(".field-drop-before, .field-drop-after, .field-drop-at-end").forEach(el =>
+    el.classList.remove("field-drop-before", "field-drop-after", "field-drop-at-end"));
+  fieldDragState.targetSectionId = "";
+  fieldDragState.targetIndex = -1;
+}
+
+function resetFieldPointerDrag(panel) {
+  clearFieldDropTarget(panel);
+  if (fieldDragState.sourceEl) fieldDragState.sourceEl.classList.remove("field-dragging");
+  if (fieldDragState.handleEl) fieldDragState.handleEl.classList.remove("is-pressed");
+  document.body.classList.remove("field-pointer-dragging");
+  fieldDragState.fieldId = "";
+  fieldDragState.pointerId = null;
+  fieldDragState.sourceEl = null;
+  fieldDragState.handleEl = null;
+}
+
+function updateFieldPointerTarget(panel, form, clientX, clientY) {
+  clearFieldDropTarget(panel);
+  const hit = document.elementFromPoint(clientX, clientY);
+  if (!hit || !panel.contains(hit)) return;
+
+  const targetEl = hit.closest("[data-field]");
+  if (targetEl && panel.contains(targetEl)) {
+    const target = getField(form, targetEl.dataset.field);
+    if (!target) return;
+    const rect = targetEl.getBoundingClientRect();
+    const after = clientY >= rect.top + rect.height / 2;
+    fieldDragState.targetSectionId = target.sec.id;
+    fieldDragState.targetIndex = target.idx + (after ? 1 : 0);
+    targetEl.classList.add(after ? "field-drop-after" : "field-drop-before");
+    return;
+  }
+
+  // Si el puntero está sobre el espacio libre de una sección, el destino
+  // es el final de su array (también permite soltar en secciones vacías).
+  const sectionEl = hit.closest("[data-section]");
+  if (!sectionEl || !panel.contains(sectionEl)) return;
+  const targetSec = getSection(form, sectionEl.dataset.section);
+  if (!targetSec) return;
+  fieldDragState.targetSectionId = targetSec.id;
+  fieldDragState.targetIndex = targetSec.fields.length;
+  sectionEl.classList.add("field-drop-at-end");
+}
+
+function wireFieldDragAndDrop(panel, form) {
+  if (!fieldDragEnabled()) return;
+
+  panel.querySelectorAll("[data-fld-drag]").forEach(handle => {
+    handle.addEventListener("pointerdown", e => {
+      if (e.button !== 0 || !fieldDragEnabled()) return;
+      const sourceEl = handle.closest("[data-field]");
+      if (!sourceEl) return;
+      e.preventDefault();
+      fieldDragState.fieldId = handle.dataset.fldDrag;
+      fieldDragState.pointerId = e.pointerId;
+      fieldDragState.sourceEl = sourceEl;
+      fieldDragState.handleEl = handle;
+      handle.setPointerCapture(e.pointerId);
+      handle.classList.add("is-pressed");
+      sourceEl.classList.add("field-dragging");
+      document.body.classList.add("field-pointer-dragging");
+      updateFieldPointerTarget(panel, form, e.clientX, e.clientY);
+    });
+
+    handle.addEventListener("pointermove", e => {
+      if (fieldDragState.pointerId !== e.pointerId) return;
+      e.preventDefault();
+      updateFieldPointerTarget(panel, form, e.clientX, e.clientY);
+    });
+
+    const finish = (e, commit) => {
+      if (fieldDragState.pointerId !== e.pointerId) return;
+      const fieldId = fieldDragState.fieldId;
+      const targetSectionId = fieldDragState.targetSectionId;
+      const targetIndex = fieldDragState.targetIndex;
+      if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+      resetFieldPointerDrag(panel);
+      if (commit && fieldId && targetSectionId && targetIndex >= 0) {
+        reorderField(form, fieldId, targetSectionId, targetIndex);
+      }
+    };
+
+    handle.addEventListener("pointerup", e => finish(e, true));
+    handle.addEventListener("pointercancel", e => finish(e, false));
+    handle.addEventListener("lostpointercapture", e => {
+      if (fieldDragState.pointerId === e.pointerId) resetFieldPointerDrag(panel);
+    });
+  });
 }
 
 function wireFormEvents(inst, form) {
@@ -2871,6 +3008,10 @@ function wireFormEvents(inst, form) {
   }));
   panel.querySelectorAll("[data-fld-del]").forEach(b => b.addEventListener("click", () =>
     deleteField(form, b.dataset.fldDel)));
+
+  // Se conecta después de cada render, sobre los nodos de campo recién
+  // creados. Al soltar se llama al mismo reorderField que usan ↑ y ↓.
+  wireFieldDragAndDrop(panel, form);
 }
 
 // Si cambia el campo del que dependen otros (ej. mapa -> POIs),
@@ -3208,6 +3349,27 @@ function moveSection(form, secId, dir) {
   scheduleSave();
 }
 
+// Mutación única de orden para botones y drag-and-drop. targetIndex es una
+// posición de inserción en el array destino antes de retirar el campo origen.
+// La posición en section.fields es el índice canónico; no hay un segundo
+// atributo order que pueda quedar desincronizado.
+function reorderField(form, fieldId, targetSectionId, targetIndex) {
+  const found = getField(form, fieldId);
+  const targetSec = getSection(form, targetSectionId);
+  if (!found || !targetSec) return false;
+  const { sec, idx } = found;
+  const requestedIndex = Number(targetIndex);
+  if (!Number.isInteger(requestedIndex)) return false;
+  let to = Math.max(0, Math.min(requestedIndex, targetSec.fields.length));
+  if (sec === targetSec && idx < to) to--;
+  if (sec === targetSec && idx === to) return false;
+  const [field] = sec.fields.splice(idx, 1);
+  targetSec.fields.splice(to, 0, field);
+  renderForm();
+  scheduleSave();
+  return true;
+}
+
 // Mueve el campo dentro de su sección; en los bordes salta a la
 // sección vecina, así el orden del output es totalmente libre.
 function moveField(form, fieldId, dir) {
@@ -3216,18 +3378,14 @@ function moveField(form, fieldId, dir) {
   const { sec, idx } = found;
   const to = idx + dir;
   if (to >= 0 && to < sec.fields.length) {
-    const [f] = sec.fields.splice(idx, 1);
-    sec.fields.splice(to, 0, f);
-  } else {
-    const sIdx = form.sections.indexOf(sec);
-    const neighbor = form.sections[sIdx + dir];
-    if (!neighbor) return;
-    const [f] = sec.fields.splice(idx, 1);
-    if (dir < 0) neighbor.fields.push(f);
-    else neighbor.fields.unshift(f);
+    // Al bajar, la posición de inserción está después del vecino.
+    reorderField(form, fieldId, sec.id, dir > 0 ? to + 1 : to);
+    return;
   }
-  renderForm();
-  scheduleSave();
+  const sIdx = form.sections.indexOf(sec);
+  const neighbor = form.sections[sIdx + dir];
+  if (!neighbor) return;
+  reorderField(form, fieldId, neighbor.id, dir < 0 ? neighbor.fields.length : 0);
 }
 
 // Referencias de campo usadas realmente por una expresión, incluyendo el
