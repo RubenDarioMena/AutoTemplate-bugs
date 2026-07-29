@@ -1,8 +1,8 @@
 # Bugs Template Tool — Design Document
 
-Status: DRAFT v0.1
+Status: ACTIVE v0.6 — historical decisions below are retained; the current implementation notes take precedence where they differ.
 Author: Hermes Agent (in collaboration with Rubén)
-Last update: 2026-07-01
+Last update: 2026-07-29
 
 ---
 
@@ -24,6 +24,21 @@ The tool runs entirely in the browser, reads/writes files from the
 local share folder, and requires NO installation, NO server, NO
 network calls, NO third-party runtime libraries.
 
+### Current implementation snapshot (2026-07-29)
+
+`bug_tool.html` is the canonical self-contained application. Its form
+schema, data lists, validation rules and initial configuration are embedded
+in `#vanillaConfig`; browser-local edits are stored in `localStorage` until
+the user exports the tool or a CSV. The schema supports text, textarea,
+autocomplete, keywords, checklist, checkbox and mirror fields; dependent
+lists form an arbitrary tree (for example Region → Map → POI).
+
+The monolith is intentionally kept as one distributable HTML file. Its
+top-level blocks are delimited with `MONOLITH:SECTION <name> START/END`.
+`Directorio-Monolito.MD` is the authoritative navigation and dependency
+map for those blocks, and must be updated in the same task as every
+structural change to the monolith.
+
 ---
 
 ## 2. Distribution & Security Model
@@ -35,13 +50,15 @@ A single shared network folder contains:
   /Bugs-template/
     bug_tool.html              # the monolith (self-contained)
     bug_data.csv               # source of truth for lists & rules
-    bug_session.json           # optional, auto-saved session state
+    Directorio-Monolito.MD      # map of sections and information flow
+    AGENTS.md                   # maintenance instructions for agents
+    PROGRESS.md                 # current state and change log
     README.md                  # short usage instructions
 
 Testers and DB editors open `bug_tool.html` by double-click.
-The HTML loads `bug_data.csv` from the same folder (via a manual
-"Load" button pointing to the share path, or via the standard file
-picker — see § 6 for the loading flow).
+The HTML is ready to use without loading a CSV. `bug_data.csv` and
+`bug_fields.csv` are optional interchange files, loaded only when a user
+explicitly chooses them through the file picker.
 
 ### Security posture (deliberately exaggerated)
 
@@ -51,15 +68,13 @@ picker — see § 6 for the loading flow).
   * No third-party libraries. The CSV parser, the validator, and
     the keyword overlap checker are all written in plain JS in
     <script> tags inside the HTML.
-  * No persistent storage outside what the user explicitly saves
-    to disk (download as file).
+  * Working configuration and instances persist in browser `localStorage`.
+    They remain local to that browser and are never sent over the network.
   * No telemetry, no analytics, no error reporting to a server.
-  * The only file the HTML reads automatically is `bug_data.csv`
-    in the same folder as itself (resolved via a relative file://
-    fetch when allowed by the browser; otherwise via a file picker
-    that defaults to the last-used path).
-  * The HTML never writes anywhere unless the user clicks an
-    explicit "Save" or "Download" button.
+  * Files are read only after an explicit picker selection.
+  * Export actions open the browser's native “save as” chooser when the
+    File System Access API is available, so the user chooses the filename
+    and location. Browsers without that API use their normal download flow.
 
 ### Why this is acceptable to the team
 
@@ -134,6 +149,15 @@ Self-contained: opening it on a machine with no internet works.
 Stores the in-progress state of every open bug/regression tab so
 the tester can close the browser and resume. Created/updated only
 when the tester clicks "Save session".
+
+### 3.4 Maintenance documentation
+
+  * `Directorio-Monolito.MD` — exact marker keywords for each top-level
+    block, its inputs, outputs and maintenance touchpoints.
+  * `AGENTS.md` — mandatory working rules for human or AI contributors,
+    including the documentation-sync rule.
+  * `PROGRESS.md` — current state, recent completed work and known next
+    steps. It is a handoff document, not a replacement for Git history.
 
 ---
 

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bug Report Tool</title>
   <style>
+    /* MONOLITH:SECTION styles START */
     /* ================= TOKENS DE TEMA ================= */
     :root, html[data-theme="light"] {
       color-scheme: light;
@@ -1345,7 +1346,9 @@
 
     /* ---------- Toggle de tema ---------- */
     #themeToggleBtn { white-space: nowrap; }
+    /* MONOLITH:SECTION styles END */
   </style>
+  <!-- MONOLITH:SECTION theme-bootstrap START -->
   <script>
     (function () {
       var KEY = "bugtool_theme_v1";
@@ -1369,8 +1372,10 @@
       });
     })();
   </script>
+  <!-- MONOLITH:SECTION theme-bootstrap END -->
 </head>
 <body>
+<!-- MONOLITH:SECTION app-shell START -->
 
   <!-- ============ BARRA SUPERIOR ============ -->
   <div class="top-tabs" id="topTabs">
@@ -1499,6 +1504,7 @@
   <input type="file" id="dataCsvInput" accept=".csv,text/csv" style="display:none" />
   <input type="file" id="fieldsCsvInput" accept=".csv,text/csv" style="display:none" />
   <input type="file" id="sessionFileInput" accept=".json,application/json" style="display:none" />
+<!-- MONOLITH:SECTION app-shell END -->
 
 <!-- ================================================================
      CONFIG VANILLA (fuente de verdad embebida)
@@ -1510,6 +1516,7 @@
      El equipo de Database puede editarlo aquí a mano si lo prefiere,
      pero lo normal es editarlo desde la propia herramienta o via CSV.
      ================================================================ -->
+<!-- MONOLITH:SECTION vanilla-config START -->
 <script type="application/json" id="vanillaConfig">
 {
   "version": 2,
@@ -1707,10 +1714,12 @@
   }
 }
 </script>
+<!-- MONOLITH:SECTION vanilla-config END -->
 
 <script>
 "use strict";
 
+/* MONOLITH:SECTION script-catalog START */
 /* ================================================================
    BUG REPORT TOOL v2 — schema-driven
    ================================================================
@@ -1734,7 +1743,9 @@
     [17] Sesión (guardar/cargar archivo), modales, banner, menús
     [18] Boot
    ================================================================ */
+/* MONOLITH:SECTION script-catalog END */
 
+/* MONOLITH:SECTION 01-constants START */
 /* ================================================================
    [1] CAPTURA PRÍSTINA Y CONSTANTES
    ================================================================
@@ -1803,6 +1814,8 @@ const TILE_SEVERITIES = [
 // Color por defecto sugerido según la severidad al crear un tile nuevo.
 const TILE_SEV_COLOR = { error: "red", warn: "amber", info: "blue" };
 
+/* MONOLITH:SECTION 01-constants END */
+/* MONOLITH:SECTION 02-utilities START */
 /* ================================================================
    [2] UTILIDADES GENERALES
    ================================================================ */
@@ -1856,7 +1869,7 @@ function isoStamp() {
   return d.toISOString().replace(/[:.]/g, "-").slice(0, 19);
 }
 
-function downloadFile(name, content) {
+function fallbackDownloadFile(name, content) {
   const blob = new Blob([content || ""], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -1864,6 +1877,44 @@ function downloadFile(name, content) {
   document.body.appendChild(a); a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function downloadFile(name, content) {
+  const text = content || "";
+  const ext = String(name).toLowerCase().split(".").pop();
+  const fileTypes = {
+    csv: { description: "Archivo CSV", accept: { "text/csv": [".csv"] } },
+    html: { description: "Documento HTML", accept: { "text/html": [".html"] } },
+    json: { description: "Archivo JSON", accept: { "application/json": [".json"] } },
+    md: { description: "Documento Markdown", accept: { "text/markdown": [".md"] } },
+    txt: { description: "Archivo de texto", accept: { "text/plain": [".txt"] } }
+  };
+
+  // File System Access API: permite elegir carpeta y nombre desde un gesto
+  // explícito del usuario. El enlace de descarga queda como respaldo para
+  // navegadores que todavía no ofrecen el selector nativo.
+  if (typeof window.showSaveFilePicker !== "function") {
+    fallbackDownloadFile(name, text);
+    flashBanner(`${name} descargado. Este navegador no permite elegir ubicación desde la herramienta.`);
+    return true;
+  }
+
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: name,
+      ...(fileTypes[ext] ? { types: [fileTypes[ext]] } : {})
+    });
+    const writable = await handle.createWritable();
+    await writable.write(text);
+    await writable.close();
+    flashBanner(`${name} guardado correctamente.`);
+    return true;
+  } catch (err) {
+    // Cancelar el diálogo no es un error y no debe mostrar una alerta.
+    if (err && err.name === "AbortError") return false;
+    flashBanner(`No se pudo guardar ${name}: ${err && err.message ? err.message : "error desconocido"}.`, true);
+    return false;
+  }
 }
 
 function copyToClipboard(text) {
@@ -1880,6 +1931,8 @@ function copyToClipboard(text) {
   });
 }
 
+/* MONOLITH:SECTION 02-utilities END */
+/* MONOLITH:SECTION 03-config START */
 /* ================================================================
    [3] CONFIG (VANILLA EMBEBIDA + COPIA LOCAL EDITABLE)
    ================================================================
@@ -2058,6 +2111,8 @@ function updateConfigChip() {
   $("configChip").classList.toggle("visible", configIsDirty());
 }
 
+/* MONOLITH:SECTION 03-config END */
+/* MONOLITH:SECTION 04-schema-helpers START */
 /* ================================================================
    [4] HELPERS DE SCHEMA
    ================================================================ */
@@ -2187,6 +2242,8 @@ function optionsForField(field, inst) {
   return config.data.lists[src] || [];
 }
 
+/* MONOLITH:SECTION 04-schema-helpers END */
+/* MONOLITH:SECTION 05-instances-persistence START */
 /* ================================================================
    [5] INSTANCIAS Y PERSISTENCIA
    ================================================================ */
@@ -2373,6 +2430,8 @@ function duplicateInstance(id) {
   scheduleSave();
 }
 
+/* MONOLITH:SECTION 05-instances-persistence END */
+/* MONOLITH:SECTION 06-tabs-navigation START */
 /* ================================================================
    [6] RENDER: PESTAÑAS SUPERIORES Y SUB-PESTAÑAS
    ================================================================ */
@@ -2506,6 +2565,8 @@ function refreshAll() {
   updateConfigChip();
 }
 
+/* MONOLITH:SECTION 06-tabs-navigation END */
+/* MONOLITH:SECTION 07-form-rendering START */
 /* ================================================================
    [7] RENDER: FORMULARIO (NORMAL + MODO EDICIÓN)
    ================================================================
@@ -2828,6 +2889,8 @@ function clearDependents(form, name, inst, panel) {
   });
 }
 
+/* MONOLITH:SECTION 07-form-rendering END */
+/* MONOLITH:SECTION 08-field-widgets START */
 /* ================================================================
    [8] WIDGETS: AUTOCOMPLETE Y PALABRAS CLAVE
    ================================================================
@@ -3130,6 +3193,8 @@ function wireKeywords(chips, inst) {
   bindRemoves();
 }
 
+/* MONOLITH:SECTION 08-field-widgets END */
+/* MONOLITH:SECTION 09-schema-editor START */
 /* ================================================================
    [9] EDICIÓN DE SCHEMA: SECCIONES Y CAMPOS
    ================================================================ */
@@ -3761,6 +3826,8 @@ function showFieldEditor(form, sec, field) {
   });
 }
 
+/* MONOLITH:SECTION 09-schema-editor END */
+/* MONOLITH:SECTION 10-validation-rules-tiles START */
 /* ================================================================
    [10] VALIDACIÓN, CONDICIONES ENTRE CAMPOS Y TILES DE ESTADO
    ================================================================
@@ -4794,6 +4861,8 @@ function wireTileInteractions() {
   panel.addEventListener("focusout", leave);
 }
 
+/* MONOLITH:SECTION 10-validation-rules-tiles END */
+/* MONOLITH:SECTION 11-output-generator START */
 /* ================================================================
    [11] GENERADOR DE OUTPUT
    ================================================================
@@ -4993,6 +5062,8 @@ function addBtn(container, label, fn, cls) {
   container.appendChild(b);
 }
 
+/* MONOLITH:SECTION 11-output-generator END */
+/* MONOLITH:SECTION 12-media-panel START */
 /* ================================================================
    [12] PANEL DE MEDIA
    ================================================================
@@ -5233,6 +5304,8 @@ function showMediaConfigEditor() {
   });
 }
 
+/* MONOLITH:SECTION 12-media-panel END */
+/* MONOLITH:SECTION 13-data-tab START */
 /* ================================================================
    [13] PESTAÑA DATA
    ================================================================
@@ -5539,6 +5612,8 @@ function addChildList() {
   });
 }
 
+/* MONOLITH:SECTION 13-data-tab END */
+/* MONOLITH:SECTION 14-rules-tab START */
 /* ================================================================
    [14] PESTAÑA RULES
    ================================================================
@@ -6012,6 +6087,8 @@ function renderRulesTab() {
   });
 }
 
+/* MONOLITH:SECTION 14-rules-tab END */
+/* MONOLITH:SECTION 15-csv-io START */
 /* ================================================================
    [15] CSV: bug_data.csv Y bug_fields.csv
    ================================================================ */
@@ -6052,7 +6129,7 @@ function csvTruthy(v) {
 // `childval` (id, padre, hijo), `listlabel` (id→etiqueta) y `rule`.
 // El formato viejo (map/poi/link/linkparent/linkchild) se sigue LEYENDO al
 // importar, igual que el CSV de 3 columnas con "padre :: hijo".
-function exportDataCsv() {
+async function exportDataCsv() {
   const rows = [["category", "key", "value", "child"]];
   Object.entries(config.data.lists).forEach(([k, arr]) =>
     (arr || []).forEach(v => rows.push(["list", k, v, ""])));
@@ -6065,8 +6142,7 @@ function exportDataCsv() {
     if (meta && meta.label && meta.label !== id) rows.push(["listlabel", id, meta.label, ""]);
   });
   Object.entries(config.data.rules).forEach(([k, v]) => rows.push(["rule", k, v, ""]));
-  downloadFile("bug_data.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
-  flashBanner("bug_data.csv descargado. Ponlo en el sharefolder para compartirlo.");
+  await downloadFile("bug_data.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
 }
 
 function importDataCsv(text) {
@@ -6132,7 +6208,7 @@ const SEP_NONE = "NONE";
 //   regexmsg=campo destino · emptyas=valor de la acción
 // (formato viejo op/valor en template/default se sigue leyendo al importar).
 
-function exportFieldsCsv() {
+async function exportFieldsCsv() {
   const rows = [FIELDS_CSV_HEADER.slice()];
   const empty = () => new Array(FIELDS_CSV_HEADER.length).fill("");
   const sepOut = (sep) => sep == null ? "" : (sep === "" ? SEP_NONE : sep);
@@ -6205,8 +6281,7 @@ function exportFieldsCsv() {
       rows.push(tr);
     });
   });
-  downloadFile("bug_fields.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
-  flashBanner("bug_fields.csv descargado. Ponlo en el sharefolder para compartirlo.");
+  await downloadFile("bug_fields.csv", rows.map(r => r.map(csvEscape).join(",")).join("\n"));
 }
 
 function importFieldsCsv(text) {
@@ -6422,6 +6497,8 @@ function importFieldsCsv(text) {
   });
 }
 
+/* MONOLITH:SECTION 15-csv-io END */
+/* MONOLITH:SECTION 16-tool-export START */
 /* ================================================================
    [16] EXPORTAR HERRAMIENTA (HTML AUTOCONTENIDO)
    ================================================================
@@ -6429,7 +6506,7 @@ function importFieldsCsv(text) {
    #vanillaConfig por la config actual (campos + datos + reglas).
    El archivo descargado se pone en el sharefolder y listo: quien lo
    abra tendrá todo integrado, sin cargar ningún CSV. */
-function exportToolHtml() {
+async function exportToolHtml() {
   // JSON.stringify nunca genera la secuencia <\/script porque
   // escapamos "</" — así el bloque no rompe el HTML.
   const json = JSON.stringify(config, null, 2).replace(/<\//g, "<\\/");
@@ -6440,17 +6517,20 @@ function exportToolHtml() {
   const out = PRISTINE_HTML.slice(0, start + marker.length)
             + "\n" + json + "\n"
             + PRISTINE_HTML.slice(end);
-  downloadFile("bug_tool.html", out);
+  const saved = await downloadFile("bug_tool.html", out);
+  if (!saved) return;
   // Lo exportado pasa a ser la nueva "vanilla": ya no hay diferencia
   vanilla = deepClone(config);
   updateConfigChip();
-  flashBanner("bug_tool.html descargado con tu config integrada. Muévelo al sharefolder para distribuirlo.");
+  flashBanner("bug_tool.html guardado con tu config integrada. Ya puedes compartirlo.");
 }
 
+/* MONOLITH:SECTION 16-tool-export END */
+/* MONOLITH:SECTION 17-session-modals-controls START */
 /* ================================================================
    [17] SESIÓN, MODALES, BANNER Y MENÚS
    ================================================================ */
-function saveSessionToFile() {
+async function saveSessionToFile() {
   const snap = {
     exportedAt: new Date().toISOString(),
     config: config,
@@ -6460,7 +6540,7 @@ function saveSessionToFile() {
       activeInstanceId: state.activeInstanceId
     }
   };
-  downloadFile("bug_session_" + isoStamp() + ".json", JSON.stringify(snap, null, 2));
+  await downloadFile("bug_session_" + isoStamp() + ".json", JSON.stringify(snap, null, 2));
 }
 
 function loadSessionFromFile(file) {
@@ -6621,6 +6701,8 @@ function flashBanner(text, isError) {
   bannerTimer = setTimeout(() => b.classList.add("hidden"), isError ? 6000 : 3000);
 }
 
+/* MONOLITH:SECTION 17-session-modals-controls END */
+/* MONOLITH:SECTION 18-boot START */
 /* ================================================================
    [18] BOOT Y CONEXIÓN DE CONTROLES FIJOS
    ================================================================ */
@@ -6806,6 +6888,7 @@ function boot() {
 }
 
 boot();
+/* MONOLITH:SECTION 18-boot END */
 </script>
 </body>
 </html>
