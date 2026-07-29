@@ -672,8 +672,10 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
   * Modo edición (toggle "✎ Editar formulario"): ▲▼ para reordenar;
     en escritorio, la preferencia persistente `state.prefs.dragFields`
     sustituye las flechas de campo por un asa ⠿ con Pointer Events. Durante
-    el gesto sólo mueve un ghost y un placeholder en el DOM; los campos que
-    ceden espacio usan una animación FLIP de 170 ms. Al soltar, ambos caminos mutan
+    el gesto sólo mueve un ghost y un placeholder en el DOM; las filas de 1/2
+    y 1/3 convierten sus columnas vacías en destinos antes de aplicar el destino
+    general de fin de sección. Los campos que ceden espacio usan una animación
+    FLIP de 170 ms. Al soltar, ambos caminos mutan
     `section.fields` mediante la misma función por ID/posición
     (= orden del output), ✎ editor de campo/sección en modal, ✕ con
     confirmación, "+ campo" y "+ Agregar sección".

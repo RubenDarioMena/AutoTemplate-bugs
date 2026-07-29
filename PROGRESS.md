@@ -19,6 +19,7 @@ Estado: activo — herramienta funcional, monolito documentado para mantenimient
 - Pointer Events evita los problemas del DnD nativo bajo `file://`; el origen muestra «Moviendo…», el destino queda marcado y el cursor pasa de mano abierta a cerrada.
 - El checkbox **Arrastrar campos**, situado a la izquierda del grupo «+ Sección / Terminar edición», sustituye ▲▼ por el asa ⠿ para liberar espacio en campos estrechos; su valor persiste en `state.prefs` al salir del modo edición y entre recargas en el mismo navegador.
 - El preview de arrastre usa una tarjeta fantasma, un placeholder «Soltar aquí» que cruza antes/después en el punto medio y animación FLIP de 170 ms para los campos desplazados; `section.fields` sólo cambia al soltar.
+- Las columnas vacías y los gaps horizontales de filas de 1/2 y 1/3 son hitboxes de la propia fila; sólo el espacio exterior conserva el atajo para enviar el campo al final de la sección.
 - Arrastre y botones ▲▼ comparten la misma función de reordenamiento; se sincronizaron `Directorio-Monolito.MD`, `DESIGN.md` y `README.md`.
 
 ### 2026-07-29 — mantenibilidad del monolito

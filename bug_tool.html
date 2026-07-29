@@ -2941,6 +2941,33 @@ function positionFieldGhost(clientX, clientY) {
   ghost.style.top = (clientY - fieldDragState.offsetY) + "px";
 }
 
+// Las filas de medios y tercios ocupan todo el ancho, aunque sus campos no
+// llenen todas las columnas. Convierte esos huecos horizontales en destinos
+// reales para que no caigan por accidente en el fallback de fin de sección.
+function updateFieldGridGapTarget(panel, form, hit, clientX) {
+  const row = hit.closest(".row-2, .row-3");
+  if (!row || !panel.contains(row)) return false;
+  const fields = [...row.children].filter(el =>
+    el !== fieldDragState.sourceEl && el.matches("[data-field]") &&
+    el.getBoundingClientRect().width > 0);
+  if (!fields.length) return false;
+
+  const beforeEl = fields.find(el => {
+    const rect = el.getBoundingClientRect();
+    return clientX < rect.left + rect.width / 2;
+  });
+  const anchorEl = beforeEl || fields[fields.length - 1];
+  const anchor = getField(form, anchorEl.dataset.field);
+  if (!anchor) return false;
+  const targetIndex = anchor.idx + (beforeEl ? 0 : 1);
+  fieldDragState.targetSectionId = anchor.sec.id;
+  fieldDragState.targetIndex = targetIndex;
+  fieldDragState.placeholderEl.dataset.targetSection = anchor.sec.id;
+  fieldDragState.placeholderEl.dataset.targetIndex = String(targetIndex);
+  moveFieldPlaceholder(panel, row, beforeEl || null);
+  return true;
+}
+
 function updateFieldPointerTarget(panel, form, clientX, clientY) {
   clearFieldDropTarget(panel);
   const hit = document.elementFromPoint(clientX, clientY);
@@ -2966,6 +2993,10 @@ function updateFieldPointerTarget(panel, form, clientX, clientY) {
     moveFieldPlaceholder(panel, targetEl.parentNode, after ? targetEl.nextSibling : targetEl);
     return;
   }
+
+  // Un gap entre columnas o a la derecha de una fila incompleta sigue siendo
+  // parte de esa fila. Se resuelve antes que el contenedor de la sección.
+  if (updateFieldGridGapTarget(panel, form, hit, clientX)) return;
 
   // Si el puntero está sobre el espacio libre de una sección, el destino
   // es el final de su array (también permite soltar en secciones vacías).
