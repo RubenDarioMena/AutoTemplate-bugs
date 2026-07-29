@@ -33,8 +33,8 @@ dependencias.
 
   1. Botón **"✎ Editar formulario"** (arriba del formulario).
   2. Aparecen los controles en cada sección y campo:
-     - **▲ ▼** cambia el orden (el orden visual ES el orden del output)
-     - En computadora también puedes mantener presionada el asa **⠿** y arrastrar el campo antes o después de otro
+     - **▲ ▼** cambia el orden (el orden visual ES el orden del output).
+     - En computadora, marca **Arrastrar campos** para sustituir las flechas de cada campo por el asa **⠿**. Mientras arrastras, una tarjeta sigue el puntero y el placeholder «Soltar aquí» muestra la posición final antes de cambiar el reporte. La elección se conserva al salir y volver al modo edición.
      - **✎** edita etiqueta, tipo, plantilla de salida, validación...
      - **✕** borra (siempre pide confirmación)
      - **+ campo** / **+ Agregar sección** para crecer el formulario
