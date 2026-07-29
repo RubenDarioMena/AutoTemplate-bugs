@@ -49,58 +49,57 @@ list,priorities,P0
 list,priorities,P1
 list,priorities,P2
 list,priorities,P3
-map,-,Highrise
-map,-,Terminal
-map,-,Scrapyard
-map,-,Rust
-map,-,Atlas
-map,-,Boneyard
-map,-,Firing Range
-map,-,Nuketown
-map,-,ExampleMap_01
-map,-,ExampleMap_02
-poi,Highrise,Office A
-poi,Highrise,Office B
-poi,Highrise,Helipad
-poi,Highrise,Roof East
-poi,Highrise,Roof West
-poi,Highrise,Stairwell
-poi,Highrise,Server Room
-poi,Terminal,Check-in
-poi,Terminal,Gate 7
-poi,Terminal,Gate 12
-poi,Terminal,Baggage Claim
-poi,Terminal,Security
-poi,Terminal,Runway
-poi,Scrapyard,Container A
-poi,Scrapyard,Container B
-poi,Scrapyard,Crane Top
-poi,Scrapyard,Office
-poi,Scrapyard,Yard Center
-poi,Rust,Refinery
-poi,Rust,Storage Tank 1
-poi,Rust,Storage Tank 2
-poi,Rust,Pipe Bridge
-poi,Rust,Control Room
-poi,Atlas,Mech Bay
-poi,Atlas,Command Center
-poi,Atlas,Hangar
-poi,Boneyard,Hangar
-poi,Boneyard,Tower
-poi,Boneyard,Runway Edge
-poi,Firing Range,Range A
-poi,Firing Range,Range B
-poi,Firing Range,Center Lane
-poi,Nuketown,House Yellow
-poi,Nuketown,House Green
-poi,Nuketown,Backyard
-poi,Nuketown,Bus
-poi,ExampleMap_01,POI A
-poi,ExampleMap_01,POI B
-poi,ExampleMap_01,POI C
-poi,ExampleMap_02,POI X
-poi,ExampleMap_02,POI Y
-poi,ExampleMap_02,POI Z
+map,-,Shurima Rift
+map,-,Piltover Foundry
+map,-,Zaun Undercity
+map,-,Freljord Bastion
+map,-,Noxian Front
+map,-,Ionia Canopy
+map,-,Demacian Citadel
+map,-,Shadow Isles
+map,-,Targon Ascent
+map,-,Void Breach
+poi,Shurima Rift,Sunscar Gate
+poi,Shurima Rift,Ember Dunes
+poi,Shurima Rift,Obelisk Yard
+poi,Shurima Rift,Buried Vault
+poi,Shurima Rift,Glass Ridge
+poi,Shurima Rift,Scorpion Pass
+poi,Shurima Rift,Sunken Relay
+poi,Piltover Foundry,Hexgate Plaza
+poi,Piltover Foundry,Clockwork Gate
+poi,Piltover Foundry,Progress Hall
+poi,Piltover Foundry,Chem-Lab Checkpoint
+poi,Piltover Foundry,Enforcer Depot
+poi,Piltover Foundry,Railway Span
+poi,Zaun Undercity,Pipeworks
+poi,Zaun Undercity,Sludge Tanks
+poi,Zaun Undercity,Dripstone Market
+poi,Zaun Undercity,Lost Workshop
+poi,Zaun Undercity,Smogway Center
+poi,Freljord Bastion,Iceforge
+poi,Freljord Bastion,Howling Storehouse
+poi,Freljord Bastion,Frostpipe Bridge
+poi,Freljord Bastion,Watchfire
+poi,Freljord Bastion,Sejuani's Rise
+poi,Noxian Front,Warcamp
+poi,Noxian Front,Legion Command
+poi,Noxian Front,Bloodgate
+poi,Ionia Canopy,Spirit Shrine
+poi,Ionia Canopy,Lotus Walk
+poi,Ionia Canopy,Monastery Roof
+poi,Demacian Citadel,Grand Armory
+poi,Demacian Citadel,Marble Rampart
+poi,Demacian Citadel,Lightwell
+poi,Shadow Isles,Black Mist Pier
+poi,Shadow Isles,Wraithwood
+poi,Shadow Isles,Thresh's Lantern
+poi,Targon Ascent,Stargazer Camp
+poi,Targon Ascent,Sunspire Trail
+poi,Targon Ascent,Celestial Ledge
+poi,Void Breach,Chasm Mouth
+poi,Void Breach,Watcher Nest
+poi,Void Breach,Nullstone Core
 tier,T1,Gameplay
 tier,T2,Multiplayer
 tier,T3,Campaign
