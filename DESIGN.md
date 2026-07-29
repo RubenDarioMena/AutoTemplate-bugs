@@ -669,7 +669,12 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
 
 ## UI nueva respecto a v1
 
-  * Modo edición (toggle "✎ Editar formulario"): ▲▼ para reordenar
+  * Modo edición (toggle "✎ Editar formulario"): ▲▼ para reordenar;
+    en escritorio, la preferencia persistente `state.prefs.dragFields`
+    sustituye las flechas de campo por un asa ⠿ con Pointer Events. Durante
+    el gesto sólo mueve un ghost y un placeholder en el DOM; los campos que
+    ceden espacio usan una animación FLIP de 170 ms. Al soltar, ambos caminos mutan
+    `section.fields` mediante la misma función por ID/posición
     (= orden del output), ✎ editor de campo/sección en modal, ✕ con
     confirmación, "+ campo" y "+ Agregar sección".
   * Dropdowns: fila "+ Agregar «...»" para sumar opciones y ✕ por

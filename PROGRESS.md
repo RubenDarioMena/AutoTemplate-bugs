@@ -12,6 +12,15 @@ Estado: activo — herramienta funcional, monolito documentado para mantenimient
 
 ## Trabajo completado recientemente
 
+### 2026-07-29 — reordenamiento de campos por drag-and-drop
+
+- En modo edición de escritorio, los campos se pueden arrastrar desde el asa ⠿ y soltar antes o después de otro campo, incluso entre secciones vacías.
+- El ID estable del campo identifica el arrastre y `section.fields` permanece como única fuente de verdad del orden.
+- Pointer Events evita los problemas del DnD nativo bajo `file://`; el origen muestra «Moviendo…», el destino queda marcado y el cursor pasa de mano abierta a cerrada.
+- El checkbox **Arrastrar campos**, situado a la izquierda del grupo «+ Sección / Terminar edición», sustituye ▲▼ por el asa ⠿ para liberar espacio en campos estrechos; su valor persiste en `state.prefs` al salir del modo edición y entre recargas en el mismo navegador.
+- El preview de arrastre usa una tarjeta fantasma, un placeholder «Soltar aquí» que cruza antes/después en el punto medio y animación FLIP de 170 ms para los campos desplazados; `section.fields` sólo cambia al soltar.
+- Arrastre y botones ▲▼ comparten la misma función de reordenamiento; se sincronizaron `Directorio-Monolito.MD`, `DESIGN.md` y `README.md`.
+
 ### 2026-07-29 — mantenibilidad del monolito
 
 - Se añadieron límites `START/END` para estilos, interfaz, configuración embebida, catálogo de script y los 18 bloques funcionales principales.
