@@ -784,6 +784,9 @@
     #formPanel .field.ft-checkbox     { border-color: var(--tile-amber-br);  background: linear-gradient(45deg, var(--tile-amber-bg) 0%,  transparent 30%); }
     #formPanel .field.ft-checklist    { border-color: var(--tile-green-br);  background: linear-gradient(45deg, var(--tile-green-bg) 0%,  transparent 30%); }
     #formPanel .field.ft-mirror       { border-color: var(--tile-slate-br);  background: linear-gradient(45deg, var(--tile-slate-bg) 0%,  transparent 30%); }
+    #formPanel .field.ft-clock        { border-color: var(--tile-cyan-br);   background: linear-gradient(45deg, var(--tile-cyan-bg) 0%,   transparent 30%); }
+    #formPanel .field.ft-date         { border-color: var(--tile-violet-br); background: linear-gradient(45deg, var(--tile-violet-bg) 0%, transparent 30%); }
+    #formPanel input.system-value { cursor: default; opacity: .82; }
     /* El rojo de alerta se impone al color del tipo. */
     #formPanel .field.invalid,
     #formPanel .field.rule-flag {
@@ -1847,8 +1850,78 @@ const FIELD_TYPES = [
   { id: "keywords",     label: "Palabras clave (chips)" },
   { id: "checklist",    label: "Checklist (título + varias casillas)" },
   { id: "checkbox",     label: "Casilla sí/no (para RULES, sin output)" },
-  { id: "mirror",       label: "Copia de otro campo (solo output)" }
+  { id: "mirror",       label: "Copia de otro campo (solo output)" },
+  { id: "clock",        label: "Reloj del sistema" },
+  { id: "date",         label: "Fecha del sistema" }
 ];
+const SYSTEM_FIELD_FORMATS = {
+  clock: [
+    ["24h", "24 horas — 13:00"],
+    ["12h-am-pm", "12 horas + AM/PM — 1:00 PM"],
+    ["12h-am-pm-dots", "12 horas + A.M./P.M. — 1:00 P.M."]
+  ],
+  date: [
+    ["dmy-4", "Día/mes/año — 05/08/2026"],
+    ["dmy-2", "Día/mes/año corto — 05/08/26"],
+    ["mdy-4", "Mes/día/año — 08/05/2026"],
+    ["en-long", "Inglés largo — September 2, 2026"],
+    ["en-weekday-long", "Inglés con día — Thursday, September 2, 2026"],
+    ["es-long", "Español largo — Jueves 5 de agosto del 2026"]
+  ]
+};
+
+function isSystemField(field) {
+  return !!field && (field.type === "clock" || field.type === "date");
+}
+
+function defaultSystemFormat(type) {
+  return type === "date" ? "dmy-4" : "24h";
+}
+
+function isKnownSystemFormat(type, format) {
+  return (SYSTEM_FIELD_FORMATS[type] || []).some(([id]) => id === format);
+}
+
+// Formatos emitidos brevemente por la primera versión de reloj. Se leen
+// como sus equivalentes de 12 horas para no romper configs o CSV ya creados.
+function normalizeSystemFormat(type, format) {
+  if (type === "clock" && format === "24h-am-pm") return "12h-am-pm";
+  if (type === "clock" && format === "24h-am-pm-dots") return "12h-am-pm-dots";
+  return isKnownSystemFormat(type, format) ? format : defaultSystemFormat(type);
+}
+
+function systemFormatOptionsHtml(type, selected) {
+  const format = normalizeSystemFormat(type, selected);
+  return (SYSTEM_FIELD_FORMATS[type] || []).map(([id, label]) =>
+    `<option value="${id}"${id === format ? " selected" : ""}>${label}</option>`).join("");
+}
+
+function formatSystemFieldValue(field, now) {
+  const date = now || new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const hour24 = pad(date.getHours());
+  const minute = pad(date.getMinutes());
+  const meridiem = date.getHours() < 12 ? "AM" : "PM";
+  const format = normalizeSystemFormat(field.type, field.format);
+  if (field.type === "clock") {
+    if (format === "12h-am-pm") return `${date.getHours() % 12 || 12}:${minute} ${meridiem}`;
+    if (format === "12h-am-pm-dots") return `${date.getHours() % 12 || 12}:${minute} ${meridiem === "AM" ? "A.M." : "P.M."}`;
+    return `${hour24}:${minute}`;
+  }
+  const day = pad(date.getDate());
+  const month = pad(date.getMonth() + 1);
+  const year = date.getFullYear();
+  if (format === "dmy-2") return `${day}/${month}/${String(year).slice(-2)}`;
+  if (format === "mdy-4") return `${month}/${day}/${year}`;
+  if (format === "en-long") return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(date);
+  if (format === "en-weekday-long") return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(date);
+  if (format === "es-long") {
+    const weekday = new Intl.DateTimeFormat("es-MX", { weekday: "long" }).format(date);
+    const monthName = new Intl.DateTimeFormat("es-MX", { month: "long" }).format(date);
+    return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${date.getDate()} de ${monthName} del ${year}`;
+  }
+  return `${day}/${month}/${year}`;
+}
 const FIELD_SIZES = [
   { id: "full",  label: "Ancho completo" },
   { id: "half",  label: "1/2 de fila" },
@@ -2342,6 +2415,7 @@ function makeInstance(formId) {
   allFields(form).forEach(({ field }) => {
     if (field.type === "mirror") return;
     if (field.type === "keywords" || field.type === "checklist") values[field.id] = [];
+    else if (isSystemField(field)) values[field.id] = formatSystemFieldValue(field);
     else values[field.id] = resolveRef(field.default || "");
   });
   return {
@@ -2367,7 +2441,9 @@ function ensureInstanceFields(inst) {
     if (field.type === "mirror") return;
     const isArrayField = field.type === "keywords" || field.type === "checklist";
     if (inst.values[field.id] === undefined) {
-      inst.values[field.id] = isArrayField ? [] : resolveRef(field.default || "");
+      inst.values[field.id] = isArrayField ? []
+        : isSystemField(field) ? formatSystemFieldValue(field)
+        : resolveRef(field.default || "");
     }
     if (isArrayField && !Array.isArray(inst.values[field.id])) {
       inst.values[field.id] = [];
@@ -2376,6 +2452,28 @@ function ensureInstanceFields(inst) {
   if (inst.ticketKey === undefined) inst.ticketKey = "";
   if (!Array.isArray(inst.media)) inst.media = [defaultMediaType(form)];
   if (!inst.errors) inst.errors = {};
+}
+
+// Reloj y fecha se toman de la hora local del equipo. Se refrescan al
+// regenerar el output y justo antes de copiar, sin convertirlos en campos
+// editables para el tester.
+function refreshSystemFieldValues(inst) {
+  const form = inst && getForm(inst.formId);
+  if (!form) return false;
+  const now = new Date();
+  let changed = false;
+  allFields(form).forEach(({ field }) => {
+    if (!isSystemField(field)) return;
+    const value = formatSystemFieldValue(field, now);
+    if (inst.values[field.id] !== value) {
+      inst.values[field.id] = value;
+      changed = true;
+    }
+    const input = [...document.querySelectorAll("#formPanel [data-system-value]")]
+      .find(el => el.dataset.systemValue === field.id);
+    if (input) input.value = value;
+  });
+  return changed;
 }
 
 function getActiveInstance() {
@@ -2816,6 +2914,14 @@ function fieldHtml(field, inst, fx) {
     return `<div class="field checklist-field${invalid}${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
       <div class="checklist${field.checkLayout === "newline" ? " ck-col" : ""}" data-ck-group="${escapeHtml(field.id)}">${boxes}${allBox}</div>
+      ${errHtml}${helpHtml}
+    </div>`;
+  }
+  if (isSystemField(field)) {
+    const systemLabel = field.type === "clock" ? "Hora local de la PC" : "Fecha local de la PC";
+    return `<div class="field system-field${invalid}${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
+      ${labelHtml}
+      <input type="text" class="system-value" data-system-value="${escapeHtml(field.id)}" value="${escapeHtml(val)}" readonly aria-label="${systemLabel}" title="${systemLabel}; se actualiza al modificar campos o copiar" />
       ${errHtml}${helpHtml}
     </div>`;
   }
@@ -3817,7 +3923,12 @@ function showFieldEditor(form, sec, field) {
         <label>Tipo de campo</label>
         <select id="fe_type">${typeOpts}</select>
       </div>
-      <div data-cbhide>
+      <div data-systemshow>
+        <label>Formato</label>
+        <select id="fe_format"></select>
+        <div class="field-help">El valor se toma de la fecha y hora local de la PC.</div>
+      </div>
+      <div data-cbhide data-systemhide>
         <label>Fuente (para dropdown, checklist o copia)</label>
         <select id="fe_source"></select>
         <div class="field-help">Dropdown/checklist: qué lista de DATA muestra. Copia: qué campo copia.</div>
@@ -3826,12 +3937,12 @@ function showFieldEditor(form, sec, field) {
         <label>Tamaño en el formulario</label>
         <select id="fe_size">${sizeOpts}</select>
       </div>
-      <div data-cbhide data-ckhide>
+      <div data-cbhide data-ckhide data-systemhide>
         <label>Valor por defecto</label>
         <input type="text" id="fe_default" value="${escapeHtml(f.default || "")}" />
         <div class="field-help">Acepta @regla, p. ej. @default_tz</div>
       </div>
-      <div data-cbhide data-ckhide>
+      <div data-cbhide data-ckhide data-systemhide>
         <label>Renglones (solo texto multilínea)</label>
         <input type="number" id="fe_rows" value="${f.rows || 3}" min="1" max="20" />
       </div>
@@ -3960,6 +4071,7 @@ function showFieldEditor(form, sec, field) {
       // La fuente depende del tipo: listas para dropdown, campos para copia.
       const typeSel = $("fe_type");
       const srcSel = $("fe_source");
+      const formatSel = $("fe_format");
       const labelInp = $("fe_label");
       const idInp = $("fe_id");
       if (isNew) {
@@ -3983,8 +4095,16 @@ function showFieldEditor(form, sec, field) {
           ? opts.map(o => `<option value="${escapeHtml(o.value)}"${f.source === o.value ? " selected" : ""}>${escapeHtml(o.label)}</option>`).join("")
           : `<option value="">(no aplica)</option>`;
       };
+      const fillSystemFormats = () => {
+        const t = typeSel.value;
+        formatSel.innerHTML = isSystemField({ type: t })
+          ? systemFormatOptionsHtml(t, f.format)
+          : "";
+      };
       typeSel.addEventListener("change", fillSources);
+      typeSel.addEventListener("change", fillSystemFormats);
       fillSources();
+      fillSystemFormats();
       // Casilla sí/no: nada de plantillas, separadores ni validación de
       // texto. Se esconden esas opciones para simplificar la experiencia.
       // El encabezado por línea solo aplica si perLine está activo.
@@ -4005,16 +4125,23 @@ function showFieldEditor(form, sec, field) {
       const updateTypeUi = () => {
         const isCb = typeSel.value === "checkbox";
         const isCk = typeSel.value === "checklist";
+        const isSystem = isSystemField({ type: typeSel.value });
         $("modalBody").querySelectorAll("[data-cbhide]").forEach(el => {
           el.style.display = isCb ? "none" : "";
         });
         // La checklist esconde lo que no aplica (regex, chips, separadores...)
         // y muestra su propia sección de opciones.
         $("modalBody").querySelectorAll("[data-ckhide]").forEach(el => {
-          if (isCk) el.style.display = "none";
+          el.style.display = isCk ? "none" : "";
         });
         $("modalBody").querySelectorAll("[data-ckshow]").forEach(el => {
           el.style.display = isCk ? "" : "none";
+        });
+        $("modalBody").querySelectorAll("[data-systemhide]").forEach(el => {
+          el.style.display = isSystem ? "none" : "";
+        });
+        $("modalBody").querySelectorAll("[data-systemshow]").forEach(el => {
+          el.style.display = isSystem ? "" : "none";
         });
         $("fe_perLineHeaderWrap").style.display = (!isCb && !isCk && perLineChk.checked) ? "" : "none";
         updateChecklistSourceUi();
@@ -4072,6 +4199,7 @@ function showFieldEditor(form, sec, field) {
       setOrDel("source", $("fe_source").disabled ? "" : $("fe_source").value, "");
       setOrDel("default", $("fe_default").value, "");
       setOrDel("rows", parseInt($("fe_rows").value, 10) || 3, 3);
+      setOrDel("format", $("fe_format").value, defaultSystemFormat(target.type));
       setOrDel("help", $("fe_help").value.trim(), "");
       setOrDel("template", $("fe_template").value, "{value}");
       // Separador: el checkbox "pegado" fuerza sep = "" (sin separador);
@@ -4127,6 +4255,15 @@ function showFieldEditor(form, sec, field) {
       } else {
         ["options", "checkTitle", "checkSep", "checkLayout", "allOption", "allLabel",
          "allOutput", "allDependency", "allValue"].forEach(k => delete target[k]);
+      }
+      if (isSystemField(target)) {
+        // Son valores siempre disponibles y generados por el navegador; no
+        // admiten fuente, default, validación ni tratamiento multilínea.
+        ["source", "default", "rows", "emptyAs", "omitValue", "perLine",
+         "perLineHeader", "required", "regex", "regexMsg", "kwCount", "kwOverlap"]
+          .forEach(k => delete target[k]);
+      } else {
+        delete target.format;
       }
       // Condición de error rápida: vive como regla normal (action=error) en
       // form.rules, visible y editable también en RULES.
@@ -5337,6 +5474,7 @@ function buildOutput(inst) {
 function renderOutput() {
   const inst = getActiveInstance();
   if (!inst || !getForm(state.topTab)) return;
+  refreshSystemFieldValues(inst);
   const chunks = buildOutput(inst);
 
   // Si el tester editó el textarea a mano se respeta su versión;
@@ -5350,12 +5488,12 @@ function renderOutput() {
 
   const actions = $("outputActions");
   actions.innerHTML = "";
-  addBtn(actions, "Copiar todo", () => copyToClipboard(inst.output), "primary");
+  addBtn(actions, "Copiar todo", () => copyToClipboard(refreshOutputForCopy(inst, "full")), "primary");
   if (chunks.summary) {
-    addBtn(actions, "Copiar summary", () => copyToClipboard(chunks.summary));
+    addBtn(actions, "Copiar summary", () => copyToClipboard(refreshOutputForCopy(inst, "summary")));
   }
   if (chunks.description) {
-    addBtn(actions, "Copiar description", () => copyToClipboard(chunks.description));
+    addBtn(actions, "Copiar description", () => copyToClipboard(refreshOutputForCopy(inst, "description")));
   }
   addBtn(actions, "Regenerar", () => {
     inst.outputEdited = false;
@@ -5382,6 +5520,20 @@ function renderOutput() {
       }
     });
   }, "danger");
+}
+
+// Copiar es un punto explícito de actualización de los valores del sistema.
+// El output editado a mano se conserva al copiarlo completo; summary y
+// description siempre se derivan del schema actualizado.
+function refreshOutputForCopy(inst, chunk) {
+  refreshSystemFieldValues(inst);
+  const chunks = buildOutput(inst);
+  if (!inst.outputEdited) {
+    inst.output = chunks.full;
+    const ta = $("outputTextarea");
+    if (ta) ta.value = inst.output;
+  }
+  return chunk === "full" ? inst.output : chunks[chunk];
 }
 
 function addBtn(container, label, fn, cls) {
@@ -6526,8 +6678,12 @@ const FIELDS_CSV_HEADER = [
   "sep", "joinprev", "perline", "rows", "required", "regex", "regexmsg",
   "default", "emptyas", "omitvalue", "nogap", "help",
   "hidden", "kwcount", "kwoverlap",
-  "ckoptions", "ckalllabel", "ckalloutput", "ckalldependency", "ckallvalue"
+  "ckoptions", "ckalllabel", "ckalloutput", "ckalldependency", "ckallvalue",
+  "format"
 ];
+// La iteración anterior ya incluía las columnas ck*. Se acepta sin format
+// para que sus archivos sigan importando sin tener que editarlos primero.
+const FIELDS_CSV_FORMATLESS_HEADER = FIELDS_CSV_HEADER.slice(0, -1);
 const FIELDS_CSV_LEGACY_HEADER = FIELDS_CSV_HEADER.slice(0, 23);
 // En la columna sep, la palabra NONE significa "sin separador"
 // (pegar al campo anterior); vacío significa "usar el de la sección".
@@ -6581,7 +6737,9 @@ async function exportFieldsCsv() {
           isCk ? (f.allLabel || "") : "",
           isCk ? (f.allOutput || "") : "",
           isCk ? (f.allDependency || "") : "",
-          isCk ? (f.allValue || "") : ""
+          isCk ? (f.allValue || "") : "",
+          isSystemField(f) ? (normalizeSystemFormat(f.type, f.format) === defaultSystemFormat(f.type)
+            ? "" : normalizeSystemFormat(f.type, f.format)) : ""
         ]);
       });
     });
@@ -6619,8 +6777,9 @@ function importFieldsCsv(text) {
   if (!lines.length) throw new Error("Archivo vacío");
   const header = parseCsvLine(lines[0]).map(s => s.toLowerCase());
   const isLegacyHeader = header.join(",") === FIELDS_CSV_LEGACY_HEADER.join(",");
-  if (!isLegacyHeader && header.join(",") !== FIELDS_CSV_HEADER.join(",")) {
-    throw new Error("El encabezado no coincide. Debe ser: " + FIELDS_CSV_HEADER.join(",") + " (también se acepta el formato anterior de 23 columnas)");
+  const isFormatlessHeader = header.join(",") === FIELDS_CSV_FORMATLESS_HEADER.join(",");
+  if (!isLegacyHeader && !isFormatlessHeader && header.join(",") !== FIELDS_CSV_HEADER.join(",")) {
+    throw new Error("El encabezado no coincide. Debe ser: " + FIELDS_CSV_HEADER.join(",") + " (también se aceptan los formatos anteriores de 28 y 23 columnas)");
   }
   const errors = [];
   const forms = [];
@@ -6633,7 +6792,8 @@ function importFieldsCsv(text) {
            sep, joinprev, perline, rowsN, required, regex, regexmsg,
            def, emptyas, omitvalue, nogap, help,
            hidden, kwcount, kwoverlap,
-           ckoptions, ckalllabel, ckalloutput, ckalldependency, ckallvalue] = r;
+           ckoptions, ckalllabel, ckalloutput, ckalldependency, ckallvalue,
+           format] = r;
     const lineNo = i + 1;
 
     if (type === "form") {
@@ -6726,6 +6886,16 @@ function importFieldsCsv(text) {
       }
       if (regexmsg) f.regexMsg = regexmsg;
       if (def) f.default = def;
+      if (isSystemField(f)) {
+        const normalizedFormat = normalizeSystemFormat(type, format);
+        const isLegacyClockFormat = type === "clock" &&
+          ["24h-am-pm", "24h-am-pm-dots"].includes(format);
+        if (format && !isKnownSystemFormat(type, format) && !isLegacyClockFormat) {
+          errors.push(`Línea ${lineNo}: formato desconocido «${format}» para ${type}`);
+          continue;
+        }
+        if (format && normalizedFormat !== defaultSystemFormat(type)) f.format = normalizedFormat;
+      }
       if (emptyas) f.emptyAs = emptyas;
       if (omitvalue) f.omitValue = omitvalue;
       // En filas de campo la columna nogap se reutiliza para el color del
@@ -6770,6 +6940,11 @@ function importFieldsCsv(text) {
         // Columna reutilizada: fuera de chips, kwcount lleva el
         // encabezado opcional de los campos "plantilla por línea".
         f.perLineHeader = kwcount;
+      }
+      if (isSystemField(f)) {
+        ["source", "default", "rows", "emptyAs", "omitValue", "perLine",
+         "perLineHeader", "required", "regex", "regexMsg", "kwCount", "kwOverlap"]
+          .forEach(k => delete f[k]);
       }
       sec.fields.push(f);
     }

@@ -24,14 +24,15 @@ The tool runs entirely in the browser, reads/writes files from the
 local share folder, and requires NO installation, NO server, NO
 network calls, NO third-party runtime libraries.
 
-### Current implementation snapshot (2026-07-29)
+### Current implementation snapshot (2026-07-30)
 
 `bug_tool.html` is the canonical self-contained application. Its form
 schema, data lists, validation rules and initial configuration are embedded
 in `#vanillaConfig`; browser-local edits are stored in `localStorage` until
 the user exports the tool or a CSV. The schema supports text, textarea,
-autocomplete, keywords, checklist, checkbox and mirror fields; dependent
-lists form an arbitrary tree (for example Region → Map → POI).
+autocomplete, keywords, checklist, checkbox, mirror, clock and date fields;
+the last two read the local system time and format it for `{value}`.
+Dependent lists form an arbitrary tree (for example Region → Map → POI).
 
 The monolith is intentionally kept as one distributable HTML file. Its
 top-level blocks are delimited with `MONOLITH:SECTION <name> START/END`.
@@ -659,9 +660,11 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
   * Formulario → secciones (`mode: joined|lines`, `heading`, `sep`,
     `noGap`) → campos.
   * Campo: `id, label, type (text|textarea|autocomplete|keywords|
-    mirror), source, size (full|half|third), template ("{value}"),
+    checklist|checkbox|mirror|clock|date), source, size (full|half|third), template ("{value}"),
     sep, joinPrev, perLine, rows, required, regex, regexMsg,
-    default, emptyAs, omitValue, help`.
+    default, emptyAs, omitValue, help`. Los campos `clock` y `date`
+    usan además `format`, son de solo lectura y se actualizan al modificar
+    datos del formulario o antes de copiar.
   * Prefijo `@` = referencia a `data.rules` (ej. `regex: "@coord_re"`,
     `default: "@default_tz"`).
   * El output se genera recorriendo secciones/campos en orden; no
@@ -866,8 +869,9 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     (label=texto, source=whenExpr, regex=severidad, regexmsg=campo
     destino, default=color, emptyas=grupo). El color del tile de error de
     un campo viaja en la columna `nogap` de la fila de campo (sin usar
-    para campos). El encabezado de 23 columnas **NO cambia**, así que los
-    CSV viejos siguen importando. Ver bug_fields.README.md. Verificado en
+    para campos). El encabezado actual tiene 29 columnas: `format` conserva
+    reloj/fecha; los CSV anteriores de 28 y 23 columnas siguen importando.
+    Ver bug_fields.README.md. Verificado en
     navegador: dos bandas en orden correcto, color por campo, colores de
     tile, interpolación, colapso por banda, resaltado, reordenar, bloqueo
     por severidad y round-trip CSV (export→import, con `errColor` y orden

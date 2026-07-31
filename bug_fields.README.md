@@ -40,7 +40,7 @@ Cinco tipos de fila, identificados por la columna `type`:
 | section   | id de la sección a la que pertenece                      | id de la sección               |
 | field     | id único del campo (sin espacios)                        | (vacío)                        |
 | label     | etiqueta que ve el tester                                 | nombre de la sección           |
-| type      | text / textarea / autocomplete / keywords / checklist / checkbox / mirror | la palabra `section` |
+| type      | text / textarea / autocomplete / keywords / checklist / checkbox / mirror / clock / date | la palabra `section` |
 | source    | autocomplete/checklist: lista (`regions`, `maps`, `child:map:mode`...) — mirror: id del campo que copia | modo: `lines` o `joined` |
 | size      | ancho en el formulario: vacío(=full) / half / third      | (vacío)                        |
 | template  | cómo sale en el output; `{value}` = lo escrito. Ej: `* *Perfil:* {value}` | encabezado de la sección, ej. `+Notas:+` |
@@ -64,6 +64,7 @@ Cinco tipos de fila, identificados por la columna `type`:
 | ckalloutput | texto que imprime esa opción especial | (vacío) |
 | ckalldependency | `all` = alimenta listas hijas como todos los valores; `none` = como ningún valor | (vacío) |
 | ckallvalue | valor interno opcional de la opción especial | (vacío) |
+| format | Formato de `clock` o `date`; vacío usa el formato predeterminado | (vacío) |
 
 En `template`, `sep` y el encabezado de sección se puede escribir
 `\n` o `<br>` para forzar un salto de línea en el output.
@@ -108,6 +109,16 @@ En `template`, `sep` y el encabezado de sección se puede escribir
   - `mirror`       — no se llena: copia el valor de otro campo
                      (columna `source`) para repetirlo en el output
                      (ej. el CCS en el bloque de Notas).
+  - `clock`        — valor automático y no editable de la hora local de la
+                     PC. `format` admite `24h` (predeterminado),
+                     `12h-am-pm` y `12h-am-pm-dots`. Los formatos con
+                     AM/PM siempre usan reloj de 12 horas.
+  - `date`         — valor automático y no editable de la fecha local de la
+                     PC. `format` admite `dmy-4` (predeterminado), `dmy-2`,
+                     `mdy-4`, `en-long`, `en-weekday-long` y `es-long`.
+                     Ambos tipos se actualizan al cambiar campos y antes de
+                     copiar el output; `template` recibe su valor mediante
+                     `{value}`.
 
 ## Filas `type=cond` — condiciones entre campos
 
@@ -201,7 +212,7 @@ Ejemplos:
     campo padre es checklist, se unen sin duplicados los hijos de todas
     sus opciones seleccionadas.
 
-Los CSV anteriores de 23 columnas siguen importándose. En ellos, un
+Los CSV anteriores de 28 y de 23 columnas siguen importándose. En ellos, un
 checklist conserva el formato histórico de opciones separadas por `|`
 en `source`; al volver a exportar se convierte automáticamente al formato
 nuevo.

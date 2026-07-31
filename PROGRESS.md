@@ -1,6 +1,6 @@
 # Progreso del proyecto
 
-Última actualización: 2026-07-29  
+Última actualización: 2026-07-30
 Estado: activo — herramienta funcional, monolito documentado para mantenimiento.
 
 ## Estado actual
@@ -11,6 +11,14 @@ Estado: activo — herramienta funcional, monolito documentado para mantenimient
 - Navegación interna: 23 bloques de primer nivel delimitados con marcadores `MONOLITH:SECTION` y descritos en `Directorio-Monolito.MD`.
 
 ## Trabajo completado recientemente
+
+### 2026-07-30 — campos automáticos de reloj y fecha
+
+- El editor permite crear campos `clock` y `date`, ambos de solo lectura y alimentados por la fecha/hora local de la PC.
+- Cada tipo expone un selector de formato; el output usa el valor mediante la plantilla habitual `{value}`. En reloj, AM/PM se muestra exclusivamente con horas de 12 horas.
+- Los valores se refrescan al regenerar output tras cambios de campo y justo antes de las acciones de copia. El texto completo editado manualmente se conserva como comportamiento establecido.
+- `bug_fields.csv` incorpora la columna `format` y conserva compatibilidad de importación con encabezados anteriores de 28 y 23 columnas.
+- Se sincronizaron `Directorio-Monolito.MD` y `bug_fields.README.md`.
 
 ### 2026-07-29 — reordenamiento de campos por drag-and-drop
 
