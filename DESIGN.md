@@ -665,6 +665,11 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     default, emptyAs, omitValue, help`. Los campos `clock` y `date`
     usan además `format`, son de solo lectura y se actualizan al modificar
     datos del formulario o antes de copiar.
+  * Toda plantilla de campo admite `{value}` (valor propio), `{idCampo}`
+    (valor crudo de otro campo con input del mismo formulario) y `{media:mediaN}`
+    (nombre generado de una media). `{{` y `}}` imprimen llaves literales.
+    `mirror` conserva su `source` como origen opcional de `{value}` y se usa
+    también como salida compuesta sin input propio.
   * Prefijo `@` = referencia a `data.rules` (ej. `regex: "@coord_re"`,
     `default: "@default_tz"`).
   * El output se genera recorriendo secciones/campos en orden; no
@@ -681,7 +686,8 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     FLIP de 170 ms. Al soltar, ambos caminos mutan
     `section.fields` mediante la misma función por ID/posición
     (= orden del output), ✎ editor de campo/sección en modal, ✕ con
-    confirmación, "+ campo" y "+ Agregar sección".
+    confirmación, "+ campo" y "+ Agregar sección". En este modo cada
+    tarjeta expone su ID entre llaves para poder usarlo en plantillas.
   * Dropdowns: fila "+ Agregar «...»" para sumar opciones y ✕ por
     opción para borrarlas (con confirmación). Escriben en DATA.
   * Botones del output en columna vertical a la derecha (más espacio
@@ -876,6 +882,36 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     tile, interpolación, colapso por banda, resaltado, reordenar, bloqueo
     por severidad y round-trip CSV (export→import, con `errColor` y orden
     de tiles).
+
+## Iteración 6 (2026-08-01): plantillas compuestas y media vinculable
+
+  * **Referencias en plantillas de campo.** Todas las plantillas resuelven
+    `{value}` como el valor propio, `{idCampo}` como el valor crudo de otro
+    campo con input del mismo formulario y `{media:mediaN}` como el nombre generado de
+    una fila de media. Los valores referenciados no reutilizan su markdown ni
+    su template, con lo que no hay formatos duplicados ni recursión entre
+    outputs. `{{` y `}}` escriben llaves literales.
+  * **Salida compuesta.** El tipo interno `mirror` no cambia, por
+    compatibilidad con schemas y CSV existentes, pero en la UI se llama
+    «Salida compuesta (solo output)». Su `source` sigue siendo el valor
+    opcional de `{value}` para los mirrors previos; si se deja vacío, la
+    plantilla puede armar una línea completa a partir de varios campos y/o
+    media sin pedir input al tester.
+  * **Media identificable.** La sesión guarda cada fila como
+    `{ id: "mediaN", type }`; al abrir, las listas antiguas de strings se
+    migran automáticamente. El primer hueco libre se reutiliza al crear una
+    fila (`media1`, `media2`...), sin renumerar las filas restantes. Los IDs
+    de media y de campo se muestran solo en modo edición.
+  * **Integridad.** El editor y la importación de `bug_fields.csv` validan
+    IDs de campo y la sintaxis `media:mediaN`; borrar un campo elimina las
+    salidas compuestas que dependan de él y avisa de las plantillas editables
+    que deben reconfigurarse. Una media ausente u incompleta omite la salida
+    que la usa, para no generar frases parciales.
+  * **Espacio de trabajo ajustable.** El divisor vertical entre formulario y
+    output usa Pointer Events para repartir su ancho, respeta mínimos útiles y
+    guarda el ratio en la sesión local. El ID de media no reserva columna fuera
+    de modo edición; al colapsar o reabrir el formulario se borra el ratio y
+    vuelve al reparto normal.
 
 ## Pendiente (siguientes iteraciones)
 

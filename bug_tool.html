@@ -513,6 +513,7 @@
       display: flex;
       flex: 1;
       min-height: 0;
+      position: relative;
     }
     .form-col {
       width: 50%;
@@ -540,6 +541,32 @@
       text-transform: uppercase; letter-spacing: 0.5px;
       user-select: none;
       white-space: nowrap;
+    }
+    .form-output-resizer {
+      flex: 0 0 6px;
+      align-self: stretch;
+      cursor: col-resize;
+      background: var(--surface-3);
+      border-left: 1px solid var(--border-soft);
+      border-right: 1px solid var(--border-soft);
+      position: relative;
+      z-index: 2;
+      touch-action: none;
+    }
+    .form-output-resizer::after {
+      content: "";
+      position: absolute;
+      inset: 0 2px;
+      background: var(--border);
+      transition: background .14s ease;
+    }
+    .form-output-resizer:hover::after,
+    .main.split-resizing .form-output-resizer::after { background: var(--primary); }
+    .form-col.form-collapsed + .form-output-resizer { display: none; }
+    .main.split-resizing .form-col { transition: none; }
+    body.split-resizing, body.split-resizing * {
+      cursor: col-resize !important;
+      user-select: none !important;
     }
     .form-toolbar {
       display: flex;
@@ -665,7 +692,7 @@
     }
     .media-row {
       display: grid;
-      grid-template-columns: 120px 1fr auto;
+      grid-template-columns: 120px minmax(0, 1fr) auto;
       gap: 6px;
       align-items: center;
       margin-bottom: 4px;
@@ -678,6 +705,29 @@
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
+    .media-id, .field-id-hint {
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 10px;
+      color: var(--text-3);
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .media-id { display: none; }
+    body.editing .media-row {
+      grid-template-columns: 58px 120px minmax(0, 1fr) auto;
+    }
+    body.editing .media-id { display: block; }
+    .field-id-hint {
+      display: none;
+      margin-left: 5px;
+      padding: 1px 4px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--surface-2);
+      vertical-align: 1px;
+    }
+    body.editing .field-id-hint { display: inline; }
     .media-row input[type="text"] {
       font-family: "SF Mono", Menlo, Consolas, monospace;
       font-size: 11px;
@@ -1520,6 +1570,9 @@
         <div class="form-rail-label">Formulario</div>
         <div class="form-panel" id="formPanel"></div>
       </div>
+      <div class="form-output-resizer" id="formOutputResizer" role="separator"
+        aria-label="Ajustar ancho del formulario y del output" aria-orientation="vertical"
+        title="Arrastra para ajustar el ancho del formulario y del output"></div>
       <div class="output-panel">
         <div class="output-body">
           <div class="output-textarea-wrap">
@@ -1543,7 +1596,8 @@
                Los nombres de abajo se generan solos con esta key y los
                campos del formulario, según la regla media_fmt. -->
           <div class="media-panel-body"><div class="media-panel-body-inner">
-            <div class="media-row">
+            <div class="media-row media-key-row">
+              <span class="media-id">—</span>
               <span class="media-type">Key</span>
               <input type="text" id="mediaTicketKey" placeholder="clave del ticket (p. ej. ABC-1234)" />
               <span></span>
@@ -1850,7 +1904,7 @@ const FIELD_TYPES = [
   { id: "keywords",     label: "Palabras clave (chips)" },
   { id: "checklist",    label: "Checklist (título + varias casillas)" },
   { id: "checkbox",     label: "Casilla sí/no (para RULES, sin output)" },
-  { id: "mirror",       label: "Copia de otro campo (solo output)" },
+  { id: "mirror",       label: "Salida compuesta (solo output)" },
   { id: "clock",        label: "Reloj del sistema" },
   { id: "date",         label: "Fecha del sistema" }
 ];
@@ -2403,11 +2457,43 @@ function optionsForField(field, inst) {
 const state = {
   topTab: "",            // id de formulario, "data" o "rules"
   editMode: false,
-  instances: [],         // { id, formId, title, values, ticketKey, output, outputEdited, errors, dirty }
+  instances: [],         // { id, formId, title, values, ticketKey, media, output, outputEdited, errors, dirty }
   activeInstanceId: null,
   dataTab: { selectedCategory: "" },
-  prefs: { dontAskOnClose: false, dragFields: false }
+  prefs: { dontAskOnClose: false, dragFields: false, formSplitRatio: null }
 };
+
+// Cada fila de media tiene un id estable mientras exista. Los ids son slots
+// reutilizables: al crear una fila se toma el menor mediaN libre, de modo que
+// borrar media1 y crear otra fila vuelve a ofrecer media1 sin renumerar las
+// que permanecen. Las sesiones previas guardaban solo strings y se migran
+// aquí a { id, type }.
+function nextMediaId(rows) {
+  const used = new Set((rows || []).map(row => row && row.id)
+    .filter(id => /^media[1-9]\d*$/.test(String(id))));
+  let n = 1;
+  while (used.has("media" + n)) n++;
+  return "media" + n;
+}
+
+function newMediaRow(rows, form) {
+  return { id: nextMediaId(rows), type: defaultMediaType(form) };
+}
+
+function normalizeMediaRows(inst, form) {
+  const input = Array.isArray(inst.media) ? inst.media : [defaultMediaType(form)];
+  const rows = [];
+  input.forEach(item => {
+    const type = item && typeof item === "object" ? String(item.type == null ? "" : item.type)
+      : String(item == null ? "" : item);
+    const requestedId = item && typeof item === "object" ? String(item.id || "") : "";
+    const id = /^media[1-9]\d*$/.test(requestedId) && !rows.some(row => row.id === requestedId)
+      ? requestedId : nextMediaId(rows);
+    rows.push({ id, type });
+  });
+  inst.media = rows;
+  return rows;
+}
 
 function makeInstance(formId) {
   const form = getForm(formId);
@@ -2424,7 +2510,7 @@ function makeInstance(formId) {
     title: form.label + " 1",
     values: values,
     ticketKey: "",
-    media: [defaultMediaType(form)],
+    media: [newMediaRow([], form)],
     output: "",
     outputEdited: false,
     errors: {},
@@ -2450,7 +2536,7 @@ function ensureInstanceFields(inst) {
     }
   });
   if (inst.ticketKey === undefined) inst.ticketKey = "";
-  if (!Array.isArray(inst.media)) inst.media = [defaultMediaType(form)];
+  normalizeMediaRows(inst, form);
   if (!inst.errors) inst.errors = {};
 }
 
@@ -2875,7 +2961,7 @@ function fieldHtml(field, inst, fx) {
     </span>`;
   const stateTag = st.hidden ? '<span class="hidden-tag">(oculto)</span>'
                  : st.disabled ? '<span class="hidden-tag">(bloqueado)</span>' : "";
-  const labelHtml = `<div class="field-head"><label>${escapeHtml(field.label)}${field.required ? '<span class="req">*</span>' : ""}${stateTag}</label>${tools}</div>`;
+  const labelHtml = `<div class="field-head"><label>${escapeHtml(field.label)}${field.required ? '<span class="req">*</span>' : ""}${stateTag}<code class="field-id-hint" title="Referencia en plantilla: {${fid}}">${fid}</code></label>${tools}</div>`;
   const helpHtml = field.help ? `<div class="field-help">${escapeHtml(field.help)}</div>` : "";
   const errHtml = `<div class="field-error">${escapeHtml(err)}</div>`;
   const val = field.type === "mirror" ? "" : (inst.values[field.id] != null ? inst.values[field.id] : "");
@@ -2884,10 +2970,17 @@ function fieldHtml(field, inst, fx) {
   const ftCls = " ft-" + (field.type || "text");
 
   if (field.type === "mirror") {
-    // Solo visible en modo edición: no se llena, copia otro campo en el output.
+    // Solo visible en modo edición: no se llena; su plantilla puede componer
+    // valores de otros campos y filas de media para el output.
+    const template = field.template || "{value}";
+    const refs = templatePlaceholders(template).filter(ref => ref !== "value");
+    const valueInfo = templatePlaceholders(template).includes("value")
+      ? ` {value} = «${escapeHtml(field.source || "sin valor principal")}».` : "";
+    const refsInfo = refs.length
+      ? ` Referencias: ${refs.map(ref => "{" + escapeHtml(ref) + "}").join(", ")}.` : "";
     return `<div class="field mirror-field${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
-      <div class="mirror-note">= copia del campo «${escapeHtml(field.source || "?")}» (solo aparece en el output)</div>
+      <div class="mirror-note">= salida: «${escapeHtml(template)}».${valueInfo}${refsInfo} Solo aparece en el output.</div>
     </div>`;
   }
   if (field.type === "checkbox") {
@@ -3693,24 +3786,59 @@ function expressionAllFieldRefs(src, seenRules) {
   return [...refs];
 }
 
-function templateFieldRefs(text) {
-  const refs = new Set();
-  String(text || "").replace(/\{([A-Za-z0-9_\-.]+)\}/g, (m, id) => {
-    refs.add(id);
+// Las dobles llaves preservan un placeholder literalmente: {{campo}} sale
+// como {campo}. El parser se comparte entre el editor, las dependencias al
+// borrar y el generador de output para que todos entiendan la misma sintaxis.
+function protectedTemplateText(text) {
+  return String(text || "").replace(/\{\{/g, "\uE000").replace(/\}\}/g, "\uE001");
+}
+
+function templatePlaceholders(text) {
+  const refs = [];
+  protectedTemplateText(text).replace(/\{([A-Za-z0-9_.:-]+)\}/g, (m, id) => {
+    refs.push(id);
     return m;
   });
-  return [...refs];
+  return refs;
+}
+
+function templateFieldRefs(text) {
+  return [...new Set(templatePlaceholders(text).filter(id =>
+    id !== "value" && !id.startsWith("media:")))];
+}
+
+function templateMediaRefs(text) {
+  return [...new Set(templatePlaceholders(text).filter(id => id.startsWith("media:")))];
+}
+
+function templateReferenceErrors(text, form, ownId) {
+  const fieldIds = new Set(allFields(form)
+    .filter(({ field }) => field.type !== "mirror")
+    .map(({ field }) => field.id));
+  if (ownId) fieldIds.add(ownId);
+  const unknownFields = templateFieldRefs(text).filter(id => !fieldIds.has(id));
+  const invalidMedia = templateMediaRefs(text)
+    .filter(id => !/^media:media[1-9]\d*$/.test(id));
+  const errors = [];
+  if (unknownFields.length) errors.push("campo(s) inexistente(s): " + unknownFields.map(id => "{" + id + "}").join(", "));
+  if (invalidMedia.length) errors.push("media inválida: " + invalidMedia.map(id => "{" + id + "}").join(", "));
+  return errors;
 }
 
 function fieldRemovalImpact(form, initialIds) {
   const removedIds = new Set(initialIds);
 
-  // Una copia sin origen no tiene utilidad: se elimina junto con su fuente.
+  // Una salida compuesta sin alguno de sus campos de origen no tiene utilidad:
+  // se elimina junto con la referencia rota. Los campos editables se conservan
+  // para que el usuario pueda reconfigurar su plantilla explícitamente.
   let added;
   do {
     added = false;
     allFields(form).forEach(({ field }) => {
-      if (field.type === "mirror" && removedIds.has(field.source) && !removedIds.has(field.id)) {
+      const refs = templateFieldRefs(field.template).concat(templateFieldRefs(field.perLineHeader));
+      if (field.type === "mirror" &&
+          (removedIds.has(field.source) || refs.some(id => removedIds.has(id))) &&
+          !removedIds.has(field.id)) {
         removedIds.add(field.id);
         added = true;
       }
@@ -3743,8 +3871,13 @@ function fieldRemovalImpact(form, initialIds) {
   const mirrors = allFields(form).filter(({ field }) =>
     field.type === "mirror" && removedIds.has(field.id) && !initialIds.includes(field.id)
   ).map(x => x.field);
+  const templates = allFields(form).filter(({ field }) => {
+    if (removedIds.has(field.id) || field.type === "mirror" || field.type === "checkbox") return false;
+    const refs = templateFieldRefs(field.template).concat(templateFieldRefs(field.perLineHeader));
+    return refs.some(id => removedIds.has(id));
+  }).map(x => x.field);
 
-  return { removedIds, rules, tiles, dependents, mirrors };
+  return { removedIds, rules, tiles, dependents, mirrors, templates };
 }
 
 function applyFieldRemoval(form, impact) {
@@ -3780,8 +3913,11 @@ function fieldRemovalWarning(impact) {
   if (impact.tiles.length) parts.push(`${impact.tiles.length} tile(s)`);
   if (impact.mirrors.length) parts.push(`${impact.mirrors.length} campo(s) copia`);
   if (impact.dependents.length) parts.push(`${impact.dependents.length} dropdown(s) dependiente(s)`);
-  if (!parts.length) return "";
-  return `<br /><br /><strong>También se limpiarán:</strong> ${parts.join(", ")}.`;
+  const cleaned = parts.length
+    ? `<br /><br /><strong>También se limpiarán:</strong> ${parts.join(", ")}.` : "";
+  const templates = impact.templates.length
+    ? `<br /><br /><strong>Reconfigura:</strong> ${impact.templates.length} plantilla(s) de campo conservarán la referencia literal hasta que las edites.` : "";
+  return cleaned + templates;
 }
 
 function deleteField(form, fieldId) {
@@ -3929,9 +4065,9 @@ function showFieldEditor(form, sec, field) {
         <div class="field-help">El valor se toma de la fecha y hora local de la PC.</div>
       </div>
       <div data-cbhide data-systemhide>
-        <label>Fuente (para dropdown, checklist o copia)</label>
+        <label>Fuente (para dropdown, checklist o valor principal)</label>
         <select id="fe_source"></select>
-        <div class="field-help">Dropdown/checklist: qué lista de DATA muestra. Copia: qué campo copia.</div>
+        <div class="field-help">Dropdown/checklist: qué lista de DATA muestra. Salida compuesta: origen opcional de {value}.</div>
       </div>
       <div>
         <label>Tamaño en el formulario</label>
@@ -3997,7 +4133,7 @@ function showFieldEditor(form, sec, field) {
       <div class="fe-full" data-cbhide>
         <label>Plantilla</label>
         <input type="text" id="fe_template" value="${escapeHtml(f.template || "{value}")}" />
-        <div class="field-help">{value} se reemplaza por lo escrito. Ej.: "* *Perfil:* {value}" o "# {value}" para pasos numerados.</div>
+        <div class="field-help">{value} = valor propio; {idDeCampo} = valor de otro campo con input; {media:media1} = nombre de media. {{ y }} dejan llaves literales.</div>
       </div>
       <div data-cbhide data-ckhide>
         <label>Separador antes del campo</label>
@@ -4068,7 +4204,8 @@ function showFieldEditor(form, sec, field) {
     bodyHtml: body,
     wide: true,
     onOpen: () => {
-      // La fuente depende del tipo: listas para dropdown, campos para copia.
+      // La fuente depende del tipo: listas para dropdown y un valor principal
+      // opcional para la salida compuesta ({value}).
       const typeSel = $("fe_type");
       const srcSel = $("fe_source");
       const formatSel = $("fe_format");
@@ -4087,8 +4224,10 @@ function showFieldEditor(form, sec, field) {
           opts = [{ value: "", label: "(opciones escritas aquí)" }].concat(sourceOptions(form));
         }
         else if (t === "mirror") {
-          opts = allFields(form).filter(x => !["mirror", "checkbox", "checklist"].includes(x.field.type) && x.field.id !== f.id)
-                                 .map(x => ({ value: x.field.id, label: x.field.label }));
+          opts = [{ value: "", label: "(sin valor principal; usar referencias en plantilla)" }]
+            .concat(allFields(form)
+              .filter(x => !["mirror", "checkbox", "checklist"].includes(x.field.type) && x.field.id !== f.id)
+              .map(x => ({ value: x.field.id, label: x.field.label + " {" + x.field.id + "}" })));
         }
         srcSel.disabled = !opts.length;
         srcSel.innerHTML = opts.length
@@ -4185,6 +4324,20 @@ function showFieldEditor(form, sec, field) {
       if (condExpr) {
         const condErrTxt = exprError(condExpr, form);
         if (condErrTxt) { flashBanner("La condición de error no es válida: " + condErrTxt, true); return false; }
+      }
+      const targetType = $("fe_type").value;
+      const targetId = isNew ? uniqueFieldId(form, slugify(label)) : field.id;
+      if (targetType !== "checkbox") {
+        const refErrors = templateReferenceErrors($("fe_template").value, form,
+          targetType === "mirror" ? "" : targetId);
+        if ($("fe_perLine").checked) {
+          refErrors.push(...templateReferenceErrors($("fe_perLineHeader").value, form,
+            targetType === "mirror" ? "" : targetId));
+        }
+        if (refErrors.length) {
+          flashBanner("La plantilla tiene " + [...new Set(refErrors)].join("; ") + ".", true);
+          return false;
+        }
       }
       const target = isNew ? { id: uniqueFieldId(form, slugify(label)) } : field;
       target.label = label;
@@ -5238,6 +5391,90 @@ function renderTiles(inst) {
   });
 }
 
+// Split horizontal del formulario y output. El ratio es una preferencia de
+// sesión mientras el formulario esté abierto; colapsarlo lo restablece al
+// reparto normal de CSS (50/50) antes de abrirlo de nuevo.
+function formOutputSplitBounds() {
+  const main = $("main");
+  const handle = $("formOutputResizer");
+  if (!main || !handle) return null;
+  const available = main.clientWidth - handle.offsetWidth;
+  if (available <= 0) return null;
+  // Conserva un formulario utilizable y espacio suficiente para el textarea
+  // y sus acciones. En ventanas angostas los mínimos se reducen en conjunto.
+  const minForm = Math.min(380, Math.floor(available * 0.45));
+  const minOutput = Math.min(360, Math.floor(available * 0.45));
+  return { available, min: minForm, max: Math.max(minForm, available - minOutput) };
+}
+
+function applyFormOutputSplit(ratio, remember) {
+  const formCol = $("formCol");
+  const main = $("main");
+  const bounds = formOutputSplitBounds();
+  if (!formCol || !main || !bounds || formCol.classList.contains("form-collapsed")) return;
+  const raw = Number(ratio);
+  const safeRatio = Number.isFinite(raw) ? raw : 0.5;
+  const width = Math.round(Math.max(bounds.min, Math.min(bounds.max, bounds.available * safeRatio)));
+  formCol.style.width = width + "px";
+  formCol.style.flex = "0 0 " + width + "px";
+  formCol.style.minWidth = bounds.min + "px";
+  if (remember) state.prefs.formSplitRatio = width / bounds.available;
+}
+
+function resetFormOutputSplit() {
+  const formCol = $("formCol");
+  if (formCol) {
+    formCol.style.removeProperty("width");
+    formCol.style.removeProperty("flex");
+    formCol.style.removeProperty("min-width");
+  }
+  delete state.prefs.formSplitRatio;
+}
+
+function restoreFormOutputSplit() {
+  const formCol = $("formCol");
+  const ratio = state.prefs.formSplitRatio;
+  if (!formCol || formCol.classList.contains("form-collapsed") || !Number.isFinite(ratio)) return;
+  applyFormOutputSplit(ratio, false);
+}
+
+function wireFormOutputResizer() {
+  const main = $("main");
+  const handle = $("formOutputResizer");
+  const formCol = $("formCol");
+  if (!main || !handle || !formCol) return;
+  let pointerId = null;
+  const finish = () => {
+    if (pointerId == null) return;
+    try { handle.releasePointerCapture(pointerId); } catch (e) {}
+    pointerId = null;
+    main.classList.remove("split-resizing");
+    document.body.classList.remove("split-resizing");
+    scheduleSave();
+  };
+  handle.addEventListener("pointerdown", e => {
+    if (pointerId != null || e.button !== 0 || formCol.classList.contains("form-collapsed")) return;
+    const bounds = formOutputSplitBounds();
+    if (!bounds) return;
+    e.preventDefault();
+    pointerId = e.pointerId;
+    handle.setPointerCapture(pointerId);
+    main.classList.add("split-resizing");
+    document.body.classList.add("split-resizing");
+  });
+  handle.addEventListener("pointermove", e => {
+    if (e.pointerId !== pointerId) return;
+    const bounds = formOutputSplitBounds();
+    if (!bounds) return;
+    const left = main.getBoundingClientRect().left;
+    applyFormOutputSplit((e.clientX - left) / bounds.available, true);
+  });
+  handle.addEventListener("pointerup", finish);
+  handle.addEventListener("pointercancel", finish);
+  handle.addEventListener("lostpointercapture", finish);
+  window.addEventListener("resize", () => restoreFormOutputSplit());
+}
+
 // Compactación: colapso de secciones y repliegue de paneles. Se cablea UNA
 // vez en boot sobre elementos persistentes (no se reemplazan, solo su
 // innerHTML), así sobrevive a los re-render. El estado vive en uiCollapse.
@@ -5263,8 +5500,12 @@ function wireCollapse() {
     const btn = $(btnId), el = $(elId);
     if (!btn || !el) return;
     btn.addEventListener("click", () => {
+      // Replegar o reabrir el formulario cancela cualquier ajuste manual y
+      // devuelve ambas columnas al reparto normal de CSS al reabrirlo.
+      if (key === "form") resetFormOutputSplit();
       uiCollapse[key] = !uiCollapse[key];
       el.classList.toggle(cls, uiCollapse[key]);
+      if (key === "form") scheduleSave();
     });
   };
   panelToggle("formCollapseBtn",    "formCol",    "form-collapsed",    "form");
@@ -5337,6 +5578,63 @@ function wireTileInteractions() {
    ES el orden del output) y aplica las plantillas de cada campo.
    Nada del texto está fijo en el código: todo sale del schema. */
 
+// Valor crudo de un campo para insertarlo dentro de la plantilla de OTRO
+// campo. No se usa su template: así {perfil} inserta solo lo que escribió el
+// tester, sin repetir etiquetas, markdown ni crear dependencias recursivas.
+function templateValueForField(field, raw) {
+  if (Array.isArray(raw)) {
+    if (field && field.type === "checklist" && field.allOption &&
+        raw.includes(checklistSpecialValue(field))) {
+      return field.allOutput || field.allLabel || "Todas las anteriores";
+    }
+    return raw.map(v => String(v)).join(", ");
+  }
+  return String(raw == null ? "" : raw);
+}
+
+// Busca una media por su id y devuelve el nombre ya generado. null significa
+// que falta la fila o alguno de los datos que necesita su formato.
+function mediaNameById(inst, id) {
+  const form = inst && getForm(inst.formId);
+  if (!form) return null;
+  const media = normalizeMediaRows(inst, form).find(row => row.id === id);
+  if (!media) return null;
+  const built = buildMediaName(media, inst, form);
+  return built.missing.length ? null : built.name;
+}
+
+// Resuelve una plantilla de campo. {value} conserva el valor propio; {id}
+// trae el valor crudo de otro campo del mismo formulario y {media:mediaN}
+// inserta el nombre generado de esa fila. {{ y }} dejan llaves literales.
+function interpolateFieldTemplate(text, field, inst, value) {
+  const form = getForm(inst.formId);
+  const missingMedia = [];
+  const unresolved = [];
+  const expanded = protectedTemplateText(unescapeNl(text)).replace(/\{([A-Za-z0-9_.:-]+)\}/g, (match, id) => {
+    if (id === "value") return String(value == null ? "" : value);
+    if (id.startsWith("media:")) {
+      const name = mediaNameById(inst, id.slice("media:".length));
+      if (name == null) {
+        missingMedia.push(id);
+        return "";
+      }
+      return name;
+    }
+    const found = form && getField(form, id);
+    // Un mirror no tiene valor propio; se evita enlazar outputs entre sí.
+    if (!found || found.field.type === "mirror") {
+      unresolved.push(id);
+      return match;
+    }
+    return templateValueForField(found.field, inst.values[id]);
+  });
+  return {
+    text: expanded.replace(/\uE000/g, "{").replace(/\uE001/g, "}"),
+    missingMedia,
+    unresolved
+  };
+}
+
 // Texto de un campo listo para el output, o null si se omite.
 function fieldOutputPart(field, inst) {
   // Las casillas sí/no nunca imprimen: solo alimentan RULES y tiles.
@@ -5359,38 +5657,50 @@ function fieldOutputPart(field, inst) {
     if (field.allOption && arr.includes(checklistSpecialValue(field))) {
       arr = [field.allOutput || field.allLabel || "Todas las anteriores"];
     }
-    const ckTpl = unescapeNl(field.template || "{value}");
-    const ckFill = (v) => ckTpl.replace(/\{value\}/g, () => v);
+    const ckTpl = field.template || "{value}";
+    const ckFill = (v) => interpolateFieldTemplate(ckTpl, field, inst, v);
+    const filled = field.checkLayout === "newline"
+      ? arr.map(ckFill)
+      : [ckFill(arr.join(unescapeNl(field.checkSep != null ? field.checkSep : ", ")) )];
+    if (filled.some(part => part.missingMedia.length)) return null;
+    const out = filled.map(part => part.text);
     if (field.checkLayout === "newline") {
-      const out = arr.map(ckFill);
       if (field.checkTitle) out.unshift(unescapeNl(field.checkTitle));
       return out;
     }
-    const joined = ckFill(arr.join(unescapeNl(field.checkSep != null ? field.checkSep : ", ")));
-    return field.checkTitle ? unescapeNl(field.checkTitle) + " " + joined : joined;
+    return field.checkTitle ? unescapeNl(field.checkTitle) + " " + out[0] : out[0];
   }
   let value = String(raw == null ? "" : raw);
+  const hasExternalRefs = templateFieldRefs(field.template).length || templateMediaRefs(field.template).length;
   if (!value.trim()) {
     if (field.emptyAs) value = field.emptyAs;
-    else return null;
+    // Un mirror compuesto puede no tener source: en ese caso sus referencias
+    // externas son el contenido que determina si sale en el output.
+    else if (field.type !== "mirror" || !hasExternalRefs) return null;
   }
   if (field.omitValue && value.trim() === field.omitValue) return null;
 
-  // \n y <br> en la plantilla se convierten en saltos de línea reales.
-  // El reemplazo usa una función para que $&, $' etc. en lo escrito
-  // por el tester salgan literales, y cubre todos los {value}.
-  const tpl = unescapeNl(field.template || "{value}");
-  const fill = (v) => tpl.replace(/\{value\}/g, () => v);
+  // \n y <br> se normalizan antes de resolver cada placeholder. El valor
+  // propio se inserta por función para que $&, $' etc. permanezcan literales.
+  const tpl = field.template || "{value}";
+  const fill = (v) => interpolateFieldTemplate(tpl, field, inst, v);
   if (field.perLine) {
     const lines = value.split("\n").map(l => l.trim()).filter(Boolean);
     if (!lines.length) return null;
     const out = lines.map(fill);
+    if (out.some(part => part.missingMedia.length)) return null;
+    const result = out.map(part => part.text);
     // Encabezado opcional: una línea fija antes de las líneas plantillada,
     // p. ej. "* *Material:*" seguido de "** mp/asset01", "** mp/asset02"...
-    if (field.perLineHeader) out.unshift(unescapeNl(field.perLineHeader));
-    return out;
+    if (field.perLineHeader) {
+      const header = interpolateFieldTemplate(field.perLineHeader, field, inst, value);
+      if (header.missingMedia.length) return null;
+      result.unshift(header.text);
+    }
+    return result;
   }
-  return fill(value);
+  const result = fill(value);
+  return result.missingMedia.length ? null : result.text;
 }
 
 function buildOutput(inst) {
@@ -5558,7 +5868,10 @@ function addBtn(container, label, fn, cls) {
      {loQueSea} → el valor de cualquier campo del formulario por id
                   (ej. {cl}, {map}, {bugType})
 
-   Los tipos de fila salen de la lista `mediaTypes` en DATA.
+   Cada fila tiene un id `mediaN` visible en modo edición. Ese id se usa desde
+   las plantillas de campo como `{media:mediaN}` y se reutiliza cuando queda
+   libre (sin renumerar las demás filas). Los tipos de fila salen de la lista
+   `mediaTypes` en DATA.
 
    La lista y la regla se pueden configurar POR SECCIÓN (bug, regression...)
    con el lápiz del panel de media: `form.media = { source, fmt }`. Si la
@@ -5601,9 +5914,11 @@ function getPlatformForMedia(inst) {
 }
 
 // Devuelve { name, missing: [placeholders sin valor] }
-function buildMediaName(mediaType, inst) {
+function buildMediaName(media, inst, form) {
+  const mediaType = media && typeof media === "object" ? media.type : media;
+  form = form || (inst && getForm(inst.formId)) || currentMediaForm();
   const missing = [];
-  const name = mediaFormat().replace(/\{([A-Za-z0-9_]+)\}/g, (m, ph) => {
+  const name = mediaFormat(form).replace(/\{([A-Za-z0-9_]+)\}/g, (m, ph) => {
     let v = "";
     if (ph === "type") v = mediaType;
     else if (ph === "key") v = String(inst.ticketKey || "").trim();
@@ -5620,7 +5935,7 @@ function renderMediaPanel() {
   if (!inst) return;
   const mform = currentMediaForm();
   if (inst.ticketKey === undefined) inst.ticketKey = "";
-  if (!Array.isArray(inst.media)) inst.media = [defaultMediaType(mform)];
+  normalizeMediaRows(inst, mform);
   $("mediaFmtHint").textContent = "Formato (regla media_fmt): " + mediaFormat(mform);
   const cfgBtn = $("mediaConfigBtn");
   if (cfgBtn) cfgBtn.onclick = () => showMediaConfigEditor();
@@ -5631,14 +5946,15 @@ function renderMediaPanel() {
   // selector de tipo (text+dropdown vía datalist) y el nombre generado
   // al lado (solo lectura + copiar). Se pueden agregar y borrar.
   const rows = $("mediaRows");
-  rows.innerHTML = inst.media.map((type, i) => {
-    const { name, missing } = buildMediaName(type, inst);
+  rows.innerHTML = inst.media.map((media, i) => {
+    const { name, missing } = buildMediaName(media, inst, mform);
     const ok = !missing.length;
     return `<div class="media-row" data-media-i="${i}">
+      <code class="media-id" title="Referencia en plantilla: {media:${escapeHtml(media.id)}}">${escapeHtml(media.id)}</code>
       <div class="field autocomplete media-type-ac">
         <div class="autocomplete-input-wrap">
           <input type="text" class="media-type-input" data-media-type="${i}"
-            value="${escapeHtml(type)}" placeholder="tipo (pic, vid...)" />
+            value="${escapeHtml(media.type)}" placeholder="tipo (pic, vid...)" />
           <span class="autocomplete-arrow" data-ac-toggle title="Ver todas las opciones">▼</span>
         </div>
         <div class="autocomplete-list"></div>
@@ -5657,7 +5973,7 @@ function renderMediaPanel() {
   // Actualiza solo el nombre generado de una fila (sin re-render: así el
   // selector de tipo no pierde el foco mientras el tester escribe).
   const refreshRowName = (i) => {
-    const { name, missing } = buildMediaName(inst.media[i], inst);
+    const { name, missing } = buildMediaName(inst.media[i], inst, mform);
     const ok = !missing.length;
     const nameInp = rows.querySelector(`[data-media-name="${i}"]`);
     const copyBtn = rows.querySelector(`[data-media-copy="${i}"]`);
@@ -5680,7 +5996,7 @@ function renderMediaPanel() {
     // Sincroniza a inst.media[i] tanto al escribir como al elegir del dropdown
     // (la selección despacha un evento "input").
     inp.addEventListener("input", () => {
-      inst.media[i] = inp.value;
+      inst.media[i].type = inp.value;
       markInstanceDirty(inst);
       refreshRowName(i);
     });
@@ -5690,7 +6006,7 @@ function renderMediaPanel() {
   rows.querySelectorAll("[data-media-copy]").forEach(btn => {
     btn.addEventListener("click", () => {
       const i = +btn.dataset.mediaCopy;
-      const { name, missing } = buildMediaName(inst.media[i], inst);
+      const { name, missing } = buildMediaName(inst.media[i], inst, mform);
       if (missing.length) { flashBanner("Faltan datos: " + missing.join(", "), true); return; }
       copyToClipboard(name);
     });
@@ -5704,7 +6020,7 @@ function renderMediaPanel() {
     });
   });
   $("addMediaBtn").addEventListener("click", () => {
-    inst.media.push(defaultMediaType(mform));
+    inst.media.push(newMediaRow(inst.media, mform));
     markInstanceDirty(inst);
     renderMediaPanel();
     saveAll();
@@ -6968,6 +7284,16 @@ function importFieldsCsv(text) {
       });
       if (t.field && !has(t.field)) errors.push(`Tile ${i + 1} de «${form.id}»: el campo destino «${t.field}» no existe`);
     });
+    allFields(form).forEach(({ field }) => {
+      if (field.type === "checkbox") return;
+      const ownId = field.type === "mirror" ? "" : field.id;
+      const templateErrors = templateReferenceErrors(field.template || "", form, ownId);
+      const headerErrors = field.perLine
+        ? templateReferenceErrors(field.perLineHeader || "", form, ownId) : [];
+      [...new Set(templateErrors.concat(headerErrors))].forEach(error => {
+        errors.push(`Campo «${field.id}» de «${form.id}»: ${error}`);
+      });
+    });
   });
 
   if (!forms.length || !forms.some(f => f.sections.length)) {
@@ -7393,8 +7719,10 @@ function boot() {
   wireStaticControls();
   wireMediaPanel();
   wireTileInteractions();
+  wireFormOutputResizer();
   wireCollapse();
   refreshAll();
+  restoreFormOutputSplit();
 }
 
 boot();

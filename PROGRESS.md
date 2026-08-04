@@ -1,6 +1,6 @@
 # Progreso del proyecto
 
-Última actualización: 2026-07-30
+Última actualización: 2026-08-02
 Estado: activo — herramienta funcional, monolito documentado para mantenimiento.
 
 ## Estado actual
@@ -11,6 +11,20 @@ Estado: activo — herramienta funcional, monolito documentado para mantenimient
 - Navegación interna: 23 bloques de primer nivel delimitados con marcadores `MONOLITH:SECTION` y descritos en `Directorio-Monolito.MD`.
 
 ## Trabajo completado recientemente
+
+### 2026-08-02 — ajuste de espacio del formulario y output
+
+- La columna de IDs de media solo ocupa espacio en modo edición; fuera de él, los controles vuelven a alinearse al borde izquierdo del panel.
+- Se añadió un divisor vertical arrastrable entre formulario y output. Conserva el ratio en la sesión local, respeta mínimos de uso y se reinicia al colapsar o volver a abrir el formulario.
+- Se sincronizaron `Directorio-Monolito.MD` y `DESIGN.md`.
+
+### 2026-08-01 — plantillas compuestas y media vinculable
+
+- Todas las plantillas de campo aceptan `{value}` para el valor propio, `{idDeCampo}` para el valor crudo de otro campo con input del mismo formulario y `{media:mediaN}` para el nombre generado de una fila de media. `{{` y `}}` preservan llaves literales.
+- El tipo persistente `mirror` se presenta como **Salida compuesta (solo output)**: mantiene `source` como origen opcional de `{value}`, pero puede armar un output sin input a partir de varias referencias.
+- Las filas de media ahora se guardan como `{ id, type }`; las sesiones antiguas de strings se migran al abrir. Al agregar media se reutiliza el menor ID libre (`media1`, `media2`...), sin renumerar las filas restantes.
+- El modo edición muestra los IDs de campos y media. El editor y `bug_fields.csv` validan las referencias; al borrar campos se eliminan las salidas compuestas dependientes y se avisa de las plantillas editables que requieren ajuste.
+- Se actualizaron `Directorio-Monolito.MD`, `DESIGN.md` y `bug_fields.README.md`.
 
 ### 2026-07-30 — campos automáticos de reloj y fecha
 

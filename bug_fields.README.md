@@ -41,9 +41,9 @@ Cinco tipos de fila, identificados por la columna `type`:
 | field     | id único del campo (sin espacios)                        | (vacío)                        |
 | label     | etiqueta que ve el tester                                 | nombre de la sección           |
 | type      | text / textarea / autocomplete / keywords / checklist / checkbox / mirror / clock / date | la palabra `section` |
-| source    | autocomplete/checklist: lista (`regions`, `maps`, `child:map:mode`...) — mirror: id del campo que copia | modo: `lines` o `joined` |
+| source    | autocomplete/checklist: lista (`regions`, `maps`, `child:map:mode`...) — mirror: origen opcional de `{value}` | modo: `lines` o `joined` |
 | size      | ancho en el formulario: vacío(=full) / half / third      | (vacío)                        |
-| template  | cómo sale en el output; `{value}` = lo escrito. Ej: `* *Perfil:* {value}` | encabezado de la sección, ej. `+Notas:+` |
+| template  | cómo sale en el output; `{value}` = valor propio, `{idCampo}` = otro campo y `{media:mediaN}` = nombre de media. Ej: `* *Perfil:* {value}` | encabezado de la sección, ej. `+Notas:+` |
 | sep       | separador ANTES del campo (secciones joined). `NONE` = pegado sin separador | separador por defecto de la sección |
 | joinprev  | `yes` = continúa en la línea anterior (ej. tz tras timestamp) | (vacío)                    |
 | perline   | `yes` = aplica la plantilla a CADA línea escrita (ej. `# {value}` en repro steps) | (vacío)  |
@@ -68,6 +68,13 @@ Cinco tipos de fila, identificados por la columna `type`:
 
 En `template`, `sep` y el encabezado de sección se puede escribir
 `\n` o `<br>` para forzar un salto de línea en el output.
+
+En las plantillas de campo, `{{` y `}}` producen llaves literales. Las
+referencias `{idCampo}` solo alcanzan campos con input del mismo formulario y
+usan su valor crudo, sin volver a aplicar su propia plantilla. Los IDs se muestran en
+modo edición; los de media son `media1`, `media2`, etc. y se usan como
+`{media:media1}`. Una media ausente o cuyo nombre aún no pueda generarse hace
+que se omita el campo de output que la referencia.
 
 ## Tipos de campo
 
@@ -106,9 +113,10 @@ En `template`, `sep` y el encabezado de sección se puede escribir
                      una línea y muestra un textarea `modelMulti` con
                      `perline=yes`, plantilla `** {value}` y encabezado
                      (columna `kwcount`) `* *Modelos:*`.
-  - `mirror`       — no se llena: copia el valor de otro campo
-                     (columna `source`) para repetirlo en el output
-                     (ej. el CCS en el bloque de Notas).
+  - `mirror`       — «Salida compuesta (solo output)»: no se llena. Conserva
+                     `source` como origen opcional de `{value}` para repetir
+                     un campo, o puede dejarlo vacío y combinar `{idCampo}`
+                     y `{media:mediaN}` en una plantilla propia.
   - `clock`        — valor automático y no editable de la hora local de la
                      PC. `format` admite `24h` (predeterminado),
                      `12h-am-pm` y `12h-am-pm-dots`. Los formatos con
