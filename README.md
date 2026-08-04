@@ -62,7 +62,10 @@ Dos maneras, las dos válidas:
 ## Pestañas
 
   - **Bug / Regression** — formularios (se pueden abrir varias
-    instancias con el "+", como pestañas de Notepad++).
+    instancias con el "+", como pestañas de Notepad++). El botón
+    **Exportar a Regression / Bug** permite elegir una pestaña del otro
+    formulario y copiarle los campos con el mismo ID; no borra datos de
+    destino si el campo de origen está vacío.
   - **Data** — edita listas, mapas, POIs, tiers y reglas globales.
   - **Rules** — vista técnica de TODAS las validaciones: obligatorio,
     REGEX (directa o `@regla`), mensaje de error y default por campo.

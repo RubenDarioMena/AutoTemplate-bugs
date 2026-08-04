@@ -24,7 +24,7 @@ The tool runs entirely in the browser, reads/writes files from the
 local share folder, and requires NO installation, NO server, NO
 network calls, NO third-party runtime libraries.
 
-### Current implementation snapshot (2026-07-30)
+### Current implementation snapshot (2026-08-03)
 
 `bug_tool.html` is the canonical self-contained application. Its form
 schema, data lists, validation rules and initial configuration are embedded
@@ -33,6 +33,12 @@ the user exports the tool or a CSV. The schema supports text, textarea,
 autocomplete, keywords, checklist, checkbox, mirror, clock and date fields;
 the last two read the local system time and format it for `{value}`.
 Dependent lists form an arbitrary tree (for example Region → Map → POI).
+
+Bug and Regression can each keep several work instances. The active instance
+can transfer entered values to a specifically selected instance of the other
+form when both fields use the same stable ID. This is intentionally a
+non-destructive, field-only transfer: blank origin values, media, automatic
+clock/date values and manually edited output are preserved at the destination.
 
 The monolith is intentionally kept as one distributable HTML file. Its
 top-level blocks are delimited with `MONOLITH:SECTION <name> START/END`.

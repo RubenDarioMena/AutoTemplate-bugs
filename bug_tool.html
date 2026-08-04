@@ -1566,6 +1566,7 @@
           </label>
           <button id="addSectionTopBtn" title="Agrega una sección nueva al final del formulario">+ Sección</button>
           <button class="edit-toggle" id="editToggle" title="Activa el modo edición para agregar, mover o borrar secciones y campos">✎ Editar formulario</button>
+          <button id="exportToOtherFormBtn" title="Copia los campos con el mismo ID a una instancia del otro formulario">Exportar</button>
         </div>
         <div class="form-rail-label">Formulario</div>
         <div class="form-panel" id="formPanel"></div>
@@ -2699,6 +2700,92 @@ function duplicateInstance(id) {
 /* ================================================================
    [6] RENDER: PESTAÑAS SUPERIORES Y SUB-PESTAÑAS
    ================================================================ */
+// Bug y Regression pueden compartir IDs de campo. La transferencia parte
+// siempre de la instancia visible y nunca toca media ni el textarea editado.
+function pairedFormId(formId) {
+  if (formId === "bug") return "regression";
+  if (formId === "regression") return "bug";
+  return "";
+}
+
+function isMultiValueField(field) {
+  return !!field && (field.type === "keywords" || field.type === "checklist");
+}
+
+function hasExportableValue(field, value) {
+  if (isMultiValueField(field)) return Array.isArray(value) && value.length > 0;
+  // Una casilla desmarcada también es una decisión explícita del usuario.
+  if (field.type === "checkbox") return value !== undefined;
+  return String(value == null ? "" : value).trim() !== "";
+}
+
+function exportSharedFieldValues(source, target) {
+  const sourceForm = getForm(source.formId);
+  const targetForm = getForm(target.formId);
+  if (!sourceForm || !targetForm) return { copied: 0, incompatible: 0 };
+  ensureInstanceFields(source);
+  ensureInstanceFields(target);
+  const targetFields = new Map(allFields(targetForm).map(({ field }) => [field.id, field]));
+  let copied = 0;
+  let incompatible = 0;
+
+  allFields(sourceForm).forEach(({ field }) => {
+    const targetField = targetFields.get(field.id);
+    if (!targetField || field.type === "mirror" || targetField.type === "mirror" ||
+        isSystemField(field) || isSystemField(targetField)) return;
+    // Evita dejar un textarea/lista con una forma de dato que su widget no
+    // puede representar si dos formularios reutilizan un ID para tipos distintos.
+    if (isMultiValueField(field) !== isMultiValueField(targetField)) {
+      incompatible++;
+      return;
+    }
+    const value = source.values[field.id];
+    if (!hasExportableValue(field, value)) return;
+    target.values[field.id] = deepClone(value);
+    copied++;
+  });
+  if (copied) {
+    // El output automático se recalculará al abrir el destino. Uno editado a
+    // mano se conserva, pues exportar campos no debe borrar esa edición.
+    if (!target.outputEdited) target.output = "";
+    revalidate(target, false);
+    markInstanceDirty(target);
+  }
+  return { copied, incompatible };
+}
+
+function showExportToOtherFormModal() {
+  const source = getActiveInstance();
+  const sourceForm = source && getForm(source.formId);
+  const targetFormId = sourceForm && pairedFormId(sourceForm.id);
+  const targetForm = targetFormId && getForm(targetFormId);
+  if (!source || !sourceForm || !targetForm) return;
+  const targets = state.instances.filter(inst => inst.formId === targetForm.id);
+  if (!targets.length) {
+    flashBanner(`No hay pestañas de ${targetForm.label}. Abre ese formulario y crea una instancia primero.`, true);
+    return;
+  }
+  showSelectModal({
+    title: `Exportar a ${targetForm.label}`,
+    body: `Desde «${source.title}»: se copiarán solo los campos editables con el mismo ID y contenido. Los campos vacíos, media y el output manual del destino se conservan.`,
+    options: targets.map(inst => ({ value: inst.id, label: inst.title || targetForm.label })),
+    confirmText: "Exportar campos",
+    onConfirm: (targetId) => {
+      const target = state.instances.find(inst => inst.id === targetId && inst.formId === targetForm.id);
+      if (!target) { flashBanner("La pestaña de destino ya no existe.", true); return; }
+      const result = exportSharedFieldValues(source, target);
+      if (!result.copied) {
+        flashBanner("No había campos con contenido e ID compatible para exportar.", true);
+        return;
+      }
+      const skipped = result.incompatible ? ` Se omitieron ${result.incompatible} ID(s) con tipos incompatibles.` : "";
+      const manual = target.outputEdited ? " Su output editado manualmente se conservó." : "";
+      flashBanner(`${result.copied} campo(s) exportado(s) a «${target.title}».${skipped}${manual}`);
+      scheduleSave();
+    }
+  });
+}
+
 function renderTopTabs() {
   const cont = $("formTabs");
   cont.innerHTML = getForms().map(f =>
@@ -2848,6 +2935,13 @@ function renderForm() {
   const toggle = $("editToggle");
   toggle.classList.toggle("active", state.editMode);
   toggle.textContent = state.editMode ? "✓ Terminar edición" : "✎ Editar formulario";
+  const exportBtn = $("exportToOtherFormBtn");
+  const exportTarget = getForm(pairedFormId(form.id));
+  exportBtn.hidden = !exportTarget;
+  if (exportTarget) {
+    exportBtn.textContent = `Exportar a ${exportTarget.label}`;
+    exportBtn.title = `Copia los campos con el mismo ID a una pestaña de ${exportTarget.label}`;
+  }
   const dragModeToggle = $("fieldDragModeToggle");
   dragModeToggle.checked = !!state.prefs.dragFields;
   document.body.classList.toggle("editing", state.editMode);
@@ -7485,10 +7579,13 @@ function showPromptModal({ title, body, placeholder, initialValue, confirmText, 
 
 // Selector simple para decisiones cerradas (mismo <select> nativo de RULES).
 function showSelectModal({ title, body, options, confirmText, onConfirm }) {
+  const normalizedOptions = (options || []).map(option => typeof option === "string"
+    ? { value: option, label: option }
+    : { value: String(option.value == null ? "" : option.value), label: String(option.label == null ? option.value : option.label) });
   const actions = openModalShell(title || "Selecciona un valor",
     (body ? `<div style="margin-bottom:8px;">${escapeHtml(body)}</div>` : "")
     + `<select id="modalSelectInput" style="width:100%">${
-      options.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("")
+      normalizedOptions.map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("")
     }</select>`,
     false);
   addModalButtons(actions, {
@@ -7573,6 +7670,7 @@ function wireStaticControls() {
     state.editMode = !state.editMode;
     renderForm();
   });
+  $("exportToOtherFormBtn").addEventListener("click", showExportToOtherFormModal);
   $("fieldDragModeToggle").addEventListener("change", e => {
     state.prefs.dragFields = e.target.checked;
     renderForm();

@@ -1,6 +1,6 @@
 # Progreso del proyecto
 
-Última actualización: 2026-08-02
+Última actualización: 2026-08-03
 Estado: activo — herramienta funcional, monolito documentado para mantenimiento.
 
 ## Estado actual
@@ -11,6 +11,13 @@ Estado: activo — herramienta funcional, monolito documentado para mantenimient
 - Navegación interna: 23 bloques de primer nivel delimitados con marcadores `MONOLITH:SECTION` y descritos en `Directorio-Monolito.MD`.
 
 ## Trabajo completado recientemente
+
+### 2026-08-03 — exportación selectiva entre Bug y Regression
+
+- Bug y Regression muestran un botón contextual junto a **Editar formulario** para exportar los valores de la instancia visible al otro tipo de formulario.
+- El usuario elige explícitamente la pestaña de destino; solo se copian campos editables con el mismo ID y contenido. No se transfieren media, campos automáticos ni el output editado manualmente; los valores vacíos del origen no borran los del destino.
+- Si un ID corresponde a un campo de valor múltiple en un formulario y escalar en el otro, se omite y se informa para no dejar un widget en un estado inválido.
+- Se actualizaron `Directorio-Monolito.MD` y este registro.
 
 ### 2026-08-02 — ajuste de espacio del formulario y output
 
