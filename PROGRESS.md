@@ -1,7 +1,7 @@
 # Progreso del proyecto
 
-Última actualización: 2026-08-03
-Estado: activo — herramienta funcional, monolito documentado para mantenimiento.
+Última actualización: 2026-08-08
+Estado: activo — herramienta funcional, monolito documentado y con suite de regresión.
 
 ## Estado actual
 
@@ -9,8 +9,24 @@ Estado: activo — herramienta funcional, monolito documentado para mantenimient
 - Distribución: HTML autocontenido con configuración inicial en `#vanillaConfig`.
 - Persistencia local: configuración e instancias en `localStorage`; importación/exportación explícita de CSV, sesión JSON y HTML integrado.
 - Navegación interna: 23 bloques de primer nivel delimitados con marcadores `MONOLITH:SECTION` y descritos en `Directorio-Monolito.MD`.
+- Verificación automatizada: 15 pruebas de contratos y comportamiento con Node.js, incluida una prueba smoke en navegador real.
 
 ## Trabajo completado recientemente
+
+### 2026-08-08 — utilidades de formulario y notas por pestaña
+
+- Los selectores de destino de condiciones y tiles en RULES ya incluyen los campos `mirror`, permitiendo condicionar su presencia en el output.
+- Se añadió **Bloc**, un bloc de notas minimalista superpuesto al output. Tiene pestañas globales, añadir/cerrar/renombrar notas y tamaños de media altura o cubrir el output; se persiste en la sesión, se conserva al exportarla y se sincroniza entre ventanas del mismo navegador. Las notas de la versión inicial por pestaña se migran al bloc global y nunca se incorporan a ninguna acción de copia del output.
+- La lupa junto a **Editar formulario** abre un buscador con buscar, reemplazar y reemplazar todas. Opera de forma literal sólo sobre inputs y textarea editables del formulario activo; vuelve a validar, regenerar output y guardar como un cambio normal.
+- Cada campo con valor propio muestra un botón discreto para copiar únicamente su valor crudo, sin etiqueta ni plantilla de output.
+- Se actualizaron `Directorio-Monolito.MD` y este registro.
+
+### 2026-08-07 — suite robusta de regresión
+
+- Se añadió una suite sin dependencias externas basada en `node:test`, ejecutable con `npm test`.
+- Los contratos cubren marcadores y directorio, JSON y sintaxis, autocontención, schema y referencias, migraciones, expresiones, persistencia, transferencia entre formularios, output, CSV y exportación HTML segura.
+- Una prueba smoke abre el monolito real en Chrome/Edge headless con un perfil temporal y verifica arranque, render, output, `localStorage`, recarga y navegación entre formularios.
+- `TESTING.md` documenta comandos, alcance y criterio para ampliar los casos futuros.
 
 ### 2026-08-03 — exportación selectiva entre Bug y Regression
 
