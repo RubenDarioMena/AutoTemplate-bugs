@@ -53,9 +53,12 @@ function createRuntime(options = {}) {
     "normalizeFieldSources", "getForms", "getForm", "getField", "allFields",
     "makeInstance", "ensureInstanceFields", "ensureSessionConsistency",
     "nextMediaId", "normalizeMediaRows", "parseExpr", "exprError", "exprFieldRefs",
-    "ruleWhenTrue", "evalFieldRules", "revalidate", "templatePlaceholders",
+    "ruleWhenTrue", "evalFieldRules", "revalidate", "isMediaTypeConditionRef",
+    "templatePlaceholders",
     "templateFieldRefs", "templateMediaRefs", "templateReferenceErrors",
     "interpolateFieldTemplate", "fieldOutputPart", "buildOutput", "buildMediaName",
+    "applyOutputDetachment", "captureOutputTextareaEdit", "refreshOutputForCopy",
+    "normalizeOutputPreviewMode", "outputPreviewLine", "jiraCodeFence",
     "exportSharedFieldValues", "importDataCsv", "importFieldsCsv", "ensureTiles"
   ];
 
@@ -90,7 +93,7 @@ globalThis.__bugToolTestApi = {
     state.instances = [];
     state.activeInstanceId = null;
     state.dataTab = { selectedCategory: "" };
-    state.prefs = { dontAskOnClose: false, dragFields: false, formSplitRatio: null };
+    state.prefs = { dontAskOnClose: false, dragFields: false, formSplitRatio: null, outputPreviewMode: "plain" };
   },
   getLastModal() { return __testModal; },
   async captureDataCsv() { __testDownload = null; await exportDataCsv(); return __testDownload; },

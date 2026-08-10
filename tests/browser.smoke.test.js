@@ -152,11 +152,90 @@ test("Chrome arranca el monolito, actualiza output y restaura la sesión", { tim
     assert.match(changed.output, /QA Persistente/);
     assert.equal(changed.saved, "Guardado");
 
+    const partialOutput = await evaluate(cdp, sessionId, `(() => {
+      const output = document.getElementById("outputTextarea");
+      output.value = output.value.replace("QA Persistente", "QA Manual");
+      output.dispatchEvent(new Event("input", { bubbles: true }));
+      const region = document.querySelector('[data-bind="region"]');
+      region.value = "EU";
+      region.dispatchEvent(new Event("input", { bubbles: true }));
+      region.dispatchEvent(new Event("blur", { bubbles: true }));
+      return {
+        output: document.getElementById("outputTextarea").value,
+        badge: document.getElementById("outputDisconnectBadge").textContent,
+        visible: document.getElementById("outputDisconnectBadge").classList.contains("visible")
+      };
+    })()`);
+    assert.match(partialOutput.output, /QA Manual/);
+    assert.match(partialOutput.output, /EU/);
+    assert.match(partialOutput.badge, /Desconectado: 1 campo/);
+    assert.equal(partialOutput.visible, true);
+
     const reloaded = cdp.once("Page.loadEventFired", sessionId);
     await cdp.send("Page.reload", {}, sessionId);
     await reloaded;
     assert.equal(await evaluate(cdp, sessionId,
       `document.querySelector('[data-bind="team"]').value`), "QA Persistente");
+    const persistedPartial = await evaluate(cdp, sessionId, `(() => ({
+      output: document.getElementById("outputTextarea").value,
+      badge: document.getElementById("outputDisconnectBadge").textContent
+    }))()`);
+    assert.match(persistedPartial.output, /QA Manual/);
+    assert.match(persistedPartial.output, /EU/);
+    assert.match(persistedPartial.badge, /Desconectado: 1 campo/);
+
+    const regenerated = await evaluate(cdp, sessionId, `(() => {
+      const button = [...document.querySelectorAll("#outputActions button")]
+        .find(item => item.textContent === "Regenerar");
+      button.click();
+      return {
+        output: document.getElementById("outputTextarea").value,
+        badgeVisible: document.getElementById("outputDisconnectBadge").classList.contains("visible")
+      };
+    })()`);
+    assert.match(regenerated.output, /QA Persistente/);
+    assert.match(regenerated.output, /EU/);
+    assert.equal(regenerated.badgeVisible, false);
+
+    const preview = await evaluate(cdp, sessionId, `(() => {
+      const output = document.getElementById("outputTextarea");
+      output.value = "* *Perfil:* QA\\n# Paso uno\\n{code:java}\\nconst value = 1;\\n{code}";
+      output.dispatchEvent(new Event("input", { bubbles: true }));
+      document.querySelector('input[aria-label="Vista previa Jira"]').click();
+      const jira = document.querySelector('input[aria-label="Vista previa Jira"]');
+      const markdown = document.querySelector('input[aria-label="Vista previa Markdown"]');
+      const preview = document.getElementById("outputPreview");
+      const jiraState = {
+        previewing: preview.closest(".output-textarea-wrap").classList.contains("previewing"),
+        jira: jira.checked,
+        markdown: markdown.checked,
+        list: preview.querySelectorAll("ul li").length,
+        ordered: preview.querySelectorAll("ol li").length,
+        code: preview.querySelector("pre code")?.textContent,
+        language: preview.querySelector("pre code")?.dataset.language,
+        notebookClosed: output.closest(".output-textarea-wrap").classList.contains("notebook-closed"),
+        bottomSpace: getComputedStyle(output).marginBottom,
+        source: output.value
+      };
+      markdown.click();
+      return {
+        jiraState,
+        markdown: document.querySelector('input[aria-label="Vista previa Markdown"]').checked,
+        jiraAfter: document.querySelector('input[aria-label="Vista previa Jira"]').checked
+      };
+    })()`);
+    assert.equal(preview.jiraState.previewing, true);
+    assert.equal(preview.jiraState.jira, true);
+    assert.equal(preview.jiraState.markdown, false);
+    assert.equal(preview.jiraState.list, 1);
+    assert.equal(preview.jiraState.ordered, 1);
+    assert.equal(preview.jiraState.code, "const value = 1;");
+    assert.equal(preview.jiraState.language, "java");
+    assert.equal(preview.jiraState.notebookClosed, true);
+    assert.equal(preview.jiraState.bottomSpace, "30px");
+    assert.equal(preview.jiraState.source, "* *Perfil:* QA\n# Paso uno\n{code:java}\nconst value = 1;\n{code}");
+    assert.equal(preview.markdown, true);
+    assert.equal(preview.jiraAfter, false);
 
     const switched = await evaluate(cdp, sessionId, `(() => {
       document.querySelector('[data-form="regression"]').click();

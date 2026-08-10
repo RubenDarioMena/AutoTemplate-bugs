@@ -631,6 +631,44 @@
       background: var(--surface-2);
       overflow: hidden;
       min-height: 0;
+      min-width: 0;
+      position: relative;
+      transition: flex-basis .18s ease, min-width .18s ease;
+    }
+    .output-panel-collapse {
+      position: absolute;
+      z-index: 5;
+      top: 50%;
+      right: 0;
+      width: 28px;
+      height: 42px;
+      padding: 0;
+      transform: translateY(-50%);
+      border-color: var(--primary-border);
+      border-radius: 5px 0 0 5px;
+      color: var(--primary-text);
+      background: var(--primary);
+      box-shadow: -2px 2px 7px rgba(58, 30, 8, .22);
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .output-panel-collapse:hover { background: var(--primary-hover); }
+    .output-panel.output-collapsed {
+      flex: 0 0 34px;
+      min-width: 34px;
+    }
+    .output-panel.output-collapsed .output-body,
+    .output-panel.output-collapsed .media-panel { display: none; }
+    .output-panel.output-collapsed .output-panel-collapse {
+      right: 0;
+      border-radius: 5px 0 0 5px;
+    }
+    .main.output-collapsed .form-output-resizer { display: none; }
+    .main.output-collapsed .form-col:not(.form-collapsed) {
+      width: auto !important;
+      min-width: 0 !important;
+      flex: 1 1 auto !important;
     }
     .output-body {
       flex: 1;
@@ -646,6 +684,68 @@
       position: relative;
     }
     .output-textarea-wrap textarea { flex: 1; }
+    .output-preview {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 9px 10px;
+      border: 1px solid var(--field-border);
+      border-radius: 4px;
+      background: var(--field-bg);
+      color: var(--field-text);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .output-textarea-wrap.previewing textarea { display: none; }
+    .output-textarea-wrap.previewing .output-preview { display: block; }
+    .output-textarea-wrap.notebook-closed > textarea,
+    .output-textarea-wrap.notebook-closed > .output-preview { margin-bottom: 30px; }
+    .output-preview p { margin: 0 0 7px; white-space: pre-wrap; }
+    .output-preview .preview-spacer { height: 7px; }
+    .output-preview ul, .output-preview ol { margin: 0 0 7px 20px; padding: 0; }
+    .output-preview li { margin: 2px 0; }
+    .output-preview a { overflow-wrap: anywhere; }
+    .output-preview code {
+      padding: 1px 3px;
+      border-radius: 3px;
+      background: var(--surface-3);
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11px;
+    }
+    .output-preview pre {
+      margin: 0 0 7px;
+      padding: 8px 10px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface-3);
+      white-space: pre;
+    }
+    .output-preview pre code { padding: 0; background: transparent; font-size: 11px; }
+    .output-preview-empty { color: var(--text-3); font-style: italic; }
+    .output-label { display: flex; align-items: center; gap: 7px; }
+    .output-preview-hint {
+      color: var(--text-3);
+      font-size: 10px;
+      font-style: italic;
+      font-weight: 500;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .output-disconnect-badge {
+      display: none;
+      padding: 1px 5px;
+      border: 1px solid var(--danger-border);
+      border-radius: 3px;
+      color: var(--danger-text);
+      background: var(--danger-soft);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .01em;
+      text-transform: none;
+    }
+    .output-disconnect-badge.visible { display: inline-block; }
     .output-notes {
       position: absolute;
       z-index: 2;
@@ -694,6 +794,8 @@
     .output-notes-tab.active { color: var(--primary); border-color: var(--border); background: var(--surface); }
     .notebook-tab-close { width: 17px; height: 17px; padding: 0; margin-left: -3px; border: 0; color: var(--text-3); background: transparent; line-height: 1; }
     .notebook-tab-close:hover { color: var(--danger); }
+    .notebook-tab-edit { width: 17px; height: 17px; padding: 0; margin-left: -2px; border: 0; color: var(--text-3); background: transparent; line-height: 1; }
+    .notebook-tab-edit:hover { color: var(--primary); }
     .output-notes-spacer { flex: 1; }
     .output-notes-control {
       width: 21px;
@@ -726,8 +828,54 @@
       min-height: 0;
     }
     .output-actions button { width: 100%; }
+    .output-preview-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding-top: 2px;
+      border-top: 1px solid var(--border-soft);
+    }
+    .output-preview-switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 7px;
+      margin: 0;
+      color: var(--text-2);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: none;
+      cursor: pointer;
+    }
+    .output-preview-switch input { position: absolute; opacity: 0; pointer-events: none; }
+    .output-preview-switch-track {
+      position: relative;
+      width: 38px;
+      height: 21px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--border-strong);
+      transition: background .16s ease;
+    }
+    .output-preview-switch-track::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: 0 1px 2px rgba(0,0,0,.22);
+      transition: transform .16s ease;
+    }
+    .output-preview-switch input:checked + .output-preview-switch-track { background: var(--primary); }
+    .output-preview-switch input:checked + .output-preview-switch-track::after { transform: translateX(17px); }
+    .output-preview-switch input:focus-visible + .output-preview-switch-track { outline: 2px solid var(--primary); outline-offset: 2px; }
     .output-side.actions-collapsed { flex-basis: 30px; }
-    .output-side.actions-collapsed .output-actions { display: none; }
+    .output-side.actions-collapsed .output-actions,
+    .output-side.actions-collapsed .output-preview-controls { display: none; }
     .output-side.actions-collapsed .rail-btn { align-self: center; }
     .output-side.actions-collapsed .rail-btn .chev { transform: rotate(180deg); }
 
@@ -1232,6 +1380,7 @@
       background: var(--field-bg);
       min-height: 30px;
       cursor: text;
+      position: relative;
     }
     .chips.invalid { border-color: var(--danger); box-shadow: 0 0 0 2px var(--danger-ring); }
     .chip {
@@ -1496,12 +1645,38 @@
     }
     .checklist label.ck-opt input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--primary); }
     .checklist label.ck-opt.ck-all { color: var(--accent-text); font-style: italic; }
+    .checklist-add { min-width: 23px; padding: 0 5px; font-size: 14px; line-height: 18px; }
+    .checklist-add-input { min-width: 130px; flex: 1 1 150px; }
     .field.invalid .checklist { border-color: var(--danger); box-shadow: 0 0 0 2px var(--danger-ring); }
     .fe-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px 14px;
     }
+    .fe-tabs {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 4px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .fe-tab {
+      padding: 4px 9px;
+      border-color: transparent;
+      color: var(--text-2);
+      background: transparent;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .fe-tab:hover { color: var(--primary); background: var(--accent-soft); }
+    .fe-tab.active { color: var(--primary-text); border-color: var(--primary-border); background: var(--primary); }
+    .fe-chip-tab-panel { grid-column: 1 / -1; }
+    .fe-chip-tab-panel .fe-chip-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 14px;
+    }
+    .fe-chip-tab-panel .fe-sep { margin-top: 0; }
     .fe-grid .fe-full { grid-column: 1 / -1; }
     .fe-grid label { margin-top: 4px; }
     .fe-grid label.checkbox { margin-top: 2px; }
@@ -1674,11 +1849,14 @@
       <div class="form-output-resizer" id="formOutputResizer" role="separator"
         aria-label="Ajustar ancho del formulario y del output" aria-orientation="vertical"
         title="Arrastra para ajustar el ancho del formulario y del output"></div>
-      <div class="output-panel">
+      <div class="output-panel" id="outputPanel">
+        <button id="outputPanelCollapseBtn" class="output-panel-collapse" type="button"
+          title="Replegar panel de output y media" aria-label="Replegar panel de output y media" aria-expanded="true">›</button>
         <div class="output-body">
           <div class="output-textarea-wrap">
-            <label>Output (editable antes de copiar)</label>
+            <label class="output-label">Output (editable antes de copiar)<span class="output-preview-hint" id="outputPreviewHint"></span><span class="output-disconnect-badge" id="outputDisconnectBadge"></span></label>
             <textarea id="outputTextarea" spellcheck="false"></textarea>
+            <div class="output-preview" id="outputPreview" role="document" aria-label="Vista previa del output"></div>
             <div class="output-notes closed" id="outputNotes">
               <div class="output-notes-bar">
                 <div id="notebookTabs" aria-label="Pestañas del bloc de notas"></div>
@@ -1696,6 +1874,7 @@
           <div class="output-side" id="outputSide">
             <button id="actionsCollapseBtn" class="rail-btn" title="Replegar los botones de copiar para ensanchar el output"><span class="chev">▸</span></button>
             <div class="output-actions" id="outputActions"></div>
+            <div class="output-preview-controls" id="outputPreviewControls" aria-label="Vista previa de formato"></div>
           </div>
         </div>
         <div class="media-panel" id="mediaPanel">
@@ -2513,8 +2692,20 @@ function checklistSpecialValue(field) {
   return field.allValue || "__checklist_all__";
 }
 
+function checklistExtraOptions(field, inst) {
+  if (!inst || !inst.checklistExtras || !Array.isArray(inst.checklistExtras[field.id])) return [];
+  return inst.checklistExtras[field.id];
+}
+
 function checklistNormalOptions(field, inst) {
-  return field.source ? optionsForField(field, inst) : (field.options || []);
+  const base = field.source ? optionsForField(field, inst) : (field.options || []);
+  const seen = new Set();
+  return base.concat(checklistExtraOptions(field, inst)).filter(value => {
+    const key = String(value).toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 // Convierte el valor de un padre escalar o multiselección en las keys que
@@ -2574,7 +2765,7 @@ const state = {
   instances: [],         // { id, formId, title, values, ticketKey, media, output, outputEdited, errors, dirty }
   activeInstanceId: null,
   dataTab: { selectedCategory: "" },
-  prefs: { dontAskOnClose: false, dragFields: false, formSplitRatio: null },
+  prefs: { dontAskOnClose: false, dragFields: false, formSplitRatio: null, outputPreviewMode: "plain" },
   notebook: { tabs: [], activeTabId: "", mode: "closed" }
 };
 
@@ -2628,6 +2819,11 @@ function makeInstance(formId) {
     media: [newMediaRow([], form)],
     output: "",
     outputEdited: false,
+    outputLayoutEdited: false,
+    outputDetached: {},
+    outputSegments: [],
+    outputRanges: {},
+    checklistExtras: {},
     errors: {},
     dirty: false
   };
@@ -2652,6 +2848,20 @@ function ensureInstanceFields(inst) {
   });
   if (inst.ticketKey === undefined) inst.ticketKey = "";
   normalizeMediaRows(inst, form);
+  if (!inst.checklistExtras || typeof inst.checklistExtras !== "object" || Array.isArray(inst.checklistExtras)) {
+    inst.checklistExtras = {};
+  }
+  Object.keys(inst.checklistExtras).forEach(fieldId => {
+    if (!Array.isArray(inst.checklistExtras[fieldId])) delete inst.checklistExtras[fieldId];
+  });
+  if (!inst.outputDetached || typeof inst.outputDetached !== "object" || Array.isArray(inst.outputDetached)) {
+    inst.outputDetached = {};
+  }
+  if (!Array.isArray(inst.outputSegments)) inst.outputSegments = [];
+  if (!inst.outputRanges || typeof inst.outputRanges !== "object" || Array.isArray(inst.outputRanges)) {
+    inst.outputRanges = {};
+  }
+  if (inst.outputLayoutEdited !== true) inst.outputLayoutEdited = false;
   if (!inst.errors) inst.errors = {};
 }
 
@@ -3120,7 +3330,10 @@ function rerenderIfRulesChanged(form, inst) {
 // guarda en state.prefs ni se exporta; cada recarga arranca todo expandido
 // (decisión de diseño). Se relee en cada render, así el colapso sobrevive a
 // los re-render dentro de la sesión pero no a un reload.
-const uiCollapse = { sections: Object.create(null), form: false, media: false, actions: false };
+const uiCollapse = {
+  sections: Object.create(null), form: false, media: false, actions: false,
+  output: false, outputAutoCollapsed: false, outputManualInNarrow: false
+};
 function sectionCollapseKey(form, secId) { return form.id + ":" + secId; }
 
 function sectionHtml(sec, inst, fx, form) {
@@ -3133,10 +3346,12 @@ function sectionHtml(sec, inst, fx, form) {
       <button class="tool-btn ed" data-sec-edit="${sid}" title="Editar sección">✎</button>
       <button class="tool-btn del" data-sec-del="${sid}" title="Borrar sección">✕</button>
     </span>`;
-  // Los campos ocultos por condición no se pintan (en modo edición sí,
-  // marcados, para poder seguir editándolos).
+  // Fuera de edición, los mirrors no participan en el grid: CSS los oculta,
+  // pero si se agruparan antes reservarían una columna vacía. Los campos
+  // ocultos por condición tampoco se pintan; en edición ambos siguen visibles
+  // para poder configurarlos.
   const visibleFields = sec.fields.filter(f =>
-    state.editMode || !(fx[f.id] && fx[f.id].hidden));
+    state.editMode || (f.type !== "mirror" && !(fx[f.id] && fx[f.id].hidden)));
   // Agrupa medios en filas de 2 y tercios/2-3 en filas de 3 columnas.
   const rows = [];
   let group = null;
@@ -3251,7 +3466,7 @@ function fieldHtml(field, inst, fx) {
       : "";
     return `<div class="field checklist-field${invalid}${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
-      <div class="checklist${field.checkLayout === "newline" ? " ck-col" : ""}" data-ck-group="${escapeHtml(field.id)}">${boxes}${allBox}</div>
+      <div class="checklist${field.checkLayout === "newline" ? " ck-col" : ""}" data-ck-group="${escapeHtml(field.id)}">${boxes}${allBox}<button type="button" class="checklist-add" data-ck-add="${fid}" title="Agregar opción" aria-label="Agregar opción">+</button><input type="text" class="checklist-add-input" data-ck-add-input="${fid}" placeholder="Nueva opción" hidden${dis} /></div>
       ${errHtml}${helpHtml}
     </div>`;
   }
@@ -3285,8 +3500,8 @@ function fieldHtml(field, inst, fx) {
     const kws = Array.isArray(val) ? val : [];
     return `<div class="field${ftCls}${sizeClass}" data-field="${escapeHtml(field.id)}">
       ${labelHtml}
-      <div class="chips${err ? " invalid" : ""}" data-kw-chips="${escapeHtml(field.id)}">
-        ${kwChipsInnerHtml(field.id, kws, readonlyCls.trim(), dis, keywordBadSet(inst, field))}
+      <div class="chips autocomplete${err ? " invalid" : ""}" data-kw-chips="${escapeHtml(field.id)}">
+        ${kwChipsInnerHtml(field.id, kws, readonlyCls.trim(), dis, keywordBadSet(inst, field), field.kwSpace)}
       </div>
       ${err ? `<div class="chips-error">${escapeHtml(err)}</div>` : ""}
       ${helpHtml}
@@ -3713,6 +3928,45 @@ function wireFormEvents(inst, form) {
       });
       commit();
     });
+    const addBtn = group.querySelector("[data-ck-add]");
+    const addInput = group.querySelector("[data-ck-add-input]");
+    const closeAddInput = () => {
+      if (!addInput) return;
+      addInput.hidden = true;
+      addInput.value = "";
+      if (addBtn) addBtn.hidden = false;
+    };
+    const addValue = () => {
+      if (!addInput) return;
+      const value = addInput.value.trim();
+      if (!value) { closeAddInput(); return; }
+      if (!addChecklistOption(field, inst, value)) return;
+      const arr = Array.isArray(inst.values[fieldId]) ? inst.values[fieldId] : [];
+      if (!arr.some(item => String(item).toLowerCase() === value.toLowerCase())) arr.push(value);
+      inst.values[fieldId] = arr;
+      if (allBox) allBox.checked = false;
+      markInstanceDirty(inst);
+      revalidate(inst);
+      renderOutput();
+      renderMediaPanel();
+      saveAll();
+      setSaveIndicator("saved");
+      renderForm();
+    };
+    if (addBtn && addInput) {
+      addBtn.addEventListener("click", () => {
+        addBtn.hidden = true;
+        addInput.hidden = false;
+        addInput.focus();
+      });
+      addInput.addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); addValue(); }
+        else if (e.key === "Escape") { e.preventDefault(); closeAddInput(); }
+      });
+      addInput.addEventListener("blur", () => setTimeout(() => {
+        if (document.activeElement !== addInput) closeAddInput();
+      }, 100));
+    }
   });
 
   // ---- Controles del modo edición ----
@@ -3931,20 +4185,47 @@ function parseSource(src) {
 
 // Agrega un valor a la fuente del campo (raíz o dependiente).
 function addOptionToSource(field, inst, value) {
+  value = String(value == null ? "" : value).trim();
+  if (!value) return false;
   const s = parseSource(field.source);
   if (s.kind === "child") {
     const c = config.data.childLists[s.link];
-    if (!c) return;
-    const pv = String(inst.values[s.parentField] || "");
-    if (!pv) { flashBanner(`Primero elige ${listLabel(c.parent).toLowerCase()}.`, true); return; }
+    if (!c) return false;
+    const form = getForm(inst.formId);
+    const parentFound = form && getField(form, s.parentField);
+    const parents = dependentParentValues(parentFound && parentFound.field,
+      inst.values[s.parentField], c);
+    if (parents.length !== 1) {
+      flashBanner(`Primero elige una sola opción de ${listLabel(c.parent).toLowerCase()}.`, true);
+      return false;
+    }
+    const pv = parents[0];
     c.values[pv] = c.values[pv] || [];
-    c.values[pv].push(value);
+    if (!c.values[pv].some(item => String(item).toLowerCase() === value.toLowerCase())) {
+      c.values[pv].push(value);
+    }
   } else {
     config.data.lists[s.list] = config.data.lists[s.list] || [];
-    config.data.lists[s.list].push(value);
+    if (!config.data.lists[s.list].some(item => String(item).toLowerCase() === value.toLowerCase())) {
+      config.data.lists[s.list].push(value);
+    }
   }
   scheduleSave();
   flashBanner(`«${value}» agregado. Recuerda exportar los datos o la herramienta para compartirlo.`);
+  return true;
+}
+
+// Añade una opción desde un checklist. Cuando hay fuente DATA, se comporta
+// igual que el dropdown: la agrega a la lista raíz o al bucket dependiente.
+// Sin fuente, queda como opción adicional de esta instancia.
+function addChecklistOption(field, inst, value) {
+  value = String(value == null ? "" : value).trim();
+  if (!value) return false;
+  if (field.source) return addOptionToSource(field, inst, value);
+  inst.checklistExtras = inst.checklistExtras || {};
+  const extra = inst.checklistExtras[field.id] = inst.checklistExtras[field.id] || [];
+  if (!extra.some(item => String(item).toLowerCase() === value.toLowerCase())) extra.push(value);
+  return true;
 }
 
 function confirmDeleteOption(field, inst, value, after) {
@@ -3996,11 +4277,12 @@ function keywordBadSet(inst, field) {
 
 // Markup interno del widget de chips (chips + input). Compartido entre el
 // render del formulario (fieldHtml) y el refresh in situ de wireKeywords.
-function kwChipsInnerHtml(fieldId, kws, inputCls, inputDis, badSet) {
+function kwChipsInnerHtml(fieldId, kws, inputCls, inputDis, badSet, splitOnSpace) {
   return kws.map(k =>
-    `<span class="chip${badSet && badSet.has(k) ? " chip-bad" : ""}">${escapeHtml(k)}<button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`
+    `<span class="chip${badSet && badSet.has(k) ? " chip-bad" : ""}" data-kw-chip="${escapeHtml(k)}"><span data-kw-chip-text>${escapeHtml(k)}</span><button data-kw-remove="${escapeHtml(k)}" title="Quitar">×</button></span>`
   ).join("")
-  + `<input type="text" class="${inputCls || ""}" data-kw-input="${escapeHtml(fieldId)}" placeholder="Escribe y presiona Enter..."${inputDis || ""} />`;
+  + `<input type="text" class="${inputCls || ""}" data-kw-input="${escapeHtml(fieldId)}" placeholder="${splitOnSpace ? "Escribe una palabra y presiona Espacio..." : "Escribe y presiona Enter..."}"${inputDis || ""} />`
+  + `<div class="autocomplete-list" data-kw-list="${escapeHtml(fieldId)}"></div>`;
 }
 
 function wireKeywords(chips, inst) {
@@ -4009,58 +4291,149 @@ function wireKeywords(chips, inst) {
   const kwFound = kwForm && getField(kwForm, fieldId);
   const fieldDef = kwFound && kwFound.field;
   const getInput = () => chips.querySelector("[data-kw-input]");
+  const getList = () => chips.querySelector("[data-kw-list]");
+  let activeIdx = -1;
 
-  const refresh = () => {
-    const cur = getInput().value;
+  const refresh = (focus) => {
+    const oldInput = getInput();
+    const cur = oldInput ? oldInput.value : "";
     chips.innerHTML = kwChipsInnerHtml(fieldId, inst.values[fieldId] || [], "", "",
-      fieldDef ? keywordBadSet(inst, fieldDef) : null);
+      fieldDef ? keywordBadSet(inst, fieldDef) : null, fieldDef && fieldDef.kwSpace);
     const inp = getInput();
     inp.value = cur;
-    inp.addEventListener("keydown", keyHandler);
-    inp.focus();
+    wireInput();
     bindRemoves();
+    bindChipEdits();
+    if (focus) inp.focus();
   };
   // Cambió la lista de chips: valida, regenera el output y re-pinta.
-  const commit = () => {
+  const commit = (focus) => {
     markInstanceDirty(inst);
     revalidate(inst);
     renderOutput();
-    refresh();
+    refresh(focus);
     saveAll();
   };
   const bindRemoves = () => {
     chips.querySelectorAll("[data-kw-remove]").forEach(btn => {
       btn.addEventListener("click", () => {
         inst.values[fieldId] = (inst.values[fieldId] || []).filter(k => k !== btn.dataset.kwRemove);
-        commit();
+        commit(true);
       });
     });
   };
-  const keyHandler = (e) => {
-    const inp = getInput();
-    if (e.key === "Enter" || e.key === ",") {
+  const commitInput = value => {
+    const v = String(value || "").trim();
+    const arr = inst.values[fieldId] || [];
+    if (!v) return false;
+    if (!arr.some(item => String(item).toLowerCase() === v.toLowerCase())) {
+      arr.push(v);
+      inst.values[fieldId] = arr;
+      commit(true);
+      return true;
+    }
+    getInput().value = "";
+    return false;
+  };
+  const renderList = showAll => {
+    const list = getList();
+    const input = getInput();
+    if (!list || !input || !fieldDef || !fieldDef.source) return;
+    const all = optionsForField(fieldDef, inst);
+    const q = input.value.trim().toLowerCase();
+    const items = !showAll && q ? all.filter(value => String(value).toLowerCase().includes(q)) : all;
+    if (!items.length) {
+      list.innerHTML = `<div class="autocomplete-empty">Sin coincidencias — puedes escribir un valor libre</div>`;
+    } else {
+      const re = q ? new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig") : null;
+      list.innerHTML = items.slice(0, 50).map(value => {
+        const marked = re ? escapeHtml(value).replace(re, "<mark>$1</mark>") : escapeHtml(value);
+        return `<div class="autocomplete-item" data-kw-option="${escapeHtml(value)}">${marked}</div>`;
+      }).join("");
+    }
+    list.querySelectorAll("[data-kw-option]").forEach(item => item.addEventListener("mousedown", e => {
       e.preventDefault();
-      const v = inp.value.trim();
-      const arr = inst.values[fieldId] || [];
-      if (v && !arr.includes(v)) {
-        arr.push(v);
-        inst.values[fieldId] = arr;
-        inp.value = "";
-        commit();
-      } else if (v) {
-        inp.value = "";
+      getInput().value = item.dataset.kwOption;
+      commitInput(item.dataset.kwOption);
+      chips.classList.remove("open");
+    }));
+    activeIdx = -1;
+    chips.classList.add("open");
+    positionAutocomplete(chips, list);
+  };
+  const keyHandler = e => {
+    const inp = getInput();
+    const isSpaceCommit = e.key === " " && fieldDef && fieldDef.kwSpace;
+    if (e.key === "Enter" || e.key === "," || isSpaceCommit) {
+      e.preventDefault();
+      const choices = getList().querySelectorAll("[data-kw-option]");
+      if (e.key === "Enter" && chips.classList.contains("open") && activeIdx >= 0 && choices[activeIdx]) {
+        inp.value = choices[activeIdx].dataset.kwOption;
+        commitInput(inp.value);
+      } else {
+        commitInput(inp.value);
       }
     } else if (e.key === "Backspace" && !inp.value && (inst.values[fieldId] || []).length) {
       inst.values[fieldId].pop();
-      commit();
+      commit(true);
+    } else if (e.key === "ArrowDown" && fieldDef && fieldDef.source) {
+      e.preventDefault();
+      if (!chips.classList.contains("open")) renderList(false);
+      const choices = getList().querySelectorAll("[data-kw-option]");
+      activeIdx = Math.min(choices.length - 1, activeIdx + 1);
+      choices.forEach((item, index) => item.classList.toggle("active", index === activeIdx));
+    } else if (e.key === "ArrowUp" && chips.classList.contains("open")) {
+      e.preventDefault();
+      const choices = getList().querySelectorAll("[data-kw-option]");
+      activeIdx = Math.max(0, activeIdx - 1);
+      choices.forEach((item, index) => item.classList.toggle("active", index === activeIdx));
+    } else if (e.key === "Escape") {
+      chips.classList.remove("open");
+      activeIdx = -1;
     }
+  };
+  const wireInput = () => {
+    const inp = getInput();
+    inp.addEventListener("keydown", keyHandler);
+    if (fieldDef && fieldDef.source) {
+      inp.addEventListener("focus", () => renderList(false));
+      inp.addEventListener("input", () => renderList(false));
+      inp.addEventListener("blur", () => setTimeout(() => chips.classList.remove("open"), 150));
+    }
+  };
+  const bindChipEdits = () => {
+    chips.querySelectorAll("[data-kw-chip]").forEach(chip => chip.addEventListener("dblclick", e => {
+      if (e.target.closest("[data-kw-remove]")) return;
+      const original = chip.dataset.kwChip;
+      chip.innerHTML = `<input type="text" data-kw-chip-edit value="${escapeHtml(original)}" aria-label="Editar chip" />`;
+      const edit = chip.querySelector("[data-kw-chip-edit]");
+      let cancelled = false;
+      const finish = () => {
+        if (cancelled) { refresh(false); return; }
+        const value = edit.value.trim();
+        const arr = inst.values[fieldId] || [];
+        const index = arr.indexOf(original);
+        if (!value) { if (index >= 0) arr.splice(index, 1); }
+        else if (index >= 0 && !arr.some((item, i) => i !== index && String(item).toLowerCase() === value.toLowerCase())) arr[index] = value;
+        inst.values[fieldId] = arr;
+        commit(false);
+      };
+      edit.addEventListener("keydown", event => {
+        if (event.key === "Enter") { event.preventDefault(); finish(); }
+        else if (event.key === "Escape") { event.preventDefault(); cancelled = true; edit.blur(); }
+      });
+      edit.addEventListener("blur", finish, { once: true });
+      edit.focus();
+      edit.select();
+    }));
   };
 
   chips.addEventListener("click", (e) => {
     if (e.target === chips) getInput().focus();
   });
-  getInput().addEventListener("keydown", keyHandler);
+  wireInput();
   bindRemoves();
+  bindChipEdits();
 }
 
 /* MONOLITH:SECTION 08-field-widgets END */
@@ -4423,9 +4796,9 @@ function showFieldEditor(form, sec, field) {
         <div class="field-help">El valor se toma de la fecha y hora local de la PC.</div>
       </div>
       <div data-cbhide data-systemhide>
-        <label>Fuente (para dropdown, checklist o valor principal)</label>
+        <label>Fuente (para dropdown, checklist, chips o valor principal)</label>
         <select id="fe_source"></select>
-        <div class="field-help">Dropdown/checklist: qué lista de DATA muestra. Salida compuesta: origen opcional de {value}.</div>
+        <div class="field-help">Dropdown/checklist/chips: lista de DATA opcional. Salida compuesta: origen opcional de {value}.</div>
       </div>
       <div>
         <label>Tamaño en el formulario</label>
@@ -4487,6 +4860,40 @@ function showFieldEditor(form, sec, field) {
         <div class="field-help">Por ejemplo, «Global» puede mostrar todos los mapas o ninguno.</div>
       </div>
 
+      <div class="fe-tabs" id="feChipsTabs" data-kwshow role="tablist" aria-label="Configuración de chips">
+        <button class="fe-tab active" type="button" role="tab" data-fe-chip-tab="output" aria-selected="true">Salida</button>
+        <button class="fe-tab" type="button" role="tab" data-fe-chip-tab="input" aria-selected="false">Entrada</button>
+      </div>
+      <div class="fe-chip-tab-panel" data-kwshow data-fe-chip-panel="output" role="tabpanel">
+        <div class="fe-sep">Chips: salida</div>
+        <div class="fe-chip-grid">
+          <div>
+            <label>Modo de salida</label>
+            <select id="fe_kwMode">
+              <option value="joined"${f.kwMode !== "newline" ? " selected" : ""}>Unida</option>
+              <option value="newline"${f.kwMode === "newline" ? " selected" : ""}>Líneas</option>
+            </select>
+            <div class="field-help">Unida conserva los chips en una sola salida; Líneas permite tratarlos por separado.</div>
+          </div>
+          <div data-kwjoined>
+            <label>Separador (modo unida)</label>
+            <input type="text" id="fe_kwSep" value="${escapeHtml(f.kwSep != null ? f.kwSep : ", ")}" />
+            <div class="field-help">Vacío = ", " (coma y espacio).</div>
+          </div>
+          <label class="checkbox fe-full" data-kwlines><input type="checkbox" id="fe_kwPerChip"${f.kwMode === "newline" && f.kwPerChip !== false ? " checked" : ""} /> Aplicar plantilla a cada chip escrito</label>
+          <div class="fe-full" data-kwlines id="fe_kwHeaderWrap">
+            <label>Encabezado (solo con plantilla por chip)</label>
+            <input type="text" id="fe_kwHeader" value="${escapeHtml(f.kwHeader || "")}" />
+            <div class="field-help">Línea fija antes de los chips. Vacío = sin encabezado.</div>
+          </div>
+        </div>
+      </div>
+      <div class="fe-chip-tab-panel" data-kwshow data-fe-chip-panel="input" role="tabpanel" hidden>
+        <div class="fe-sep">Chips: entrada</div>
+        <label class="checkbox"><input type="checkbox" id="fe_kwSpace"${f.kwSpace ? " checked" : ""} /> Crear un chip al pulsar Espacio</label>
+        <div class="field-help">Útil para keywords de una sola palabra. Enter y coma siguen creando chips; apagado conserva el comportamiento actual.</div>
+      </div>
+
       <div class="fe-sep" data-cbhide>Cómo sale en el output</div>
       <div class="fe-full" data-cbhide>
         <label>Plantilla</label>
@@ -4509,11 +4916,11 @@ function showFieldEditor(form, sec, field) {
         <input type="text" id="fe_omitValue" value="${escapeHtml(f.omitValue || "")}" />
         <div class="field-help">P. ej. "N/A" para no imprimir BSP CL: N/A</div>
       </div>
-      <div data-cbhide data-ckhide style="display:flex;flex-direction:column;gap:2px;justify-content:end;">
+      <div data-cbhide data-ckhide data-kwhide style="display:flex;flex-direction:column;gap:2px;justify-content:end;">
         <label class="checkbox"><input type="checkbox" id="fe_joinPrev"${f.joinPrev ? " checked" : ""} /> Continúa en la línea anterior</label>
         <label class="checkbox"><input type="checkbox" id="fe_perLine"${f.perLine ? " checked" : ""} /> Aplicar plantilla a cada línea escrita</label>
       </div>
-      <div class="fe-full" data-cbhide id="fe_perLineHeaderWrap">
+      <div class="fe-full" data-cbhide data-kwhide id="fe_perLineHeaderWrap">
         <label>Encabezado (solo con plantilla por línea)</label>
         <input type="text" id="fe_perLineHeader" value="${escapeHtml(f.perLineHeader || "")}" />
         <div class="field-help">Línea fija que se imprime ANTES de las líneas. Ej.: "* *Material:*" y abajo "** {value}" por cada línea. Vacío = sin encabezado.</div>
@@ -4562,8 +4969,8 @@ function showFieldEditor(form, sec, field) {
     bodyHtml: body,
     wide: true,
     onOpen: () => {
-      // La fuente depende del tipo: listas para dropdown y un valor principal
-      // opcional para la salida compuesta ({value}).
+      // La fuente depende del tipo: listas para dropdown/checklist/chips y un
+      // valor principal opcional para la salida compuesta ({value}).
       const typeSel = $("fe_type");
       const srcSel = $("fe_source");
       const formatSel = $("fe_format");
@@ -4580,6 +4987,9 @@ function showFieldEditor(form, sec, field) {
         if (t === "autocomplete") opts = sourceOptions(form);
         else if (t === "checklist") {
           opts = [{ value: "", label: "(opciones escritas aquí)" }].concat(sourceOptions(form));
+        }
+        else if (t === "keywords") {
+          opts = [{ value: "", label: "(sin lista; permite texto libre)" }].concat(sourceOptions(form));
         }
         else if (t === "mirror") {
           opts = [{ value: "", label: "(sin valor principal; usar referencias en plantilla)" }]
@@ -4606,6 +5016,26 @@ function showFieldEditor(form, sec, field) {
       // texto. Se esconden esas opciones para simplificar la experiencia.
       // El encabezado por línea solo aplica si perLine está activo.
       const perLineChk = $("fe_perLine");
+      let activeChipTab = "output";
+      const updateChipTab = () => {
+        const isKw = typeSel.value === "keywords";
+        $("modalBody").querySelectorAll("[data-fe-chip-panel]").forEach(panel => {
+          const active = isKw && panel.dataset.feChipPanel === activeChipTab;
+          panel.hidden = !active;
+          panel.style.display = active ? "" : "none";
+        });
+        $("modalBody").querySelectorAll("[data-fe-chip-tab]").forEach(tab => {
+          const active = tab.dataset.feChipTab === activeChipTab;
+          tab.classList.toggle("active", active);
+          tab.setAttribute("aria-selected", String(active));
+        });
+      };
+      $("modalBody").querySelectorAll("[data-fe-chip-tab]").forEach(tab => {
+        tab.addEventListener("click", () => {
+          activeChipTab = tab.dataset.feChipTab;
+          updateChipTab();
+        });
+      });
       const updateChecklistSourceUi = () => {
         const usesData = typeSel.value === "checklist" && !!srcSel.value;
         $("fe_ckOptions").disabled = usesData;
@@ -4622,6 +5052,7 @@ function showFieldEditor(form, sec, field) {
       const updateTypeUi = () => {
         const isCb = typeSel.value === "checkbox";
         const isCk = typeSel.value === "checklist";
+        const isKw = typeSel.value === "keywords";
         const isSystem = isSystemField({ type: typeSel.value });
         $("modalBody").querySelectorAll("[data-cbhide]").forEach(el => {
           el.style.display = isCb ? "none" : "";
@@ -4634,20 +5065,33 @@ function showFieldEditor(form, sec, field) {
         $("modalBody").querySelectorAll("[data-ckshow]").forEach(el => {
           el.style.display = isCk ? "" : "none";
         });
+        $("modalBody").querySelectorAll("[data-kwshow]").forEach(el => {
+          el.style.display = isKw ? "" : "none";
+        });
+        $("modalBody").querySelectorAll("[data-kwhide]").forEach(el => {
+          el.style.display = isKw ? "none" : "";
+        });
         $("modalBody").querySelectorAll("[data-systemhide]").forEach(el => {
           el.style.display = isSystem ? "none" : "";
         });
         $("modalBody").querySelectorAll("[data-systemshow]").forEach(el => {
           el.style.display = isSystem ? "" : "none";
         });
-        $("fe_perLineHeaderWrap").style.display = (!isCb && !isCk && perLineChk.checked) ? "" : "none";
+        $("fe_perLineHeaderWrap").style.display = (!isCb && !isCk && !isKw && perLineChk.checked) ? "" : "none";
+        const kwLines = isKw && $("fe_kwMode").value === "newline";
+        $("modalBody").querySelectorAll("[data-kwjoined]").forEach(el => { el.style.display = isKw && !kwLines ? "" : "none"; });
+        $("modalBody").querySelectorAll("[data-kwlines]").forEach(el => { el.style.display = kwLines ? "" : "none"; });
+        $("fe_kwHeaderWrap").style.display = kwLines && $("fe_kwPerChip").checked ? "" : "none";
         updateChecklistSourceUi();
         updateAllOptionUi();
+        updateChipTab();
       };
       typeSel.addEventListener("change", updateTypeUi);
       srcSel.addEventListener("change", updateChecklistSourceUi);
       $("fe_ckAll").addEventListener("change", updateAllOptionUi);
       perLineChk.addEventListener("change", updateTypeUi);
+      $("fe_kwMode").addEventListener("change", updateTypeUi);
+      $("fe_kwPerChip").addEventListener("change", updateTypeUi);
       updateTypeUi();
       // Condición de error: autocompletado del lenguaje de RULES y
       // validación en vivo de la sintaxis.
@@ -4729,7 +5173,26 @@ function showFieldEditor(form, sec, field) {
       setOrDel("regexMsg", $("fe_regexMsg").value.trim(), "");
       setOrDel("kwCount", $("fe_kwCount").value.trim(), "");
       if ($("fe_kwOverlap").checked) target.kwOverlap = true; else delete target.kwOverlap;
-      if (target.type !== "keywords") { delete target.kwCount; delete target.kwOverlap; }
+      if (target.type === "keywords") {
+        const kwSource = $("fe_source").value;
+        setOrDel("source", kwSource, "");
+        if ($("fe_kwMode").value === "newline") {
+          target.kwMode = "newline";
+          if ($("fe_kwPerChip").checked) delete target.kwPerChip; else target.kwPerChip = false;
+          setOrDel("kwHeader", $("fe_kwHeader").value, "");
+          delete target.kwSep;
+        } else {
+          delete target.kwMode;
+          delete target.kwPerChip;
+          delete target.kwHeader;
+          setOrDel("kwSep", $("fe_kwSep").value, ", ");
+        }
+        if ($("fe_kwSpace").checked) target.kwSpace = true; else delete target.kwSpace;
+        delete target.perLine;
+        delete target.perLineHeader;
+      } else {
+        ["kwCount", "kwOverlap", "kwMode", "kwSep", "kwPerChip", "kwHeader", "kwSpace"].forEach(k => delete target[k]);
+      }
       if (target.type === "mirror") { delete target.required; delete target.regex; }
       if (target.type === "checkbox") {
         // Una casilla sí/no no imprime ni valida texto: se limpian esas
@@ -4761,7 +5224,8 @@ function showFieldEditor(form, sec, field) {
         }
         // Lo que no aplica a una checklist se limpia del schema.
         ["default", "rows", "sep", "emptyAs", "omitValue", "joinPrev",
-         "perLine", "perLineHeader", "regex", "regexMsg", "kwCount", "kwOverlap"]
+         "perLine", "perLineHeader", "regex", "regexMsg", "kwCount", "kwOverlap",
+         "kwMode", "kwSep", "kwPerChip", "kwHeader", "kwSpace"]
           .forEach(k => delete target[k]);
       } else {
         ["options", "checkTitle", "checkSep", "checkLayout", "allOption", "allLabel",
@@ -4771,7 +5235,8 @@ function showFieldEditor(form, sec, field) {
         // Son valores siempre disponibles y generados por el navegador; no
         // admiten fuente, default, validación ni tratamiento multilínea.
         ["source", "default", "rows", "emptyAs", "omitValue", "perLine",
-         "perLineHeader", "required", "regex", "regexMsg", "kwCount", "kwOverlap"]
+         "perLineHeader", "required", "regex", "regexMsg", "kwCount", "kwOverlap",
+         "kwMode", "kwSep", "kwPerChip", "kwHeader", "kwSpace"]
           .forEach(k => delete target[k]);
       } else {
         delete target.format;
@@ -4822,7 +5287,8 @@ function showFieldEditor(form, sec, field) {
      action: show | hide | disable | setDefault
    Ejemplos: si map está vacío o es "global" → ocultar/bloquear POI;
    si shortDescription cumple la regex LOD → mostrar el campo
-   "LOD number" (creado con "Oculto por defecto") en Notas. */
+   "LOD number" (creado con "Oculto por defecto") en Notas; y
+   media:media1:type = "Vid" → mostrar un mirror con enlace .mp4. */
 function getFormRules(form) {
   return form.rules || [];
 }
@@ -4838,12 +5304,13 @@ function getFormRules(form) {
      and     := not  ( ("AND"|"&&") not )*
      not     := ("NOT"|"!") not  |  primary
      primary := "(" expr ")"  |  "@"nombre  |  comparación
-     comparación := campo ( "empty" | "notEmpty"
+     comparación := referencia ( "empty" | "notEmpty"
                           | ("="|"==") operando       // igual
                           | ("!="|"<>") operando       // distinto
                           | ("matches"|"~") operando   // cumple regex/@regla
                           | ("in"|"not in") lista )    // pertenece/no pertenece
      operando := "texto"  |  "@"nombre  |  palabra
+     referencia := campo | media:mediaN:type
      lista    := "(" miembro ("," miembro)* ")"
      miembro  := "texto" | "empty"
 
@@ -4855,10 +5322,27 @@ function getFormRules(form) {
      (permite reutilizar/concatenar reglas: «@esLod OR @esVlod»).
    Retrocompatible: una `when` vieja { field, op, value } sigue evaluándose. */
 
+// Referencia virtual disponible SOLO en expresiones de condiciones. No es un
+// campo del schema ni puede interpolarse en una plantilla: lee el tipo actual
+// de una fila de media, p. ej. media:media1:type = "Vid".
+function isMediaTypeConditionRef(id) {
+  return /^media:media[1-9]\d*:type$/.test(String(id || ""));
+}
+
+function conditionReference(form, inst, id) {
+  if (isMediaTypeConditionRef(id)) {
+    const mediaId = String(id).split(":")[1];
+    const row = normalizeMediaRows(inst, form).find(item => item.id === mediaId);
+    return { found: true, field: null, raw: row ? row.type : "" };
+  }
+  const found = form && getField(form, id);
+  return { found: !!found, field: found && found.field, raw: found ? inst.values[id] : "" };
+}
+
 function tokenizeExpr(src) {
   const toks = [];
   let i = 0;
-  const isWord = (c) => /[A-Za-z0-9_\-.]/.test(c);
+  const isWord = (c) => /[A-Za-z0-9_\-.:]/.test(c);
   while (i < src.length) {
     const c = src[i];
     if (/\s/.test(c)) { i++; continue; }
@@ -5008,7 +5492,7 @@ function astHasMissingField(ast, inst) {
   const walk = (node) => {
     if (!node) return false;
     if (node.type === "cmp") {
-      if (!getField(form, node.field)) return true;
+      if (!getField(form, node.field) && !isMediaTypeConditionRef(node.field)) return true;
       if (node.op === "in" || node.op === "notIn") return false;
       const w = cmpToWhen(node);
       return ["equalsField", "notEqualsField"].includes(w.op) && !getField(form, w.value);
@@ -5030,8 +5514,9 @@ function evalAst(ast, inst, seen) {
     case "cmp":
       if (ast.op === "in" || ast.op === "notIn") {
         const form = getForm(inst.formId);
-        if (!form || !getField(form, ast.field)) return false;
-        const raw = inst.values[ast.field];
+        const ref = conditionReference(form, inst, ast.field);
+        if (!form || !ref.found) return false;
+        const raw = ref.raw;
         const values = Array.isArray(raw)
           ? raw.map(v => String(v).trim().toLowerCase()).filter(Boolean)
           : [String(raw == null ? "" : raw).trim().toLowerCase()].filter(Boolean);
@@ -5080,7 +5565,7 @@ function exprError(src, form) {
   try {
     const ast = parseExpr(String(src));
     if (form) {
-      const missing = exprFieldRefs(src).find(id => !getField(form, id));
+      const missing = exprFieldRefs(src).find(id => !getField(form, id) && !isMediaTypeConditionRef(id));
       if (missing) return `El campo «${missing}» no existe en este formulario`;
     }
     return "";
@@ -5106,6 +5591,7 @@ function exprFieldRefs(src) {
 // Valores configurados para un campo autocomplete o checklist. En listas
 // dependientes no hay una instancia concreta en RULES: se reúnen los buckets.
 function condExprFieldValues(field) {
+  if (field && field.type === "mediaType") return field.options || [];
   if (!field || (field.type !== "autocomplete" && field.type !== "checklist")) return [];
   let values = [];
   if (field.type === "checklist") {
@@ -5156,8 +5642,8 @@ function condExprFragment(src, cursor) {
       atRule: false
     };
   }
-  const m = /[@A-Za-z0-9_.-]+$/.exec(before);
-  const tail = /^[A-Za-z0-9_.-]+/.exec(src.slice(cursor));
+  const m = /[@A-Za-z0-9_.:-]+$/.exec(before);
+  const tail = /^[A-Za-z0-9_.:-]+/.exec(src.slice(cursor));
   return {
     from: m ? cursor - m[0].length : cursor,
     to: cursor + (tail ? tail[0].length : 0),
@@ -5213,10 +5699,11 @@ function condExprSuggestionState(src, cursor, form) {
   if (["=", "==", "!=", "<>", "~"].includes(op(last)) || ["matches", "contains"].includes(word(last))) {
     const fieldTk = prev;
     const fieldRef = fieldTk && fieldTk.t === "word" ? getField(form, fieldTk.v) : null;
+    const mediaRef = fieldTk && fieldTk.t === "word" && isMediaTypeConditionRef(fieldTk.v);
     return {
       ...fragment,
       kind: op(last) === "~" || word(last) === "matches" ? "matchesOperand" : "operand",
-      field: fieldRef && fieldRef.field
+      field: fieldRef ? fieldRef.field : (mediaRef ? { type: "mediaType", options: mediaTypes(form) } : null)
     };
   }
   if (word(last) === "in") {
@@ -5235,6 +5722,9 @@ function condExprSuggestionState(src, cursor, form) {
     }
     const fieldRef = getField(form, last.v);
     if (fieldRef) return { ...fragment, kind: "operator", field: fieldRef.field };
+    if (isMediaTypeConditionRef(last.v)) {
+      return { ...fragment, kind: "operator", field: { type: "mediaType", options: mediaTypes(form) } };
+    }
   }
   return { ...fragment, kind: "logical", field: null };
 }
@@ -5244,7 +5734,9 @@ function condExprSuggestions(src, cursor, form) {
   const fields = allFields(form).filter(x => x.field.type !== "mirror").map(x => x.field);
   const rules = Object.keys(config.data.rules || {});
   const item = (insert, label, detail) => ({ insert, label: label || insert.trim(), detail: detail || "" });
-  const fieldItems = () => fields.map(field => item(field.id + " ", field.id, field.label));
+  const fieldItems = () => fields.map(field => item(field.id + " ", field.id, field.label))
+    .concat([1, 2, 3].map(n => item(`media:media${n}:type `,
+      `media:media${n}:type`, `tipo de media ${n}`)));
   const ruleItems = () => rules.map(name => item("@" + name + " ", "@" + name, "regla global"));
   const valueItems = field => condExprFieldValues(field)
     .map(value => {
@@ -5390,9 +5882,9 @@ function wireCondExprAutocomplete(input, form) {
 
 function evalCondition(when, inst) {
   const form = getForm(inst.formId);
-  const found = form && getField(form, when.field);
-  if (!found) return false;
-  const raw = inst.values[when.field];
+  const ref = conditionReference(form, inst, when.field);
+  if (!ref.found) return false;
+  const raw = ref.raw;
   const values = Array.isArray(raw)
     ? raw.map(v => String(v).trim()).filter(Boolean)
     : (String(raw == null ? "" : raw).trim() ? [String(raw).trim()] : []);
@@ -5405,8 +5897,8 @@ function evalCondition(when, inst) {
     case "equals":    return Array.isArray(raw) ? hasTarget : v.toLowerCase() === target.toLowerCase();
     case "notEquals": return Array.isArray(raw) ? !hasTarget : v.toLowerCase() !== target.toLowerCase();
     case "contains":  return hasTarget;
-    case "isAll":     return found.field.type === "checklist" && found.field.allOption &&
-                             values.includes(checklistSpecialValue(found.field));
+    case "isAll":     return ref.field && ref.field.type === "checklist" && ref.field.allOption &&
+                             values.includes(checklistSpecialValue(ref.field));
     case "matches":
       try { return values.some(value => new RegExp(resolveRef(target), "i").test(value)); }
       catch (e) { return false; }
@@ -5833,6 +6325,39 @@ function wireFormOutputResizer() {
   window.addEventListener("resize", () => restoreFormOutputSplit());
 }
 
+// Al reducir la ventana a un ancho típico de media pantalla, el panel derecho
+// deja el formulario como foco. Reabrirlo es una preferencia temporal del
+// usuario: se respeta mientras la ventana siga angosta y se vuelve a evaluar
+// al recuperar ancho.
+const OUTPUT_AUTO_COLLAPSE_MAX_WIDTH = 1100;
+function applyOutputPanelCollapse(collapsed) {
+  const panel = $("outputPanel");
+  const main = $("main");
+  const btn = $("outputPanelCollapseBtn");
+  if (!panel || !main || !btn) return;
+  uiCollapse.output = !!collapsed;
+  panel.classList.toggle("output-collapsed", uiCollapse.output);
+  main.classList.toggle("output-collapsed", uiCollapse.output);
+  btn.innerHTML = uiCollapse.output ? "‹" : "›";
+  btn.title = uiCollapse.output ? "Reabrir panel de output y media" : "Replegar panel de output y media";
+  btn.setAttribute("aria-label", btn.title);
+  btn.setAttribute("aria-expanded", String(!uiCollapse.output));
+}
+
+function syncOutputPanelForViewport() {
+  const isNarrow = window.innerWidth <= OUTPUT_AUTO_COLLAPSE_MAX_WIDTH;
+  if (isNarrow) {
+    if (!uiCollapse.outputManualInNarrow) {
+      uiCollapse.outputAutoCollapsed = true;
+      applyOutputPanelCollapse(true);
+    }
+    return;
+  }
+  if (uiCollapse.outputAutoCollapsed) applyOutputPanelCollapse(false);
+  uiCollapse.outputAutoCollapsed = false;
+  uiCollapse.outputManualInNarrow = false;
+}
+
 // Compactación: colapso de secciones y repliegue de paneles. Se cablea UNA
 // vez en boot sobre elementos persistentes (no se reemplazan, solo su
 // innerHTML), así sobrevive a los re-render. El estado vive en uiCollapse.
@@ -5869,6 +6394,18 @@ function wireCollapse() {
   panelToggle("formCollapseBtn",    "formCol",    "form-collapsed",    "form");
   panelToggle("mediaCollapseBtn",   "mediaPanel", "collapsed",         "media");
   panelToggle("actionsCollapseBtn", "outputSide", "actions-collapsed", "actions");
+  const outputBtn = $("outputPanelCollapseBtn");
+  if (outputBtn) {
+    outputBtn.addEventListener("click", () => {
+      if (window.innerWidth <= OUTPUT_AUTO_COLLAPSE_MAX_WIDTH) {
+        uiCollapse.outputManualInNarrow = true;
+        uiCollapse.outputAutoCollapsed = false;
+      }
+      applyOutputPanelCollapse(!uiCollapse.output);
+    });
+  }
+  window.addEventListener("resize", syncOutputPanelForViewport);
+  syncOutputPanelForViewport();
 }
 
 // Interacciones de la barra de tiles. Se cablean UNA vez sobre elementos
@@ -6004,7 +6541,19 @@ function fieldOutputPart(field, inst) {
   if (field.type === "keywords") {
     const arr = Array.isArray(raw) ? raw : [];
     if (!arr.length) return null;
-    raw = arr.join(", ");
+    if (field.kwMode === "newline") {
+      const kwTpl = field.template || "{value}";
+      if (field.kwPerChip !== false) {
+        const filled = arr.map(value => interpolateFieldTemplate(kwTpl, field, inst, value));
+        if (filled.some(part => part.missingMedia.length)) return null;
+        const out = filled.map(part => part.text);
+        if (field.kwHeader) out.unshift(unescapeNl(field.kwHeader));
+        return out;
+      }
+      raw = arr.join("\n");
+    } else {
+      raw = arr.join(unescapeNl(field.kwSep != null ? field.kwSep : ", "));
+    }
   }
   if (field.type === "checklist") {
     // Salen solo las opciones marcadas. Inline: una línea unida por el
@@ -6063,32 +6612,80 @@ function fieldOutputPart(field, inst) {
 
 function buildOutput(inst) {
   const form = getForm(inst.formId);
-  if (!form) return { full: "", summary: "" };
+  if (!form) return { full: "", summary: "", description: "", segments: [], ranges: {} };
   const blocks = [];
   let summaryLine = "";
+  const partIndexByField = Object.create(null);
   // Campos ocultos por condición: fuera del output
   const fx = evalFieldRules(form, inst);
+
+  // Cada entrada conserva qué fracción sale de la plantilla del campo. Los
+  // encabezados y separadores quedan sin segmento: se pueden editar, pero no
+  // desconectan ningún campo del formulario.
+  const outputEntries = (field, part) => {
+    const arr = Array.isArray(part) ? part : [part];
+    let untrackedHeaders = 0;
+    if (Array.isArray(part)) {
+      if (field.type === "checklist" && field.checkLayout === "newline" && field.checkTitle) untrackedHeaders = 1;
+      else if (field.type === "keywords" && field.kwMode === "newline" && field.kwPerChip !== false && field.kwHeader) untrackedHeaders = 1;
+      else if (field.perLine && field.perLineHeader) untrackedHeaders = 1;
+    }
+    const inlinePrefix = !Array.isArray(part) && field.type === "checklist" &&
+      field.checkLayout !== "newline" && field.checkTitle
+      ? unescapeNl(field.checkTitle).length + 1 : 0;
+    return arr.map((text, index) => ({
+      text: String(text),
+      trackStart: index < untrackedHeaders ? null : (index === 0 ? inlinePrefix : 0)
+    }));
+  };
+  const newLine = () => ({ text: "", segments: [] });
+  const appendEntry = (line, entry, prefix, fieldId) => {
+    const leading = prefix || "";
+    const base = line.text.length + leading.length;
+    line.text += leading + entry.text;
+    if (entry.trackStart != null && entry.trackStart < entry.text.length) {
+      const index = partIndexByField[fieldId] || 0;
+      line.segments.push({
+        fieldId,
+        index,
+        start: base + entry.trackStart,
+        end: base + entry.text.length
+      });
+      partIndexByField[fieldId] = index + 1;
+    }
+  };
 
   form.sections.forEach(sec => {
     const lines = [];
     if (sec.mode === "joined") {
       // Todo en una sola línea, con separadores por campo
-      let line = "";
+      const line = newLine();
       sec.fields.forEach(field => {
         if (fx[field.id] && fx[field.id].hidden) return;
         const part = fieldOutputPart(field, inst);
         if (part == null) return;
-        const text = Array.isArray(part) ? part.join(" ") : part;
-        if (!line) {
-          line = text;
-        } else {
-          const sep = unescapeNl(field.sep != null ? field.sep : (sec.sep != null ? sec.sep : " - "));
-          line += sep + text;
-        }
+        const entries = outputEntries(field, part);
+        const fieldText = entries.map(entry => entry.text).join(" ");
+        const prefix = line.text ? unescapeNl(field.sep != null ? field.sep : (sec.sep != null ? sec.sep : " - ")) : "";
+        // Conserva los rangos de cada entrada aunque varias compongan la misma
+        // línea de una sección unida.
+        const base = line.text.length + prefix.length;
+        line.text += prefix + fieldText;
+        let entryOffset = 0;
+        entries.forEach((entry, index) => {
+          if (entry.trackStart != null && entry.trackStart < entry.text.length) {
+            const partIndex = partIndexByField[field.id] || 0;
+            line.segments.push({ fieldId: field.id, index: partIndex,
+              start: base + entryOffset + entry.trackStart,
+              end: base + entryOffset + entry.text.length });
+            partIndexByField[field.id] = partIndex + 1;
+          }
+          entryOffset += entry.text.length + (index < entries.length - 1 ? 1 : 0);
+        });
       });
-      if (line) {
+      if (line.text) {
         lines.push(line);
-        if (!summaryLine) summaryLine = line;
+        if (!summaryLine) summaryLine = line.text;
       }
     } else {
       // Cada campo aporta su(s) línea(s)
@@ -6096,19 +6693,31 @@ function buildOutput(inst) {
         if (fx[field.id] && fx[field.id].hidden) return;
         const part = fieldOutputPart(field, inst);
         if (part == null) return;
-        const arr = Array.isArray(part) ? part : [part];
+        const entries = outputEntries(field, part);
         if (field.joinPrev) {
           // Continúa en la línea anterior; si no hay línea previa
           // (p. ej. timestamp vacío) no se imprime suelto.
           if (!lines.length) return;
           const sep = unescapeNl(field.sep != null ? field.sep : " ");
-          lines[lines.length - 1] += sep + arr[0];
-          arr.slice(1).forEach(l => lines.push(l));
+          appendEntry(lines[lines.length - 1], entries[0], sep, field.id);
+          entries.slice(1).forEach(entry => {
+            const line = newLine();
+            appendEntry(line, entry, "", field.id);
+            lines.push(line);
+          });
         } else {
-          arr.forEach(l => lines.push(l));
+          entries.forEach(entry => {
+            const line = newLine();
+            appendEntry(line, entry, "", field.id);
+            lines.push(line);
+          });
         }
       });
-      if (lines.length && sec.heading) lines.unshift(unescapeNl(sec.heading));
+      if (lines.length && sec.heading) {
+        const heading = newLine();
+        heading.text = unescapeNl(sec.heading);
+        lines.unshift(heading);
+      }
     }
     if (lines.length) blocks.push({ lines, noGap: !!sec.noGap });
   });
@@ -6116,7 +6725,14 @@ function buildOutput(inst) {
   const out = [];
   blocks.forEach((b, i) => {
     out.push(...b.lines);
-    if (i < blocks.length - 1 && !b.noGap) out.push("");
+    if (i < blocks.length - 1 && !b.noGap) out.push(newLine());
+  });
+  const segments = [];
+  let cursor = 0;
+  out.forEach((line, index) => {
+    (line.segments || []).forEach(segment => segments.push({ ...segment,
+      start: segment.start + cursor, end: segment.end + cursor }));
+    cursor += line.text.length + (index < out.length - 1 ? 1 : 0);
   });
 
   // Chunks para los botones de copia:
@@ -6124,24 +6740,55 @@ function buildOutput(inst) {
   //   description = todas las demás secciones
   const isSummaryFirst = blocks.length > 0 && !!summaryLine
                       && blocks[0].lines.length === 1
-                      && blocks[0].lines[0] === summaryLine;
+                      && blocks[0].lines[0].text === summaryLine;
   const rest = [];
   blocks.forEach((b, i) => {
     if (isSummaryFirst && i === 0) return;
     rest.push(...b.lines);
-    if (i < blocks.length - 1 && !b.noGap) rest.push("");
+    if (i < blocks.length - 1 && !b.noGap) rest.push(newLine());
   });
-  while (rest.length && rest[rest.length - 1] === "") rest.pop();
-  return {
-    full: out.join("\n"),
-    summary: isSummaryFirst ? summaryLine : "",
-    description: rest.join("\n")
+  while (rest.length && rest[rest.length - 1].text === "") rest.pop();
+  const full = out.map(line => line.text).join("\n");
+  const summary = isSummaryFirst ? summaryLine : "";
+  const description = rest.map(line => line.text).join("\n");
+  const ranges = {
+    full: { start: 0, end: full.length },
+    summary: { start: 0, end: summary.length },
+    description: { start: description ? full.length - description.length : full.length, end: full.length }
   };
+  return { full, summary, description, segments, ranges };
 }
 
 function activeNotebookTab() {
   normalizeNotebook();
   return state.notebook.tabs.find(tab => tab.id === state.notebook.activeTabId) || state.notebook.tabs[0];
+}
+
+function nextNotebookTitle(tabs) {
+  const used = new Set((tabs || []).map(tab => {
+    const match = /^nota\s+(\d+)$/i.exec(String(tab && tab.title || "").trim());
+    return match ? +match[1] : 0;
+  }).filter(Boolean));
+  let n = 1;
+  while (used.has(n)) n++;
+  return `Nota ${n}`;
+}
+
+function renameNotebookTab(tab) {
+  if (!tab) return;
+  showPromptModal({
+    title: "Renombrar nota",
+    body: "Escribe el nombre de esta pestaña.",
+    placeholder: "Nombre de la nota",
+    initialValue: tab.title,
+    confirmText: "Guardar",
+    onConfirm: value => {
+      const title = String(value || "").trim();
+      if (!title) { flashBanner("La nota necesita un nombre.", true); return; }
+      tab.title = title;
+      saveNotebook();
+    }
+  });
 }
 
 function renderNotebook() {
@@ -6152,8 +6799,11 @@ function renderNotebook() {
   const book = state.notebook;
   const active = activeNotebookTab();
   box.className = "output-notes " + book.mode;
+  const wrap = box.closest(".output-textarea-wrap");
+  if (wrap) wrap.classList.toggle("notebook-closed", book.mode === "closed");
   tabsEl.innerHTML = book.tabs.map(tab => `<span class="notebook-tab-wrap">
     <button type="button" class="output-notes-tab${tab.id === active.id ? " active" : ""}" data-notebook-tab="${escapeHtml(tab.id)}" title="Doble clic para renombrar">${escapeHtml(tab.title)}</button>
+    <button type="button" class="notebook-tab-edit" data-notebook-edit="${escapeHtml(tab.id)}" title="Renombrar ${escapeHtml(tab.title)}" aria-label="Renombrar ${escapeHtml(tab.title)}">✎</button>
     ${book.tabs.length > 1 ? `<button type="button" class="notebook-tab-close" data-notebook-close="${escapeHtml(tab.id)}" title="Cerrar nota" aria-label="Cerrar ${escapeHtml(tab.title)}">×</button>` : ""}
   </span>`).join("");
   if (document.activeElement !== notes) notes.value = active.content;
@@ -6173,20 +6823,352 @@ function setNotebookMode(mode) {
   if (mode !== "closed") $("notesTextarea").focus();
 }
 
+function outputDetachedFieldIds(inst, segments) {
+  return Object.keys(inst.outputDetached || {}).filter(fieldId => {
+    const parts = inst.outputDetached[fieldId] && inst.outputDetached[fieldId].parts;
+    return parts && typeof parts === "object" && (segments || []).some(segment =>
+      segment.fieldId === fieldId && typeof parts[segment.index] === "string");
+  });
+}
+
+function outputIsLegacyManual(inst) {
+  if (!inst.outputEdited || Object.keys(inst.outputDetached || {}).length) return false;
+  return !Array.isArray(inst.outputSegments) || !inst.outputSegments.length;
+}
+
+// La salida canónica sigue siendo texto plano. Estas vistas sólo interpretan
+// la copia visible para que el tester pueda comprobar el aspecto final sin
+// alterar templates, rangos de output ni el texto que se copia.
+function normalizeOutputPreviewMode(mode) {
+  return ["jira", "markdown"].includes(mode) ? mode : "plain";
+}
+
+function outputPreviewLine(line, mode) {
+  const text = String(line == null ? "" : line);
+  if (!text) return { type: "spacer", text: "" };
+  if (mode === "jira") {
+    const list = text.match(/^(\*+|#+)\s+(.+)$/);
+    if (list) return { type: list[1][0] === "*" ? "ul" : "ol", text: list[2] };
+  }
+  if (mode === "markdown") {
+    const heading = text.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) return { type: "heading", level: heading[1].length, text: heading[2] };
+    const unordered = text.match(/^[-*+]\s+(.+)$/);
+    if (unordered) return { type: "ul", text: unordered[1] };
+    const ordered = text.match(/^\d+[.)]\s+(.+)$/);
+    if (ordered) return { type: "ol", text: ordered[1] };
+    const quote = text.match(/^>\s?(.+)$/);
+    if (quote) return { type: "quote", text: quote[1] };
+  }
+  return { type: "paragraph", text };
+}
+
+function jiraCodeFence(line) {
+  const match = String(line == null ? "" : line).trim().match(/^\{code(?::([A-Za-z0-9_+-]+))?\}$/i);
+  return match ? { language: match[1] || "" } : null;
+}
+
+function appendJiraCodeBlock(parent, block) {
+  const pre = document.createElement("pre");
+  const code = document.createElement("code");
+  if (block.language) code.dataset.language = block.language;
+  code.textContent = block.lines.join("\n");
+  pre.append(code);
+  parent.append(pre);
+}
+
+function safePreviewUrl(value) {
+  try {
+    const url = new URL(String(value || ""), window.location.href);
+    return ["http:", "https:", "mailto:"].includes(url.protocol) ? url.href : "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function appendOutputPreviewInline(parent, source, mode) {
+  const text = String(source == null ? "" : source);
+  const pattern = mode === "jira"
+    ? /(\{\{([^{}\n]+)\}\}|\[([^\]|\n]+)\|([^\]\n]+)\]|\*([^*\n]+)\*|\+([^+\n]+)\+|_([^_\n]+)_)/g
+    : /(\[([^\]\n]+)\]\(([^)\s]+)\)|\*\*([^*\n]+)\*\*|__([^_\n]+)__|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_)/g;
+  let cursor = 0;
+  let match;
+  while ((match = pattern.exec(text))) {
+    if (match.index > cursor) parent.append(document.createTextNode(text.slice(cursor, match.index)));
+    let element;
+    if (mode === "jira") {
+      if (match[2]) element = document.createElement("code");
+      else if (match[3]) {
+        const href = safePreviewUrl(match[4]);
+        element = href ? document.createElement("a") : document.createElement("span");
+        if (href) { element.href = href; element.target = "_blank"; element.rel = "noopener noreferrer"; }
+        element.textContent = match[3];
+      } else if (match[5]) element = document.createElement("strong");
+      else if (match[6]) element = document.createElement("u");
+      else element = document.createElement("em");
+      if (element.textContent === "") element.textContent = match[2] || match[5] || match[6] || match[7] || "";
+    } else {
+      if (match[2]) {
+        const href = safePreviewUrl(match[3]);
+        element = href ? document.createElement("a") : document.createElement("span");
+        if (href) { element.href = href; element.target = "_blank"; element.rel = "noopener noreferrer"; }
+        element.textContent = match[2];
+      } else if (match[4] || match[5]) element = document.createElement("strong");
+      else if (match[6]) element = document.createElement("s");
+      else if (match[7]) element = document.createElement("code");
+      else element = document.createElement("em");
+      if (element.textContent === "") element.textContent = match[4] || match[5] || match[6] || match[7] || match[8] || match[9] || "";
+    }
+    parent.append(element);
+    cursor = pattern.lastIndex;
+  }
+  if (cursor < text.length) parent.append(document.createTextNode(text.slice(cursor)));
+}
+
+function renderOutputPreview(text) {
+  const preview = $("outputPreview");
+  const wrap = preview && preview.closest(".output-textarea-wrap");
+  const hint = $("outputPreviewHint");
+  const mode = normalizeOutputPreviewMode(state.prefs.outputPreviewMode);
+  if (state.prefs.outputPreviewMode !== mode) state.prefs.outputPreviewMode = mode;
+  if (!preview || !wrap) return;
+  wrap.classList.toggle("previewing", mode !== "plain");
+  if (hint) hint.textContent = mode === "plain" ? "" : `Vista previa ${mode === "jira" ? "Jira" : "Markdown"} (solo lectura)`;
+  preview.replaceChildren();
+  if (mode === "plain") return;
+  const source = String(text == null ? "" : text);
+  if (!source) {
+    const empty = document.createElement("p");
+    empty.className = "output-preview-empty";
+    empty.textContent = "No hay texto para previsualizar.";
+    preview.append(empty);
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  let activeList = null;
+  let activeListType = "";
+  let codeBlock = null;
+  source.split("\n").forEach(line => {
+    const fence = mode === "jira" ? jiraCodeFence(line) : null;
+    if (fence) {
+      activeList = null;
+      activeListType = "";
+      if (codeBlock) {
+        appendJiraCodeBlock(fragment, codeBlock);
+        codeBlock = null;
+      } else {
+        codeBlock = { language: fence.language, lines: [] };
+      }
+      return;
+    }
+    if (codeBlock) {
+      codeBlock.lines.push(line);
+      return;
+    }
+    const block = outputPreviewLine(line, mode);
+    if (block.type === "ul" || block.type === "ol") {
+      if (!activeList || activeListType !== block.type) {
+        activeList = document.createElement(block.type);
+        activeListType = block.type;
+        fragment.append(activeList);
+      }
+      const item = document.createElement("li");
+      appendOutputPreviewInline(item, block.text, mode);
+      activeList.append(item);
+      return;
+    }
+    activeList = null;
+    activeListType = "";
+    if (block.type === "spacer") {
+      const spacer = document.createElement("div");
+      spacer.className = "preview-spacer";
+      fragment.append(spacer);
+      return;
+    }
+    const element = document.createElement(block.type === "heading" ? `h${block.level}`
+      : block.type === "quote" ? "blockquote" : "p");
+    appendOutputPreviewInline(element, block.text, mode);
+    fragment.append(element);
+  });
+  if (codeBlock) appendJiraCodeBlock(fragment, codeBlock);
+  preview.append(fragment);
+}
+
+function renderOutputPreviewControls() {
+  const controls = $("outputPreviewControls");
+  if (!controls) return;
+  const mode = normalizeOutputPreviewMode(state.prefs.outputPreviewMode);
+  controls.innerHTML = "";
+  [["jira", "Jira"], ["markdown", "Markdown"]].forEach(([id, label]) => {
+    const switchLabel = document.createElement("label");
+    switchLabel.className = "output-preview-switch";
+    switchLabel.append(document.createTextNode(label));
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = mode === id;
+    input.setAttribute("role", "switch");
+    input.setAttribute("aria-label", `Vista previa ${label}`);
+    input.addEventListener("change", () => {
+      state.prefs.outputPreviewMode = input.checked ? id : "plain";
+      renderOutputPreview($("outputTextarea").value);
+      renderOutputPreviewControls();
+      scheduleSave();
+    });
+    const track = document.createElement("span");
+    track.className = "output-preview-switch-track";
+    switchLabel.append(input, track);
+    controls.append(switchLabel);
+  });
+}
+
+function renderOutputDisconnectBadge(inst, segments) {
+  const badge = $("outputDisconnectBadge");
+  if (!badge) return;
+  const fields = outputDetachedFieldIds(inst, segments);
+  const legacy = outputIsLegacyManual(inst);
+  if (legacy) {
+    badge.textContent = "Desconectado del formulario";
+    badge.classList.add("visible");
+  } else if (fields.length) {
+    badge.textContent = `Desconectado: ${fields.length} ${fields.length === 1 ? "campo" : "campos"}`;
+    badge.classList.add("visible");
+  } else {
+    badge.textContent = "";
+    badge.classList.remove("visible");
+  }
+}
+
+function applyOutputDetachment(chunks, detached) {
+  const segments = chunks.segments || [];
+  let cursor = 0;
+  let full = "";
+  const appliedSegments = [];
+  segments.forEach(segment => {
+    full += chunks.full.slice(cursor, segment.start);
+    const record = detached && detached[segment.fieldId];
+    const manual = record && record.parts && record.parts[segment.index];
+    const text = typeof manual === "string" ? manual : chunks.full.slice(segment.start, segment.end);
+    const start = full.length;
+    full += text;
+    appliedSegments.push({ ...segment, start, end: full.length });
+    cursor = segment.end;
+  });
+  full += chunks.full.slice(cursor);
+  const mapOffset = offset => {
+    let delta = 0;
+    segments.forEach((segment, index) => {
+      if (segment.end > offset) return;
+      delta += (appliedSegments[index].end - appliedSegments[index].start) -
+        (segment.end - segment.start);
+    });
+    return offset + delta;
+  };
+  const ranges = {};
+  Object.entries(chunks.ranges || {}).forEach(([name, range]) => {
+    ranges[name] = { start: mapOffset(range.start), end: mapOffset(range.end) };
+  });
+  const chunkText = name => {
+    const range = ranges[name];
+    return range ? full.slice(range.start, range.end) : String(chunks[name] || "");
+  };
+  return {
+    full,
+    summary: chunkText("summary"),
+    description: chunkText("description"),
+    segments: appliedSegments,
+    ranges
+  };
+}
+
+function outputChangeRange(before, after) {
+  let start = 0;
+  while (start < before.length && start < after.length && before[start] === after[start]) start++;
+  let oldEnd = before.length, newEnd = after.length;
+  while (oldEnd > start && newEnd > start && before[oldEnd - 1] === after[newEnd - 1]) {
+    oldEnd--; newEnd--;
+  }
+  return { start, oldEnd, newEnd, delta: newEnd - oldEnd };
+}
+
+function outputSegmentAfterChange(segment, change, textLength) {
+  let start = segment.start;
+  let end = segment.end;
+  if (segment.end <= change.start) return { ...segment };
+  if (segment.start >= change.oldEnd) return { ...segment, start: start + change.delta, end: end + change.delta };
+  start = segment.start < change.start ? segment.start : change.start;
+  end = segment.end > change.oldEnd ? segment.end + change.delta : change.newEnd;
+  return { ...segment, start: Math.max(0, start), end: Math.max(0, Math.min(textLength, end)) };
+}
+
+function outputRangesAfterChange(ranges, change, textLength) {
+  const next = {};
+  Object.entries(ranges || {}).forEach(([name, range]) => {
+    next[name] = outputSegmentAfterChange(range, change, textLength);
+  });
+  return next;
+}
+
+function outputSegmentTouchesChange(segment, change) {
+  if (change.start === change.oldEnd) {
+    return segment.start < change.start && change.start < segment.end;
+  }
+  return segment.start < change.oldEnd && segment.end > change.start;
+}
+
+function captureOutputTextareaEdit(inst, text) {
+  const before = String(inst.output || "");
+  const segments = Array.isArray(inst.outputSegments) ? inst.outputSegments : [];
+  inst.output = text;
+  if (!segments.length) {
+    const change = outputChangeRange(before, text);
+    inst.outputRanges = outputRangesAfterChange(inst.outputRanges, change, text.length);
+    inst.outputLayoutEdited = true;
+    inst.outputEdited = false;
+    renderOutputDisconnectBadge(inst, []);
+    return;
+  }
+  const change = outputChangeRange(before, text);
+  const nextSegments = segments.map(segment => outputSegmentAfterChange(segment, change, text.length));
+  inst.outputRanges = outputRangesAfterChange(inst.outputRanges, change, text.length);
+  const changedFields = new Set(segments.filter(segment => outputSegmentTouchesChange(segment, change))
+    .map(segment => segment.fieldId));
+  if (changedFields.size) {
+    inst.outputDetached = inst.outputDetached || {};
+    changedFields.forEach(fieldId => {
+      const record = inst.outputDetached[fieldId] = inst.outputDetached[fieldId] || { parts: {} };
+      nextSegments.filter(segment => segment.fieldId === fieldId).forEach(segment => {
+        record.parts[segment.index] = text.slice(segment.start, segment.end);
+      });
+    });
+    inst.outputEdited = true;
+  } else {
+    // Los cambios de formato se conservan mientras se copia este texto, pero
+    // no desconectan campos y se recalculan ante el siguiente cambio del form.
+    inst.outputLayoutEdited = true;
+    inst.outputEdited = outputDetachedFieldIds(inst, nextSegments).length > 0;
+  }
+  inst.outputSegments = nextSegments;
+  renderOutputDisconnectBadge(inst, nextSegments);
+}
+
 function renderOutput() {
   const inst = getActiveInstance();
   if (!inst || !getForm(state.topTab)) return;
   refreshSystemFieldValues(inst);
   const chunks = buildOutput(inst);
 
-  // Si el tester editó el textarea a mano se respeta su versión;
-  // "Regenerar" vuelve a la versión automática.
   const ta = $("outputTextarea");
-  if (!inst.output || !inst.outputEdited) {
-    inst.output = chunks.full;
-    inst.outputEdited = false;
+  if (!outputIsLegacyManual(inst)) {
+    const rendered = applyOutputDetachment(chunks, inst.outputDetached);
+    inst.output = rendered.full;
+    inst.outputSegments = rendered.segments;
+    inst.outputRanges = rendered.ranges;
+    inst.outputEdited = outputDetachedFieldIds(inst, rendered.segments).length > 0;
+    inst.outputLayoutEdited = false;
   }
   ta.value = inst.output;
+  renderOutputDisconnectBadge(inst, inst.outputSegments);
+  renderOutputPreview(inst.output);
   renderNotebook();
 
   const actions = $("outputActions");
@@ -6200,6 +7182,10 @@ function renderOutput() {
   }
   addBtn(actions, "Regenerar", () => {
     inst.outputEdited = false;
+    inst.outputLayoutEdited = false;
+    inst.outputDetached = {};
+    inst.outputSegments = [];
+    inst.outputRanges = {};
     inst.output = "";
     renderOutput();
     scheduleSave();
@@ -6216,6 +7202,11 @@ function renderOutput() {
         inst.ticketKey = "";
         inst.output = "";
         inst.outputEdited = false;
+        inst.outputLayoutEdited = false;
+        inst.outputDetached = {};
+        inst.outputSegments = [];
+        inst.outputRanges = {};
+        inst.checklistExtras = blank.checklistExtras;
         markInstanceDirty(inst);
         scheduleSave();
         renderForm();
@@ -6223,6 +7214,7 @@ function renderOutput() {
       }
     });
   }, "danger");
+  renderOutputPreviewControls();
 }
 
 // Copiar es un punto explícito de actualización de los valores del sistema.
@@ -6231,12 +7223,24 @@ function renderOutput() {
 function refreshOutputForCopy(inst, chunk) {
   refreshSystemFieldValues(inst);
   const chunks = buildOutput(inst);
-  if (!inst.outputEdited) {
-    inst.output = chunks.full;
+  let rendered = null;
+  if (!outputIsLegacyManual(inst) && !inst.outputLayoutEdited) {
+    rendered = applyOutputDetachment(chunks, inst.outputDetached);
+    inst.output = rendered.full;
+    inst.outputSegments = rendered.segments;
+    inst.outputRanges = rendered.ranges;
+    inst.outputEdited = outputDetachedFieldIds(inst, rendered.segments).length > 0;
     const ta = $("outputTextarea");
     if (ta) ta.value = inst.output;
+    renderOutputDisconnectBadge(inst, rendered.segments);
   }
-  return chunk === "full" ? inst.output : chunks[chunk];
+  if (chunk === "full") return inst.output;
+  if (rendered) return rendered[chunk];
+  if (!outputIsLegacyManual(inst) && inst.outputRanges && inst.outputRanges[chunk]) {
+    const range = inst.outputRanges[chunk];
+    return inst.output.slice(range.start, range.end);
+  }
+  return chunks[chunk];
 }
 
 function addBtn(container, label, fn, cls) {
@@ -7025,7 +8029,9 @@ function renderRulesTab() {
         <code>campo in ("uno", "dos", empty)</code>,
         <code>campo not in ("uno", "dos", empty)</code>,
         <code>campo matches @regla</code> (o una regex), y
-        <code>campoA = campoB</code> (compara dos campos). Puedes referenciar otra
+        <code>campoA = campoB</code> (compara dos campos) y
+        <code>media:media1:type = "Vid"</code> (tipo de una fila de media).
+        Puedes referenciar otra
         <code>@regla</code> booleana suelta y concatenarlas
         (<code>@esLod OR @esVlod</code>). Ejemplo:
         <code>shortDescription matches @lod AND NOT poi empty</code>. El input se
@@ -7059,11 +8065,12 @@ function renderRulesTab() {
       ${tilesHtml}
     </div>
     <div class="rules-future">
-      Próximamente: más acciones para los nombres de media (condiciones sobre la
-      media y REGEX de la Key). La estructura ya lo soporta; se agregará sin
-      romper tus datos. El formato de media ya es editable: regla
-      <code>media_fmt</code> (placeholders {type}, {key}, {platform} y cualquier
-      id de campo) y la lista <code>mediaTypes</code> en Data.
+      El tipo de una fila de media está disponible en condiciones como
+      <code>media:media1:type = "Vid"</code>. Úsalo para mostrar un campo
+      <code>mirror</code> cuyo template inserte <code>{media:media1}</code> y
+      añada la extensión necesaria solo en el output. El nombre del panel de
+      media se conserva sin extensión. El formato base sigue siendo la regla
+      <code>media_fmt</code> y la lista <code>mediaTypes</code> en Data.
     </div>`;
 
   // Evita que el navegador autocomplete un input con el valor de otro
@@ -7381,7 +8388,7 @@ function importDataCsv(text) {
 }
 
 // ---- bug_fields.csv (schema de formularios) ----
-const FIELDS_CSV_HEADER = [
+const FIELDS_CSV_PREVIOUS_HEADER = [
   "form", "section", "field", "label", "type", "source", "size", "template",
   "sep", "joinprev", "perline", "rows", "required", "regex", "regexmsg",
   "default", "emptyas", "omitvalue", "nogap", "help",
@@ -7389,10 +8396,14 @@ const FIELDS_CSV_HEADER = [
   "ckoptions", "ckalllabel", "ckalloutput", "ckalldependency", "ckallvalue",
   "format"
 ];
+const FIELDS_CSV_CHIP_OUTPUT_HEADER = FIELDS_CSV_PREVIOUS_HEADER.concat([
+  "kwmode", "kwsep", "kwperchip", "kwheader"
+]);
+const FIELDS_CSV_HEADER = FIELDS_CSV_CHIP_OUTPUT_HEADER.concat(["kwspace"]);
 // La iteración anterior ya incluía las columnas ck*. Se acepta sin format
 // para que sus archivos sigan importando sin tener que editarlos primero.
-const FIELDS_CSV_FORMATLESS_HEADER = FIELDS_CSV_HEADER.slice(0, -1);
-const FIELDS_CSV_LEGACY_HEADER = FIELDS_CSV_HEADER.slice(0, 23);
+const FIELDS_CSV_FORMATLESS_HEADER = FIELDS_CSV_PREVIOUS_HEADER.slice(0, -1);
+const FIELDS_CSV_LEGACY_HEADER = FIELDS_CSV_PREVIOUS_HEADER.slice(0, 23);
 // En la columna sep, la palabra NONE significa "sin separador"
 // (pegar al campo anterior); vacío significa "usar el de la sección".
 const SEP_NONE = "NONE";
@@ -7447,7 +8458,12 @@ async function exportFieldsCsv() {
           isCk ? (f.allDependency || "") : "",
           isCk ? (f.allValue || "") : "",
           isSystemField(f) ? (normalizeSystemFormat(f.type, f.format) === defaultSystemFormat(f.type)
-            ? "" : normalizeSystemFormat(f.type, f.format)) : ""
+            ? "" : normalizeSystemFormat(f.type, f.format)) : "",
+          f.type === "keywords" ? (f.kwMode || "") : "",
+          f.type === "keywords" ? (f.kwSep || "") : "",
+          f.type === "keywords" && f.kwPerChip === false ? "no" : "",
+          f.type === "keywords" ? (f.kwHeader || "") : "",
+          f.type === "keywords" && f.kwSpace ? "yes" : ""
         ]);
       });
     });
@@ -7486,8 +8502,10 @@ function importFieldsCsv(text) {
   const header = parseCsvLine(lines[0]).map(s => s.toLowerCase());
   const isLegacyHeader = header.join(",") === FIELDS_CSV_LEGACY_HEADER.join(",");
   const isFormatlessHeader = header.join(",") === FIELDS_CSV_FORMATLESS_HEADER.join(",");
-  if (!isLegacyHeader && !isFormatlessHeader && header.join(",") !== FIELDS_CSV_HEADER.join(",")) {
-    throw new Error("El encabezado no coincide. Debe ser: " + FIELDS_CSV_HEADER.join(",") + " (también se aceptan los formatos anteriores de 28 y 23 columnas)");
+  const isPreviousHeader = header.join(",") === FIELDS_CSV_PREVIOUS_HEADER.join(",");
+  const isChipOutputHeader = header.join(",") === FIELDS_CSV_CHIP_OUTPUT_HEADER.join(",");
+  if (!isLegacyHeader && !isFormatlessHeader && !isPreviousHeader && !isChipOutputHeader && header.join(",") !== FIELDS_CSV_HEADER.join(",")) {
+    throw new Error("El encabezado no coincide. Debe ser: " + FIELDS_CSV_HEADER.join(",") + " (también se aceptan los formatos anteriores de 33, 29, 28 y 23 columnas)");
   }
   const errors = [];
   const forms = [];
@@ -7501,7 +8519,7 @@ function importFieldsCsv(text) {
            def, emptyas, omitvalue, nogap, help,
            hidden, kwcount, kwoverlap,
            ckoptions, ckalllabel, ckalloutput, ckalldependency, ckallvalue,
-           format] = r;
+           format, kwmode, kwsep, kwperchip, kwheader, kwspace] = r;
     const lineNo = i + 1;
 
     if (type === "form") {
@@ -7614,6 +8632,16 @@ function importFieldsCsv(text) {
       if (type === "keywords") {
         if (kwcount) f.kwCount = kwcount;
         if (csvTruthy(kwoverlap)) f.kwOverlap = true;
+        // CSV anterior podía usar perline para chips; se migra al modo
+        // Líneas actual sin alterar el comportamiento de archivos viejos.
+        if (kwmode === "newline" || f.perLine) {
+          f.kwMode = "newline";
+          delete f.perLine;
+          if (String(kwperchip).toLowerCase() === "no") f.kwPerChip = false;
+          if (kwheader) f.kwHeader = kwheader;
+        }
+        if (kwsep) f.kwSep = kwsep;
+        if (csvTruthy(kwspace)) f.kwSpace = true;
       } else if (type === "checklist") {
         // CSV anterior: source contenía opciones separadas por |. En v2,
         // source vuelve a ser una fuente DATA y ckoptions guarda JSON robusto.
@@ -7651,7 +8679,8 @@ function importFieldsCsv(text) {
       }
       if (isSystemField(f)) {
         ["source", "default", "rows", "emptyAs", "omitValue", "perLine",
-         "perLineHeader", "required", "regex", "regexMsg", "kwCount", "kwOverlap"]
+         "perLineHeader", "required", "regex", "regexMsg", "kwCount", "kwOverlap",
+         "kwMode", "kwSep", "kwPerChip", "kwHeader", "kwSpace"]
           .forEach(k => delete f[k]);
       }
       sec.fields.push(f);
@@ -7664,7 +8693,7 @@ function importFieldsCsv(text) {
     getFormRules(form).forEach((r, i) => {
       const has = (id) => form.sections.some(s => s.fields.some(f => f.id === id));
       exprFieldRefs(r.whenExpr).forEach(fid => {
-        if (!has(fid)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo «${fid}» no existe`);
+        if (!has(fid) && !isMediaTypeConditionRef(fid)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo «${fid}» no existe`);
       });
       if (!has(r.then.field)) errors.push(`Condición ${i + 1} de «${form.id}»: el campo destino «${r.then.field}» no existe`);
     });
@@ -7672,7 +8701,7 @@ function importFieldsCsv(text) {
     getFormTiles(form).forEach((t, i) => {
       const has = (id) => form.sections.some(s => s.fields.some(f => f.id === id));
       exprFieldRefs(t.whenExpr).forEach(fid => {
-        if (!has(fid)) errors.push(`Tile ${i + 1} de «${form.id}»: el campo «${fid}» no existe`);
+        if (!has(fid) && !isMediaTypeConditionRef(fid)) errors.push(`Tile ${i + 1} de «${form.id}»: el campo «${fid}» no existe`);
       });
       if (t.field && !has(t.field)) errors.push(`Tile ${i + 1} de «${form.id}»: el campo destino «${t.field}» no existe`);
     });
@@ -8066,8 +9095,8 @@ function wireStaticControls() {
   $("outputTextarea").addEventListener("input", (e) => {
     const inst = getActiveInstance();
     if (!inst) return;
-    inst.output = e.target.value;
-    inst.outputEdited = true;
+    captureOutputTextareaEdit(inst, e.target.value);
+    renderOutputPreview(e.target.value);
     markInstanceDirty(inst);
   });
   $("outputTextarea").addEventListener("blur", () => {
@@ -8076,6 +9105,7 @@ function wireStaticControls() {
   });
   $("notebookTabs").addEventListener("click", (e) => {
     const close = e.target.closest("[data-notebook-close]");
+    const edit = e.target.closest("[data-notebook-edit]");
     const tab = e.target.closest("[data-notebook-tab]");
     normalizeNotebook();
     if (close) {
@@ -8085,6 +9115,8 @@ function wireStaticControls() {
         state.notebook.activeTabId = state.notebook.tabs[0].id;
       }
       saveNotebook();
+    } else if (edit) {
+      renameNotebookTab(state.notebook.tabs.find(item => item.id === edit.dataset.notebookEdit));
     } else if (tab) {
       state.notebook.activeTabId = tab.dataset.notebookTab;
       if (state.notebook.mode === "closed") state.notebook.mode = "half";
@@ -8095,25 +9127,11 @@ function wireStaticControls() {
     const tabEl = e.target.closest("[data-notebook-tab]");
     if (!tabEl) return;
     const tab = state.notebook.tabs.find(item => item.id === tabEl.dataset.notebookTab);
-    if (!tab) return;
-    showPromptModal({
-      title: "Renombrar nota",
-      body: "Escribe el nombre de esta pestaña.",
-      placeholder: "Nombre de la nota",
-      initialValue: tab.title,
-      confirmText: "Guardar",
-      onConfirm: value => {
-        const title = String(value || "").trim();
-        if (!title) { flashBanner("La nota necesita un nombre.", true); return; }
-        tab.title = title;
-        saveNotebook();
-      }
-    });
+    renameNotebookTab(tab);
   });
   $("notebookAddBtn").addEventListener("click", () => {
     normalizeNotebook();
-    const n = state.notebook.tabs.length + 1;
-    const tab = { id: newId(), title: `Nota ${n}`, content: "" };
+    const tab = { id: newId(), title: nextNotebookTitle(state.notebook.tabs), content: "" };
     state.notebook.tabs.push(tab);
     state.notebook.activeTabId = tab.id;
     state.notebook.mode = "half";

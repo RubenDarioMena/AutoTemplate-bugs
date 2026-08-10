@@ -41,7 +41,7 @@ Cinco tipos de fila, identificados por la columna `type`:
 | field     | id único del campo (sin espacios)                        | (vacío)                        |
 | label     | etiqueta que ve el tester                                 | nombre de la sección           |
 | type      | text / textarea / autocomplete / keywords / checklist / checkbox / mirror / clock / date | la palabra `section` |
-| source    | autocomplete/checklist: lista (`regions`, `maps`, `child:map:mode`...) — mirror: origen opcional de `{value}` | modo: `lines` o `joined` |
+| source    | autocomplete/checklist/chips: lista (`regions`, `maps`, `child:map:mode`...) — mirror: origen opcional de `{value}` | modo: `lines` o `joined` |
 | size      | ancho en el formulario: vacío(=full) / half / third      | (vacío)                        |
 | template  | cómo sale en el output; `{value}` = valor propio, `{idCampo}` = otro campo y `{media:mediaN}` = nombre de media. Ej: `* *Perfil:* {value}` | encabezado de la sección, ej. `+Notas:+` |
 | sep       | separador ANTES del campo (secciones joined). `NONE` = pegado sin separador | separador por defecto de la sección |
@@ -65,6 +65,11 @@ Cinco tipos de fila, identificados por la columna `type`:
 | ckalldependency | `all` = alimenta listas hijas como todos los valores; `none` = como ningún valor | (vacío) |
 | ckallvalue | valor interno opcional de la opción especial | (vacío) |
 | format | Formato de `clock` o `date`; vacío usa el formato predeterminado | (vacío) |
+| kwmode | chips: `newline` para modo Líneas; vacío = Unida | (vacío) |
+| kwsep | chips en modo Unida: separador; vacío = `, ` | (vacío) |
+| kwperchip | chips en modo Líneas: `no` aplica la plantilla una vez al conjunto; vacío = una vez por chip | (vacío) |
+| kwheader | chips en modo Líneas con plantilla por chip: encabezado opcional | (vacío) |
+| kwspace | chips: `yes` crea el chip al pulsar Espacio; vacío conserva Enter o coma | (vacío) |
 
 En `template`, `sep` y el encabezado de sección se puede escribir
 `\n` o `<br>` para forzar un salto de línea en el output.
@@ -83,7 +88,14 @@ que se omita el campo de output que la referencia.
   - `autocomplete` — texto + dropdown autocompletable. La lista sale
                      de `source`. El dropdown tiene "+ Agregar..." al
                      final y una ✕ por opción para borrarla.
-  - `keywords`     — chips (etiquetas). La validación es POR CAMPO:
+  - `keywords`     — chips (etiquetas). `source` es opcional y ofrece
+                     autocompletado sin limitar los valores libres. Por
+                     defecto salen unidos con `, `; `kwmode=newline` los
+                     imprime en líneas y `kwperchip=no` decide si la
+                     plantilla se aplica una vez al conjunto. `kwspace=yes`
+                     confirma una keyword al pulsar Espacio, útil cuando cada
+                     keyword es una sola palabra. La edición de
+                     un chip no modifica la lista DATA. La validación es POR CAMPO:
                      `kwcount` = cantidad exacta o mínima (vacío = libre) y
                      `kwoverlap` = prohibir que aparezcan en el
                      cuerpo del bug. Un campo chips nuevo sin esas
@@ -92,6 +104,10 @@ que se omita el campo de output que la referencia.
                      las opciones marcadas. `source` puede apuntar a la
                      misma clase de lista DATA que un autocomplete. Si no
                      usa DATA, `ckoptions` contiene un array JSON,
+                     el botón `+` agrega y marca una opción: cuando hay
+                     `source`, la añade también a esa lista DATA (o a su
+                     bucket dependiente seleccionado); sin fuente queda en
+                     la instancia actual,
                      `sep` = separador entre opciones en modo en línea
                      (vacío = `", "`), `perline=yes` = una opción por
                      línea (en el formulario y en el output),
@@ -154,6 +170,9 @@ Comparaciones:
     campo vacío
   - `campo matches @regla` (o una regex directa)
   - `campoA = campoB` — compara dos campos por id (ambos no vacíos)
+  - `media:media1:type = "Vid"` — compara el tipo de una fila de media;
+    sirve para mostrar un `mirror` que use `{media:media1}` y agregue, por
+    ejemplo, `.mp4` solo en el output.
   - `@regla` suelta = evalúa esa regla booleana; se pueden concatenar
     (`@esLod OR @esVlod`)
 
@@ -209,7 +228,7 @@ Ejemplos:
 > una versión antigua de la herramienta, así que reparte el HTML nuevo
 > junto con el CSV.
 
-## Valores de `source` para autocomplete y checklist
+## Valores de `source` para autocomplete, checklist y chips
 
   - nombre de una lista de `bug_data.csv` (ej. `regions`, `platforms`,
     o cualquier lista nueva que crees en la pestaña Data)

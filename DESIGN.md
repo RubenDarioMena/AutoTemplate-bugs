@@ -24,7 +24,7 @@ The tool runs entirely in the browser, reads/writes files from the
 local share folder, and requires NO installation, NO server, NO
 network calls, NO third-party runtime libraries.
 
-### Current implementation snapshot (2026-08-03)
+### Current implementation snapshot (2026-08-08)
 
 `bug_tool.html` is the canonical self-contained application. Its form
 schema, data lists, validation rules and initial configuration are embedded
@@ -919,12 +919,52 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     de modo edición; al colapsar o reabrir el formulario se borra el ratio y
     vuelve al reparto normal.
 
+## Iteración 7 (2026-08-08): output parcial y widgets de listas
+
+  * **Output parcialmente conectado.** El generador conserva rangos de las
+    partes que provienen de la plantilla de cada campo. Una edición directa
+    de esos rangos desconecta sólo los campos implicados; un badge rojo los
+    cuenta y **Regenerar** borra todas las desconexiones. Cambiar encabezados,
+    separadores o espacios no desconecta campos. Los rangos de `summary` y
+    `description` se ajustan junto con los fragmentos, por lo que sus botones
+    de copia conservan las correcciones manuales que les correspondan.
+  * **Compactación de mirrors.** Fuera del modo edición, los campos `mirror`
+    se excluyen antes de agrupar tamaños full/half/third. Así un mirror oculto
+    no deja columnas vacías en el formulario.
+  * **Checklist y chips.** Checklist permite añadir y marcar una opción; si
+    tiene `source`, se añade a la misma lista DATA o bucket dependiente que
+    usaría un dropdown. Chips incorpora `source` opcional para autocompletar
+    sin limitar valores libres, edición por doble clic y salida Unida/Líneas
+    con separador, plantilla por chip y encabezado configurables.
+  * **Condiciones por tipo de media.** El lenguaje de RULES reconoce la
+    referencia virtual `media:mediaN:type` sólo en condiciones. Esto permite
+    mostrar mirrors condicionales que usen `{media:mediaN}` y añadan `.mp4`,
+    `.jpg` u otro texto sólo en el output, sin alterar el nombre canónico de
+    la media que se copia desde el panel.
+  * **Notas.** Las nuevas pestañas usan el menor `Nota N` libre y cada una
+    expone un lápiz de renombre además del doble clic.
+
+## Iteración 8 (2026-08-09): vista previa de formato
+
+  * **Texto canónico único.** Los switches **Jira** y **Markdown**, bajo
+    `Limpiar campos`, son mutuamente excluyentes y sólo cambian la
+    representación del textarea actual. El modo elegido se guarda como una
+    preferencia de sesión; el output, los fragmentos desconectados y todas las
+    acciones de copia continúan trabajando con el mismo texto plano.
+  * **Vista deliberadamente de solo lectura.** La previsualización interpreta
+    de forma local y segura los bloques e inline markup más comunes: listas,
+    encabezados Markdown, énfasis, subrayado Jira, bloques `{code}` y
+    `{code:lenguaje}`, código y enlaces HTTP(S) o mailto. La barra cerrada del
+    Bloc reserva su altura para no cubrir el final de la salida. No se usa HTML
+    proveniente del reporte. Para editar, el usuario
+    desactiva el switch y vuelve al textarea; no hay conversión inversa desde
+    HTML hacia las plantillas.
+
 ## Pendiente (siguientes iteraciones)
 
   * Agrupación visual de tiles por categoría y color por grupo (el dato
     `group` ya existe; se pospuso a favor del modelo de dos bandas). Ver
     ROADMAP §1.
-  * Más conexiones media↔Rules: el formato por sección ya existe; falta
-    lo que detalle Rubén (condiciones sobre media —p. ej. exigir
-    ConsoleLog si el bug es Crash— y validar la Key con regex).
+  * Validar la Key de media con regex y decidir si se requieren más
+    propiedades virtuales de media además de `media:mediaN:type`.
     Ver ROADMAP §2.

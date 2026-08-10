@@ -26,8 +26,12 @@ dependencias.
      que abrir ningún CSV.
   2. Llenar los campos. Los tiles de arriba avisan en rojo qué falta
      o qué está mal escrito (click en el tile = saltar al campo).
-  3. Copiar el reporte con los botones de la derecha.
-  4. El progreso se guarda solo en el navegador; al reabrir el
+  3. El output se puede corregir antes de copiar. Si cambias texto generado
+     por una plantilla, un aviso rojo indica cuántos campos quedaron
+     desconectados; los demás se siguen actualizando y los botones de copia
+     respetan tu corrección. **Regenerar** vuelve a conectarlos todos.
+  4. Copiar el reporte con los botones de la derecha.
+  5. El progreso se guarda solo en el navegador; al reabrir el
      archivo se continúa donde se quedó.
 
 ## Personalizar los formularios (sin tocar código)
@@ -41,6 +45,10 @@ dependencias.
      - **+ campo** / **+ Agregar sección** para crecer el formulario
   3. En los dropdowns: la fila **"+ Agregar «...»"** suma opciones a
      la lista y la **✕** de cada opción la borra (con confirmación).
+     Los checklists también tienen **+** para crear y marcar una opción.
+     Los campos de chips pueden enlazarse opcionalmente a una lista para
+     sugerencias, aceptar texto libre, editar chips con doble clic y salir
+     en modo **Unida** o **Líneas**.
   4. Al terminar: **"Exportar herramienta"** descarga un
      `bug_tool.html` nuevo con todo integrado. Ese archivo se pone en
      el sharefolder y es el que copia el resto del equipo.
@@ -76,6 +84,9 @@ Dos maneras, las dos válidas:
     marcar un error (ej. "BSP CL debe ser distinto de CL"). Para
     campos exclusivos de un tipo de issue (ej. LOD number), se crea
     el campo como "oculto por defecto" y una condición lo muestra.
+    También se puede condicionar por tipo de media, por ejemplo
+    `media:media1:type = "Vid"`, para mostrar un mirror que agregue `.mp4`
+    únicamente al output de regresión.
 
 ## Nombres de media
 

@@ -60,6 +60,17 @@ test("el motor booleano respeta precedencia, listas, referencias y campos ausent
   assert.equal(api.exprError('map = "Shurima Rift" AND (mode = "MP"', form).length > 0, true);
 });
 
+test("las condiciones pueden leer el tipo de una fila de media sin convertirlo en campo", () => {
+  const { api } = createRuntime();
+  const form = api.getForm("bug");
+  const inst = api.makeInstance("bug");
+  inst.media = [{ id: "media1", type: "Vid" }];
+  assert.equal(api.isMediaTypeConditionRef("media:media1:type"), true);
+  assert.equal(api.exprError('media:media1:type = "Vid"', form), "");
+  assert.equal(api.ruleWhenTrue({ whenExpr: 'media:media1:type = "VID"' }, inst), true);
+  assert.equal(api.ruleWhenTrue({ whenExpr: 'media:media1:type = "Pic"' }, inst), false);
+});
+
 test("instancias se sanea contra el schema y media conserva IDs estables", () => {
   const { api } = createRuntime();
   api.resetState();
@@ -132,6 +143,104 @@ test("plantillas compuestas, llaves literales y media producen output estable", 
   assert.equal(output.summary, "PS5 - CL 42");
   assert.equal(output.description, "{raw} Falla [42]\nMedia: Vid_BUG-7_PS5_42");
   assert.equal(output.full, "PS5 - CL 42\n\n{raw} Falla [42]\nMedia: Vid_BUG-7_PS5_42");
+});
+
+test("el output conserva solo el fragmento de plantilla editado manualmente", () => {
+  const { api } = createRuntime();
+  api.setConfig({
+    version: 2,
+    data: { lists: { mediaTypes: ["Vid"] }, childLists: {}, listMeta: {}, rules: { media_fmt: "{type}" } },
+    schema: { forms: [{ id: "bug", label: "Bug", sections: [{ id: "s", label: "S", mode: "lines", fields: [
+      { id: "first", label: "First", type: "text", template: "A {value}" },
+      { id: "second", label: "Second", type: "text", template: "B {value}" }
+    ] }] }] }
+  });
+  const inst = api.makeInstance("bug");
+  inst.values.first = "uno";
+  inst.values.second = "dos";
+  let chunks = api.buildOutput(inst);
+  inst.output = chunks.full;
+  inst.outputSegments = chunks.segments;
+  inst.outputRanges = chunks.ranges;
+  api.captureOutputTextareaEdit(inst, "A manual\nB dos");
+  inst.values.second = "tres";
+  chunks = api.buildOutput(inst);
+  const rendered = api.applyOutputDetachment(chunks, inst.outputDetached);
+  assert.equal(rendered.full, "A manual\nB tres");
+});
+
+test("la copia parcial respeta campos desconectados y el formato no desconecta campos", () => {
+  const { api } = createRuntime();
+  api.setConfig({
+    version: 2,
+    data: { lists: { mediaTypes: ["Vid"] }, childLists: {}, listMeta: {}, rules: { media_fmt: "{type}" } },
+    schema: { forms: [{ id: "bug", label: "Bug", sections: [
+      { id: "summary", label: "Summary", mode: "joined", sep: " - ", fields: [
+        { id: "team", label: "Team", type: "text", template: "Team {value}" },
+        { id: "region", label: "Region", type: "text", template: "Region {value}" }
+      ] },
+      { id: "details", label: "Details", mode: "lines", fields: [
+        { id: "detail", label: "Detail", type: "text", template: "Detail {value}" }
+      ] }
+    ] }] }
+  });
+  const inst = api.makeInstance("bug");
+  inst.values.team = "QA";
+  inst.values.region = "MX";
+  inst.values.detail = "Inicial";
+  let chunks = api.buildOutput(inst);
+  inst.output = chunks.full;
+  inst.outputSegments = chunks.segments;
+  inst.outputRanges = chunks.ranges;
+
+  api.captureOutputTextareaEdit(inst, inst.output.replace("Team QA", "Team Manual"));
+  assert.deepEqual(Object.keys(inst.outputDetached), ["team"]);
+  inst.values.region = "EU";
+  inst.values.detail = "Actualizado";
+  api.state.topTab = "bug";
+  api.state.instances = { bug: [inst] };
+  api.state.activeInstance = { bug: inst.id };
+  assert.equal(api.refreshOutputForCopy(inst, "summary"), "Team Manual - Region EU");
+  assert.equal(api.refreshOutputForCopy(inst, "description"), "Detail Actualizado");
+  chunks = api.buildOutput(inst);
+  const rendered = api.applyOutputDetachment(chunks, inst.outputDetached);
+  assert.equal(rendered.summary, "Team Manual - Region EU");
+  assert.equal(rendered.description, "Detail Actualizado");
+
+  inst.output = rendered.full;
+  inst.outputSegments = rendered.segments;
+  inst.outputRanges = rendered.ranges;
+  api.captureOutputTextareaEdit(inst, inst.output.replace(" - ", " / "));
+  assert.deepEqual(Object.keys(inst.outputDetached), ["team"]);
+  assert.equal(inst.outputLayoutEdited, true);
+
+  const blank = api.makeInstance("bug");
+  blank.outputRanges = {
+    full: { start: 0, end: 0 },
+    summary: { start: 0, end: 0 },
+    description: { start: 0, end: 0 }
+  };
+  api.captureOutputTextareaEdit(blank, "Texto manual sin campo");
+  assert.equal(blank.outputEdited, false);
+  assert.equal(blank.outputLayoutEdited, true);
+});
+
+test("la vista previa reconoce los bloques básicos de Jira y Markdown sin tocar el texto", () => {
+  const { api } = createRuntime();
+  assert.equal(api.normalizeOutputPreviewMode("jira"), "jira");
+  assert.equal(api.normalizeOutputPreviewMode("markdown"), "markdown");
+  assert.equal(api.normalizeOutputPreviewMode("html"), "plain");
+  assert.deepEqual(jsonValue(api.outputPreviewLine("* *Perfil:* QA", "jira")),
+    { type: "ul", text: "*Perfil:* QA" });
+  assert.deepEqual(jsonValue(api.outputPreviewLine("# Paso uno", "jira")),
+    { type: "ol", text: "Paso uno" });
+  assert.deepEqual(jsonValue(api.outputPreviewLine("## Título", "markdown")),
+    { type: "heading", level: 2, text: "Título" });
+  assert.deepEqual(jsonValue(api.outputPreviewLine("1. Paso uno", "markdown")),
+    { type: "ol", text: "Paso uno" });
+  assert.deepEqual(jsonValue(api.jiraCodeFence("{code:java}")), { language: "java" });
+  assert.deepEqual(jsonValue(api.jiraCodeFence(" {code} ")), { language: "" });
+  assert.equal(api.jiraCodeFence("{code: java}"), null);
 });
 
 test("los CSV canónicos se importan y los datos embebidos hacen round-trip", async () => {

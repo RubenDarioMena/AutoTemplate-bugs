@@ -1,6 +1,6 @@
 # Progreso del proyecto
 
-Última actualización: 2026-08-08
+Última actualización: 2026-08-09
 Estado: activo — herramienta funcional, monolito documentado y con suite de regresión.
 
 ## Estado actual
@@ -12,6 +12,30 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
 - Verificación automatizada: 15 pruebas de contratos y comportamiento con Node.js, incluida una prueba smoke en navegador real.
 
 ## Trabajo completado recientemente
+
+### 2026-08-09 — vista previa Jira y Markdown
+
+- Debajo de **Limpiar campos** hay switches mutuamente excluyentes para previsualizar el output actual como **Jira** o **Markdown**. La vista es de solo lectura, se actualiza con el texto y no altera el output canónico, sus copias ni sus rangos de edición manual.
+- La preferencia de vista se conserva en la sesión local. El renderizador interpreta de forma segura listas, encabezados Markdown, énfasis, subrayado Jira, código y enlaces comunes, sin dependencias externas.
+- La vista Jira ya reconoce bloques `{code}` y `{code:lenguaje}` (por ejemplo `{code:java}`); además, la salida reserva el alto de la barra cerrada del Bloc para que el último renglón permanezca visible.
+- Se actualizaron `Directorio-Monolito.MD` y este registro.
+
+### 2026-08-09 — entrada de chips y panel derecho compacto
+
+- El editor de un campo de chips tiene pestañas propias de **Salida** y **Entrada**. En Entrada, **Crear un chip al pulsar Espacio** activa `kwSpace`: confirma una keyword de una sola palabra al teclear Espacio; Enter y coma conservan su función y el comportamiento predeterminado sigue siendo el anterior.
+- `kwSpace` se conserva en el schema y en la nueva columna `kwspace` de `bug_fields.csv`; el importador continúa aceptando los encabezados anteriores.
+- Un botón naranja fijo al borde derecho repliega o reabre conjuntamente el output, sus acciones y los nombres de media. Al reducir la ventana a 1100 px o menos se repliega automáticamente; el usuario puede reabrirlo mientras la ventana siga estrecha. El divisor manual formulario/output se conserva para cuando el panel vuelve a mostrarse.
+- Se actualizaron `Directorio-Monolito.MD` y `bug_fields.README.md`.
+
+### 2026-08-08 — output parcial, chips, checklist y condiciones de media
+
+- Los `mirror` ocultos fuera de edición ya no reservan columnas en las filas de 1/3 o 1/2; el grid se compacta con los campos visibles.
+- El checklist incorpora `+`: agrega y marca la opción. Con fuente DATA la suma a la lista raíz o al bucket dependiente seleccionado; sin fuente queda en la instancia actual.
+- Los chips admiten fuente DATA opcional para autocompletar sin restringir texto libre, edición por doble clic y modos de output **Unida** (separador `, `) y **Líneas**, con plantilla por chip y encabezado opcional.
+- El textarea de output identifica los rangos generados por plantillas: editar uno desconecta sólo ese campo y muestra un badge rojo; encabezados y separadores no desconectan campos, las copias de summary/description respetan los fragmentos manuales y **Regenerar** restaura la conexión completa incluso después de recargar la sesión.
+- Las condiciones aceptan `media:mediaN:type`, permitiendo mostrar mirrors como `[^{media:media1}.mp4]` según el tipo sin cambiar el nombre canónico copiable de media.
+- Las notas reutilizan el menor nombre `Nota N` libre y muestran un botón de lápiz para renombrarse.
+- Se actualizaron `Directorio-Monolito.MD`, `bug_fields.README.md`, la compatibilidad de `bug_fields.csv` y la suite de regresión.
 
 ### 2026-08-08 — utilidades de formulario y notas por pestaña
 
