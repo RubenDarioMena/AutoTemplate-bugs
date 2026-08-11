@@ -5,13 +5,42 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
 
 ## Estado actual
 
-- Aplicación canónica: `bug_tool.html`.
-- Distribución: HTML autocontenido con configuración inicial en `#vanillaConfig`.
-- Persistencia local: configuración e instancias en `localStorage`; importación/exportación explícita de CSV, sesión JSON y HTML integrado.
-- Navegación interna: 23 bloques de primer nivel delimitados con marcadores `MONOLITH:SECTION` y descritos en `Directorio-Monolito.MD`.
-- Verificación automatizada: 15 pruebas de contratos y comportamiento con Node.js, incluida una prueba smoke en navegador real.
+- Aplicación canónica: `bug_tool.html`; variante activa:
+  `bug_tool_multilanguage.html`.
+- Distribución: dos HTML autocontenidos con configuración inicial en
+  `#vanillaConfig`. La variante multilenguaje exporta bajo su propio nombre.
+- Persistencia local: configuración e instancias en `localStorage`;
+  importación/exportación explícita de CSV, sesión JSON y HTML integrado. La
+  variante separa las preferencias de idioma/estilo de los datos de trabajo.
+- Navegación interna: 23 bloques de primer nivel en la versión canónica y 24
+  en la multilenguaje, descritos en `Directorio-Monolito.MD` y
+  `Directorio-Monolito-Multilanguage.MD` respectivamente.
+- Verificación automatizada: 29 pruebas con Node.js; incluye los 19 casos
+  históricos y diez específicos de la variante, con un smoke de navegador
+  real para cada HTML.
 
 ## Trabajo completado recientemente
+
+### 2026-08-10 — variante multilenguaje y selectores de apariencia
+
+- Se creó `bug_tool_multilanguage.html` como refactor paralelo autocontenido,
+  con selector español/inglés y selector Día/Noche basado en los temas
+  `light`/`dark` existentes.
+- Los catálogos localizan la interfaz y un overlay presenta en inglés textos
+  distribuidos conocidos del schema sin mutar la configuración. IDs, DATA,
+  DSL, placeholders, plantillas, CSV, texto del usuario y output permanecen
+  canónicos.
+- Idioma y estilo se restauran antes del render desde
+  `bug_tool_multilanguage_ui_v1`. Configuración y sesión usan claves v3
+  propias con lectura de claves v2 para migración.
+- La exportación de la variante conserva el nombre
+  `bug_tool_multilanguage.html`; las preferencias visuales siguen locales al
+  navegador y no forman parte de config, CSV, output ni archivo de sesión.
+- Se añadieron `Directorio-Monolito-Multilanguage.MD` y documentación de uso,
+  arquitectura, persistencia y QA. La suite suma contratos de catálogos,
+  aislamiento, exportación y estabilidad del output; además prueba en
+  Chrome/Edge el cambio y la restauración de idioma/tema. La matriz visual 2×2
+  continúa siendo una revisión manual obligatoria.
 
 ### 2026-08-10 — gestión de DATA desde el autocompletado de chips
 
@@ -128,8 +157,13 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
 
 ## Próximos pasos conocidos
 
-- Los pendientes funcionales históricos están en la sección “Pendiente” de `DESIGN.md` y en `ROADMAP.md`; deben validarse con el usuario antes de implementarse.
-- Si se modifica la variante `bug_tool_redesign.html` o se recupera una versión legacy, decidir explícitamente si debe adoptar los marcadores y documentación del monolito principal. No asumir que está sincronizada.
+- Los pendientes funcionales históricos están en la sección “Pendiente” de
+  `DESIGN.md`; deben validarse con el usuario antes de implementarse.
+- Factorizar más contratos comunes de schema/CSV/output para ejecutarlos contra
+  ambos HTML cuando cambie ese núcleo compartido; conservar la cobertura
+  específica de catálogos, persistencia, exportación y selectores.
+- Mantener independientes los dos directorios de marcadores; no asumir que un
+  cambio estructural de una variante aplica automáticamente a la otra.
 
 ## Cómo actualizar este archivo
 

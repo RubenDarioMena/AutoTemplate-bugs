@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jira Changelist Filter Tool</title>
+  <style>
+    /* MONOLITH:SECTION styles START */
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --text: #172033;
+      --muted: #667085;
+      --line: #d9e0ea;
+      --line-strong: #b9c4d3;
+      --accent: #2f65d9;
+      --accent-2: #e9f0ff;
+      --danger: #b42318;
+      --danger-bg: #fff1f0;
+      --success: #177245;
+      --success-bg: #edf9f2;
+      --warning: #9a6700;
+      --warning-bg: #fff8e6;
+      --shadow: 0 14px 36px rgba(16, 24, 40, .08);
+      --radius: 14px;
+      --radius-sm: 9px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(245, 247, 251, .94);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 14px 22px 0;
+    }
+
+    .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    .brand h1 { font-size: 19px; margin: 0; letter-spacing: -.01em; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn {
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 8px 11px;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .btn:hover { border-color: #8fa0b8; }
+    .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn.danger { color: var(--danger); }
+    .btn.small { padding: 6px 9px; font-size: 12px; }
+
+    .tabs { display: flex; gap: 4px; }
+    .tab-btn {
+      border: 0;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      padding: 11px 15px 10px;
+      font-weight: 750;
+      color: var(--muted);
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .page { max-width: 1240px; margin: 0 auto; padding: 22px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, .72fr); gap: 18px; align-items: start; }
+    .stack { display: grid; gap: 18px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel-head { padding: 17px 18px 13px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .panel-head h2 { margin: 0; font-size: 15px; }
+    .panel-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .panel-body { padding: 18px; }
+
+    .field { display: grid; gap: 7px; }
+    .field label { font-size: 12px; font-weight: 750; color: #344054; }
+    .field .help { color: var(--muted); font-size: 11px; line-height: 1.45; }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 10px 11px;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47, 101, 217, .12); }
+
+    .upload-box {
+      border: 1.5px dashed var(--line-strong);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--panel-2);
+    }
+    .upload-meta strong { display: block; font-size: 13px; }
+    .upload-meta span { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; word-break: break-all; }
+
+    .status {
+      margin-top: 12px;
+      border-radius: 9px;
+      padding: 9px 11px;
+      font-size: 12px;
+      display: none;
+      line-height: 1.45;
+    }
+    .status.show { display: block; }
+    .status.success { background: var(--success-bg); color: var(--success); }
+    .status.error { background: var(--danger-bg); color: var(--danger); }
+    .status.warning { background: var(--warning-bg); color: var(--warning); }
+
+    .build-row { display: grid; grid-template-columns: minmax(160px, 230px) 1fr; gap: 14px; align-items: end; }
+    .logic-note { padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); font-size: 12px; color: var(--muted); }
+    .logic-note code { color: var(--text); font-weight: 700; }
+
+    .rules-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .rules-toolbar .caption { color: var(--muted); font-size: 12px; }
+    .plus-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      background: var(--accent-2);
+      font-size: 23px;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      font-weight: 500;
+    }
+
+    .rules-list { display: grid; gap: 10px; }
+    .rule-card { border: 1px solid var(--line); border-radius: 11px; background: var(--panel-2); overflow: hidden; }
+    .rule-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 11px 6px; }
+    .rule-title { font-size: 12px; font-weight: 800; color: #344054; }
+    .rule-grid { display: grid; grid-template-columns: 1.4fr .8fr 1.2fr; gap: 10px; padding: 8px 11px 12px; }
+    .rule-grid .field label { font-size: 11px; }
+    .rule-grid input { padding: 8px 9px; font-size: 12px; }
+    .empty-state { border: 1px dashed var(--line-strong); border-radius: 10px; padding: 18px; text-align: center; color: var(--muted); font-size: 12px; }
+
+    .output-box { display: grid; gap: 10px; }
+    .output-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .output-toolbar strong { font-size: 12px; }
+    #jiraOutput { min-height: 132px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.5; background: #fbfcff; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+    .stat { border: 1px solid var(--line); border-radius: 9px; padding: 9px; background: var(--panel-2); }
+    .stat b { display: block; font-size: 17px; }
+    .stat span { color: var(--muted); font-size: 10px; }
+
+    .preview-wrap { overflow: auto; max-height: 420px; border: 1px solid var(--line); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th, td { padding: 8px 9px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+    th { position: sticky; top: 0; background: #eef3fb; color: #344054; z-index: 2; }
+    td.summary-cell { white-space: normal; min-width: 270px; }
+    tr:last-child td { border-bottom: 0; }
+
+    .headers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .info-box { border: 1px solid var(--line); border-radius: 10px; padding: 13px; background: var(--panel-2); color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .info-box code { color: var(--text); }
+
+    .config-preview { width: 100%; min-height: 290px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; background: #fbfcff; }
+
+    .banner {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      background: #172033;
+      color: #fff;
+      padding: 9px 13px;
+      border-radius: 9px;
+      font-size: 12px;
+      box-shadow: var(--shadow);
+      transition: .18s ease;
+      z-index: 50;
+      max-width: min(720px, calc(100vw - 32px));
+    }
+    .banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .banner.error { background: #7a271a; }
+
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .headers-grid, .rule-grid { grid-template-columns: 1fr; }
+      .build-row { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .brand-row { align-items: flex-start; flex-direction: column; }
+      .toolbar { justify-content: flex-start; }
+    }
+    /* MONOLITH:SECTION styles END */
+  </style>
+</head>
+<body>
+  <!-- MONOLITH:SECTION app-shell START -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-row">
+        <div class="brand">
+          <h1>Jira Changelist Filter Tool</h1>
+          <p>CSV → filtro por changelist/build → <code>Key in (...)</code></p>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="saveSessionBtn" type="button">Exportar sesión</button>
+          <button class="btn" id="loadSessionBtn" type="button">Cargar sesión</button>
+          <button class="btn" id="exportToolBtn" type="button">Exportar herramienta</button>
+          <button class="btn danger" id="resetBtn" type="button">Restablecer</button>
+        </div>
+      </div>
+      <nav class="tabs" aria-label="Pestañas principales">
+        <button class="tab-btn active" data-tab="filter" type="button">FILTRO</button>
+        <button class="tab-btn" data-tab="headers" type="button">HEADERS</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="tab-panel active" id="tab-filter">
+      <div class="grid-2">
+        <div class="stack">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>1. Archivo CSV</h2>
+                <p>Detecta automáticamente coma o punto y coma y respeta campos entre comillas.</p>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="upload-box">
+                <div class="upload-meta">
+                  <strong id="fileTitle">Ningún CSV cargado</strong>
+                  <span id="fileMeta">Se validarán los headers configurados en la pestaña HEADERS.</span>
+                </div>
+                <button class="btn primary" id="chooseCsvBtn" type="button">Seleccionar CSV</button>
+              </div>
+              <div class="status" id="csvStatus"></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>2. Build general</h2>
+                <p>Se usa salvo que el Summary coincida con una regla Map / Release.</p>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="build-row">
+                <div class="field">
+                  <label for="buildInput">Build</label>
+                  <input id="buildInput" type="number" inputmode="numeric" step="1" placeholder="Ej. 182450" />
+                </div>
+                <div class="logic-note">
+                  Regla base: incluir si <code>changelist ≤ build</code> o si <code>changelist</code> está vacío. Una coincidencia Map / Release sustituye <code>build</code> por su <code>buildMap</code> antes de evaluar la fila.
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>3. Overrides por Map / Release</h2>
+                <p>La primera regla que coincida con Summary define el buildMap efectivo de esa fila.</p>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="rules-toolbar">
+                <div class="caption">Map Name y Release Name buscan coincidencia parcial sin distinguir mayúsculas. <code>_</code>, <code>-</code> y espacios se consideran equivalentes.</div>
+                <button class="plus-btn" id="addRuleBtn" type="button" aria-label="Agregar regla" title="Agregar regla">+</button>
+              </div>
+              <div class="rules-list" id="rulesList"></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="stack">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Output Jira</h2>
+                <p>Las keys se deduplican y conservan el orden de aparición del CSV.</p>
+              </div>
+            </div>
+            <div class="panel-body output-box">
+              <div class="output-toolbar">
+                <strong>keyValue → JQL</strong>
+                <button class="btn small" id="copyOutputBtn" type="button">Copiar</button>
+              </div>
+              <textarea id="jiraOutput" readonly spellcheck="false">Key in ()</textarea>
+              <div class="stats">
+                <div class="stat"><b id="statRows">0</b><span>Filas CSV</span></div>
+                <div class="stat"><b id="statIncluded">0</b><span>Filas incluidas</span></div>
+                <div class="stat"><b id="statKeys">0</b><span>Keys únicas</span></div>
+                <div class="stat"><b id="statInvalid">0</b><span>CL inválidos</span></div>
+              </div>
+              <div class="status" id="filterStatus"></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Preview de coincidencias</h2>
+                <p>Máximo 200 filas en pantalla; el output usa todas.</p>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="preview-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Key</th>
+                      <th>Changelist</th>
+                      <th>Build efectivo</th>
+                      <th>Regla</th>
+                      <th>Summary</th>
+                    </tr>
+                  </thead>
+                  <tbody id="previewBody">
+                    <tr><td colspan="5" style="color:var(--muted);">Carga un CSV para ver resultados.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="tab-headers">
+      <div class="stack">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Header mapping</h2>
+              <p>Define qué texto debe buscar la herramienta en la cabecera del CSV.</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="headers-grid">
+              <div class="field">
+                <label for="headerChangelist">Header de Changelist</label>
+                <input type="text" id="headerChangelist" />
+                <div class="help">Columna numérica usada para decidir si la fila entra al filtro.</div>
+              </div>
+              <div class="field">
+                <label for="headerKey">Header de Key</label>
+                <input type="text" id="headerKey" />
+                <div class="help">Columna de donde se extraen las keys que forman <code>keyValue</code>.</div>
+              </div>
+              <div class="field">
+                <label for="headerSummary">Header de Summary</label>
+                <input type="text" id="headerSummary" />
+                <div class="help">Columna usada para detectar Map Name o Release Name.</div>
+              </div>
+            </div>
+            <div class="info-box" style="margin-top:14px;">
+              La búsqueda de headers es <strong>exacta tras limpiar espacios y sin distinguir mayúsculas/minúsculas</strong>. Por ejemplo, configurar <code>changelist</code> también encuentra <code>Changelist</code> o <code> CHANGELIST </code>.
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Estructura de datos actual</h2>
+              <p>Vista de la configuración separada del render. Se actualiza con los campos de la herramienta.</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <textarea id="configPreview" class="config-preview" readonly spellcheck="false"></textarea>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <input type="file" id="csvInput" accept=".csv,text/csv,text/plain" hidden />
+  <input type="file" id="sessionInput" accept=".json,application/json" hidden />
+  <div class="banner" id="banner"></div>
+  <!-- MONOLITH:SECTION app-shell END -->
+
+  <!-- MONOLITH:SECTION vanilla-config START -->
+  <script type="application/json" id="vanillaConfig">
+  {
+    "version": 1,
+    "headers": {
+      "changelist": "changelist",
+      "key": "key",
+      "summary": "summary"
+    },
+    "filter": {
+      "comparison": "lte",
+      "includeBlankChangelist": true,
+      "deduplicateKeys": true,
+      "summaryCaseSensitive": false,
+      "normalizeSummarySeparators": true
+    },
+    "mapRules": []
+  }
+  </script>
+  <!-- MONOLITH:SECTION vanilla-config END -->
+
+  <script>
+  "use strict";
+
+  /* MONOLITH:SECTION 01-constants START */
+  const PRISTINE_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  const SCRIPT_END = "</scr" + "ipt>";
+  const CONFIG_KEY = "jira_changelist_filter_v1_config";
+  const SESSION_KEY = "jira_changelist_filter_v1_session";
+  /* MONOLITH:SECTION 01-constants END */
+
+  /* MONOLITH:SECTION 02-core-pure-functions START */
+  function deepClone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function normalizeHeader(value) {
+    return String(value ?? "").replace(/^\uFEFF/, "").trim().toLowerCase();
+  }
+
+  function normalizeSummaryText(value, normalizeSeparators = true) {
+    let out = String(value ?? "").trim().toLowerCase();
+    if (normalizeSeparators) out = out.replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+    return out;
+  }
+
+  function detectDelimiter(text) {
+    const input = String(text ?? "").replace(/^\uFEFF/, "");
+    let inQuotes = false;
+    let commas = 0;
+    let semicolons = 0;
+    for (let i = 0; i < input.length; i++) {
+      const c = input[i];
+      if (c === '"') {
+        if (inQuotes && input[i + 1] === '"') { i++; continue; }
+        inQuotes = !inQuotes;
+      } else if (!inQuotes) {
+        if (c === ',') commas++;
+        else if (c === ';') semicolons++;
+        else if (c === '\n' || c === '\r') break;
+      }
+    }
+    return semicolons > commas ? ';' : ',';
+  }
+
+  function parseDelimited(text, forcedDelimiter) {
+    const input = String(text ?? "").replace(/^\uFEFF/, "");
+    const delimiter = forcedDelimiter || detectDelimiter(input);
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < input.length; i++) {
+      const c = input[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (input[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else {
+          field += c;
+        }
+        continue;
+      }
+
+      if (c === '"') {
+        inQuotes = true;
+      } else if (c === delimiter) {
+        row.push(field);
+        field = "";
+      } else if (c === '\n') {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else if (c === '\r') {
+        if (input[i + 1] === '\n') continue;
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else {
+        field += c;
+      }
+    }
+
+    if (inQuotes) throw new Error("CSV inválido: hay una comilla doble sin cerrar.");
+    if (field.length || row.length) {
+      row.push(field);
+      rows.push(row);
+    }
+
+    while (rows.length && rows[rows.length - 1].every(cell => String(cell).trim() === "")) rows.pop();
+    if (!rows.length) throw new Error("El archivo está vacío.");
+
+    const headers = rows[0].map((h, idx) => idx === 0 ? String(h).replace(/^\uFEFF/, "") : String(h));
+    const dataRows = rows.slice(1);
+    return { delimiter, headers, rows: dataRows };
+  }
+
+  function findHeaderIndex(headers, target) {
+    const wanted = normalizeHeader(target);
+    if (!wanted) return -1;
+    return headers.findIndex(h => normalizeHeader(h) === wanted);
+  }
+
+  function numericOrNull(value) {
+    const raw = String(value ?? "").trim();
+    if (raw === "") return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function ruleMatchesSummary(summary, rule, options) {
+    const norm = v => normalizeSummaryText(v, options.normalizeSummarySeparators !== false);
+    const source = norm(summary);
+    if (!source) return false;
+    const terms = [rule.mapName, rule.releaseName]
+      .map(norm)
+      .filter(Boolean);
+    return terms.some(term => source.includes(term));
+  }
+
+  function evaluateDataset(parsed, config, buildValue) {
+    const idx = {
+      changelist: findHeaderIndex(parsed.headers, config.headers.changelist),
+      key: findHeaderIndex(parsed.headers, config.headers.key),
+      summary: findHeaderIndex(parsed.headers, config.headers.summary)
+    };
+
+    const missing = Object.entries(idx).filter(([, v]) => v < 0).map(([k]) => k);
+    if (missing.length) {
+      return { ok: false, reason: "missing_headers", missing, idx, included: [], keys: [], invalidChangelists: 0, totalRows: parsed.rows.length };
+    }
+
+    const build = Number(buildValue);
+    if (!Number.isFinite(build)) {
+      return { ok: false, reason: "missing_build", missing: [], idx, included: [], keys: [], invalidChangelists: 0, totalRows: parsed.rows.length };
+    }
+
+    const validRules = (config.mapRules || []).filter(rule => {
+      const bm = Number(rule.buildMap);
+      return Number.isFinite(bm) && (String(rule.mapName || "").trim() || String(rule.releaseName || "").trim());
+    });
+
+    const included = [];
+    const keys = [];
+    const seenKeys = new Set();
+    let invalidChangelists = 0;
+
+    parsed.rows.forEach((row, rowIndex) => {
+      const clRaw = row[idx.changelist] ?? "";
+      const keyRaw = String(row[idx.key] ?? "").trim();
+      const summary = String(row[idx.summary] ?? "");
+
+      let effectiveBuild = build;
+      let matchedRule = null;
+      for (let i = 0; i < validRules.length; i++) {
+        if (ruleMatchesSummary(summary, validRules[i], config.filter || {})) {
+          matchedRule = validRules[i];
+          effectiveBuild = Number(validRules[i].buildMap);
+          break;
+        }
+      }
+
+      const cl = numericOrNull(clRaw);
+      let passes = false;
+      if (cl === null) {
+        passes = config.filter.includeBlankChangelist !== false;
+      } else if (Number.isNaN(cl)) {
+        invalidChangelists++;
+        passes = false;
+      } else {
+        passes = cl <= effectiveBuild;
+      }
+
+      if (!passes) return;
+
+      included.push({
+        rowIndex: rowIndex + 2,
+        key: keyRaw,
+        changelist: String(clRaw ?? "").trim(),
+        summary,
+        effectiveBuild,
+        ruleId: matchedRule ? matchedRule.id : null,
+        ruleLabel: matchedRule ? (matchedRule.mapName || matchedRule.releaseName || matchedRule.id) : "Build general"
+      });
+
+      if (!keyRaw) return;
+      if (config.filter.deduplicateKeys === false || !seenKeys.has(keyRaw)) {
+        keys.push(keyRaw);
+        seenKeys.add(keyRaw);
+      }
+    });
+
+    return { ok: true, idx, included, keys, invalidChangelists, totalRows: parsed.rows.length };
+  }
+
+  // Exposición deliberada de funciones puras para pruebas rápidas del monolito.
+  window.JiraFilterCore = { detectDelimiter, parseDelimited, findHeaderIndex, evaluateDataset, ruleMatchesSummary, normalizeSummaryText };
+  /* MONOLITH:SECTION 02-core-pure-functions END */
+
+  /* MONOLITH:SECTION 03-config-state START */
+  let vanilla = null;
+  let config = null;
+  const state = {
+    build: "",
+    rawCsv: "",
+    parsed: null,
+    fileName: "",
+    fileSize: 0,
+    activeTab: "filter"
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function newRule() {
+    const id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : "rule_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+    return { id, mapName: "", buildMap: "", releaseName: "" };
+  }
+
+  function loadVanillaConfig() {
+    vanilla = JSON.parse($("vanillaConfig").textContent);
+  }
+
+  function normalizeConfig(candidate) {
+    const base = deepClone(vanilla);
+    const c = candidate && typeof candidate === "object" ? candidate : {};
+    base.version = c.version || base.version;
+    base.headers = { ...base.headers, ...(c.headers || {}) };
+    base.filter = { ...base.filter, ...(c.filter || {}) };
+    base.mapRules = Array.isArray(c.mapRules) ? c.mapRules.map(r => ({
+      id: r.id || newRule().id,
+      mapName: String(r.mapName ?? ""),
+      buildMap: String(r.buildMap ?? ""),
+      releaseName: String(r.releaseName ?? "")
+    })) : [];
+    return base;
+  }
+
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(CONFIG_KEY);
+      config = raw ? normalizeConfig(JSON.parse(raw)) : deepClone(vanilla);
+    } catch (e) {
+      console.warn("No se pudo cargar config local", e);
+      config = deepClone(vanilla);
+    }
+
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const snap = JSON.parse(raw);
+        state.build = String(snap.build ?? "");
+        state.activeTab = snap.activeTab === "headers" ? "headers" : "filter";
+      }
+    } catch (e) {
+      console.warn("No se pudo cargar sesión local", e);
+    }
+  }
+
+  let saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveLocal, 180);
+  }
+
+  function saveLocal() {
+    try {
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ build: state.build, activeTab: state.activeTab }));
+    } catch (e) {
+      console.warn("No se pudo guardar en localStorage", e);
+    }
+  }
+  /* MONOLITH:SECTION 03-config-state END */
+
+  /* MONOLITH:SECTION 04-ui-render START */
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>'"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[ch]));
+  }
+
+  function showBanner(message, isError = false) {
+    const el = $("banner");
+    el.textContent = message;
+    el.classList.toggle("error", !!isError);
+    el.classList.add("show");
+    clearTimeout(showBanner.timer);
+    showBanner.timer = setTimeout(() => el.classList.remove("show"), 2400);
+  }
+
+  function setStatus(id, type, message) {
+    const el = $(id);
+    el.className = "status";
+    if (!message) { el.textContent = ""; return; }
+    el.classList.add("show", type);
+    el.innerHTML = message;
+  }
+
+  function renderTabs() {
+    document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === state.activeTab));
+    document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === "tab-" + state.activeTab));
+  }
+
+  function renderConfigInputs() {
+    $("headerChangelist").value = config.headers.changelist;
+    $("headerKey").value = config.headers.key;
+    $("headerSummary").value = config.headers.summary;
+    $("buildInput").value = state.build;
+    $("configPreview").value = JSON.stringify(config, null, 2);
+  }
+
+  function renderRules() {
+    const host = $("rulesList");
+    if (!config.mapRules.length) {
+      host.innerHTML = '<div class="empty-state">No hay overrides. Usa <strong>+</strong> para agregar el primer Map / Release.</div>';
+      return;
+    }
+
+    host.innerHTML = config.mapRules.map((rule, idx) => `
+      <div class="rule-card" data-rule-id="${escapeHtml(rule.id)}">
+        <div class="rule-card-head">
+          <span class="rule-title">Regla ${idx + 1}</span>
+          <button class="btn small danger" type="button" data-action="delete-rule" data-rule-id="${escapeHtml(rule.id)}">Eliminar</button>
+        </div>
+        <div class="rule-grid">
+          <div class="field">
+            <label>Map Name</label>
+            <input type="text" data-rule-field="mapName" data-rule-id="${escapeHtml(rule.id)}" value="${escapeHtml(rule.mapName)}" placeholder="El_ejemplo_1" />
+          </div>
+          <div class="field">
+            <label>Build Map</label>
+            <input type="number" step="1" data-rule-field="buildMap" data-rule-id="${escapeHtml(rule.id)}" value="${escapeHtml(rule.buildMap)}" placeholder="182500" />
+          </div>
+          <div class="field">
+            <label>Release Name <span style="font-weight:500;color:var(--muted);">(opcional)</span></label>
+            <input type="text" data-rule-field="releaseName" data-rule-id="${escapeHtml(rule.id)}" value="${escapeHtml(rule.releaseName)}" placeholder="Release_2026_08" />
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderFileInfo() {
+    if (!state.parsed) {
+      $("fileTitle").textContent = "Ningún CSV cargado";
+      $("fileMeta").textContent = "Se validarán los headers configurados en la pestaña HEADERS.";
+      return;
+    }
+    const delim = state.parsed.delimiter === ';' ? "punto y coma (;)" : "coma (,)";
+    $("fileTitle").textContent = state.fileName || "CSV cargado";
+    $("fileMeta").textContent = `${state.parsed.rows.length} filas · ${state.parsed.headers.length} columnas · delimitador ${delim}`;
+  }
+
+  function headerValidationHtml() {
+    if (!state.parsed) return "";
+    const mappings = [
+      ["changelist", config.headers.changelist],
+      ["key", config.headers.key],
+      ["summary", config.headers.summary]
+    ];
+    const missing = mappings.filter(([, name]) => findHeaderIndex(state.parsed.headers, name) < 0);
+    if (!missing.length) {
+      return `<strong>Headers correctos.</strong> Detectados: ${mappings.map(([, name]) => `<code>${escapeHtml(name)}</code>`).join(", ")}.`;
+    }
+    return `<strong>Faltan headers:</strong> ${missing.map(([, name]) => `<code>${escapeHtml(name)}</code>`).join(", ")}. Cabecera encontrada: ${state.parsed.headers.map(h => `<code>${escapeHtml(h)}</code>`).join(", ")}.`;
+  }
+
+  function renderEvaluation() {
+    renderFileInfo();
+    $("configPreview").value = JSON.stringify(config, null, 2);
+
+    if (!state.parsed) {
+      setStatus("csvStatus", "", "");
+      setStatus("filterStatus", "warning", "Carga un CSV para generar el filtro.");
+      $("jiraOutput").value = "Key in ()";
+      $("statRows").textContent = "0";
+      $("statIncluded").textContent = "0";
+      $("statKeys").textContent = "0";
+      $("statInvalid").textContent = "0";
+      $("previewBody").innerHTML = '<tr><td colspan="5" style="color:var(--muted);">Carga un CSV para ver resultados.</td></tr>';
+      return;
+    }
+
+    const result = evaluateDataset(state.parsed, config, state.build);
+    $("statRows").textContent = String(result.totalRows || 0);
+    $("statIncluded").textContent = String(result.included.length || 0);
+    $("statKeys").textContent = String(result.keys.length || 0);
+    $("statInvalid").textContent = String(result.invalidChangelists || 0);
+
+    if (!result.ok && result.reason === "missing_headers") {
+      setStatus("csvStatus", "error", headerValidationHtml());
+      setStatus("filterStatus", "error", "No se puede ejecutar el filtro hasta corregir el Header mapping.");
+      $("jiraOutput").value = "Key in ()";
+      renderPreview([]);
+      return;
+    }
+
+    setStatus("csvStatus", "success", headerValidationHtml());
+
+    if (!result.ok && result.reason === "missing_build") {
+      setStatus("filterStatus", "warning", "Introduce un <strong>Build</strong> numérico para evaluar el changelist.");
+      $("jiraOutput").value = "Key in ()";
+      renderPreview([]);
+      return;
+    }
+
+    const keyValue = result.keys.join(", ");
+    $("jiraOutput").value = `Key in (${keyValue})`;
+
+    const details = [];
+    if (result.invalidChangelists) details.push(`${result.invalidChangelists} changelist no numérico(s) fueron excluidos`);
+    const invalidRules = config.mapRules.filter(r => (String(r.mapName).trim() || String(r.releaseName).trim()) && !Number.isFinite(Number(r.buildMap))).length;
+    if (invalidRules) details.push(`${invalidRules} regla(s) Map / Release no tienen buildMap válido y fueron ignoradas`);
+    setStatus("filterStatus", details.length ? "warning" : "success", details.length ? details.join(". ") + "." : `Filtro generado con <strong>${result.keys.length}</strong> key(s) única(s).`);
+    renderPreview(result.included);
+  }
+
+  function renderPreview(included) {
+    const rows = included.slice(0, 200);
+    if (!rows.length) {
+      $("previewBody").innerHTML = '<tr><td colspan="5" style="color:var(--muted);">No hay filas incluidas con la configuración actual.</td></tr>';
+      return;
+    }
+    $("previewBody").innerHTML = rows.map(item => `
+      <tr>
+        <td>${escapeHtml(item.key || "—")}</td>
+        <td>${escapeHtml(item.changelist || "(vacío)")}</td>
+        <td>${escapeHtml(item.effectiveBuild)}</td>
+        <td>${escapeHtml(item.ruleLabel)}</td>
+        <td class="summary-cell">${escapeHtml(item.summary)}</td>
+      </tr>
+    `).join("");
+  }
+
+  function refreshAll() {
+    renderTabs();
+    renderConfigInputs();
+    renderRules();
+    renderEvaluation();
+  }
+  /* MONOLITH:SECTION 04-ui-render END */
+
+  /* MONOLITH:SECTION 05-csv-io START */
+  function loadCsvText(text, fileName = "session.csv", fileSize = 0) {
+    const parsed = parseDelimited(text);
+    state.rawCsv = String(text);
+    state.parsed = parsed;
+    state.fileName = fileName;
+    state.fileSize = fileSize;
+    renderEvaluation();
+  }
+
+  function onCsvFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        loadCsvText(e.target.result, file.name, file.size);
+        showBanner("CSV cargado.");
+      } catch (err) {
+        state.rawCsv = "";
+        state.parsed = null;
+        setStatus("csvStatus", "error", escapeHtml(err.message));
+        renderEvaluation();
+        showBanner("No se pudo leer el CSV.", true);
+      }
+    };
+    reader.onerror = () => showBanner("No se pudo leer el archivo.", true);
+    reader.readAsText(file);
+  }
+  /* MONOLITH:SECTION 05-csv-io END */
+
+  /* MONOLITH:SECTION 06-session-export START */
+  function downloadText(name, content, mime = "text/plain;charset=utf-8") {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function isoStamp() {
+    return new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  }
+
+  function exportSession() {
+    const snap = {
+      tool: "jira-changelist-filter",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      config: deepClone(config),
+      session: {
+        build: state.build,
+        activeTab: state.activeTab,
+        fileName: state.fileName,
+        rawCsv: state.rawCsv
+      }
+    };
+    downloadText(`jira_filter_session_${isoStamp()}.json`, JSON.stringify(snap, null, 2), "application/json;charset=utf-8");
+    showBanner("Sesión exportada. Incluye configuración, build y CSV cargado.");
+  }
+
+  function importSessionText(text) {
+    const snap = JSON.parse(text);
+    if (!snap || !snap.config || !snap.session) throw new Error("El JSON no tiene la estructura de sesión esperada.");
+    config = normalizeConfig(snap.config);
+    state.build = String(snap.session.build ?? "");
+    state.activeTab = snap.session.activeTab === "headers" ? "headers" : "filter";
+    state.rawCsv = String(snap.session.rawCsv ?? "");
+    state.fileName = String(snap.session.fileName ?? "session.csv");
+    state.fileSize = state.rawCsv.length;
+    state.parsed = state.rawCsv ? parseDelimited(state.rawCsv) : null;
+    saveLocal();
+    refreshAll();
+  }
+
+  function exportToolHtml() {
+    const json = JSON.stringify(config, null, 2).replace(/<\//g, "<\\/");
+    const marker = 'id="vanillaConfig">';
+    const start = PRISTINE_HTML.indexOf(marker);
+    if (start < 0) { showBanner("No se encontró #vanillaConfig.", true); return; }
+    const end = PRISTINE_HTML.indexOf(SCRIPT_END, start);
+    if (end < 0) { showBanner("No se encontró el cierre del bloque de config.", true); return; }
+    const out = PRISTINE_HTML.slice(0, start + marker.length) + "\n" + json + "\n" + PRISTINE_HTML.slice(end);
+    downloadText("jira_changelist_filter_tool.html", out, "text/html;charset=utf-8");
+    vanilla = deepClone(config);
+    showBanner("Herramienta exportada con la configuración actual embebida.");
+  }
+  /* MONOLITH:SECTION 06-session-export END */
+
+  /* MONOLITH:SECTION 07-events START */
+  function wireEvents() {
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.activeTab = btn.dataset.tab;
+        renderTabs();
+        scheduleSave();
+      });
+    });
+
+    $("chooseCsvBtn").addEventListener("click", () => $("csvInput").click());
+    $("csvInput").addEventListener("change", e => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (file) onCsvFile(file);
+    });
+
+    $("buildInput").addEventListener("input", e => {
+      state.build = e.target.value;
+      scheduleSave();
+      renderEvaluation();
+    });
+
+    const headerBindings = [
+      ["headerChangelist", "changelist"],
+      ["headerKey", "key"],
+      ["headerSummary", "summary"]
+    ];
+    headerBindings.forEach(([id, key]) => {
+      $(id).addEventListener("input", e => {
+        config.headers[key] = e.target.value;
+        scheduleSave();
+        renderEvaluation();
+      });
+    });
+
+    $("addRuleBtn").addEventListener("click", () => {
+      config.mapRules.push(newRule());
+      scheduleSave();
+      renderRules();
+      renderEvaluation();
+      const cards = $("rulesList").querySelectorAll(".rule-card");
+      if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    $("rulesList").addEventListener("input", e => {
+      const field = e.target.dataset.ruleField;
+      const id = e.target.dataset.ruleId;
+      if (!field || !id) return;
+      const rule = config.mapRules.find(r => r.id === id);
+      if (!rule) return;
+      rule[field] = e.target.value;
+      scheduleSave();
+      renderEvaluation();
+    });
+
+    $("rulesList").addEventListener("click", e => {
+      const btn = e.target.closest("[data-action='delete-rule']");
+      if (!btn) return;
+      const id = btn.dataset.ruleId;
+      config.mapRules = config.mapRules.filter(r => r.id !== id);
+      scheduleSave();
+      renderRules();
+      renderEvaluation();
+    });
+
+    $("copyOutputBtn").addEventListener("click", async () => {
+      const text = $("jiraOutput").value;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        $("jiraOutput").focus();
+        $("jiraOutput").select();
+        document.execCommand("copy");
+      }
+      showBanner("Output copiado.");
+    });
+
+    $("saveSessionBtn").addEventListener("click", exportSession);
+    $("loadSessionBtn").addEventListener("click", () => $("sessionInput").click());
+    $("sessionInput").addEventListener("change", e => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          importSessionText(ev.target.result);
+          showBanner("Sesión cargada.");
+        } catch (err) {
+          showBanner("Sesión inválida: " + err.message, true);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    $("exportToolBtn").addEventListener("click", exportToolHtml);
+
+    $("resetBtn").addEventListener("click", () => {
+      if (!confirm("¿Restablecer configuración, build y reglas locales? El CSV cargado también se quitará de esta sesión.")) return;
+      config = deepClone(vanilla);
+      state.build = "";
+      state.rawCsv = "";
+      state.parsed = null;
+      state.fileName = "";
+      state.fileSize = 0;
+      state.activeTab = "filter";
+      localStorage.removeItem(CONFIG_KEY);
+      localStorage.removeItem(SESSION_KEY);
+      refreshAll();
+      showBanner("Herramienta restablecida.");
+    });
+
+    window.addEventListener("beforeunload", saveLocal);
+  }
+  /* MONOLITH:SECTION 07-events END */
+
+  /* MONOLITH:SECTION 08-boot START */
+  function boot() {
+    try {
+      loadVanillaConfig();
+      loadLocal();
+      wireEvents();
+      refreshAll();
+    } catch (err) {
+      document.body.innerHTML = `<div style="padding:32px;font-family:sans-serif"><h2>No se pudo iniciar la herramienta</h2><pre>${escapeHtml(err.message)}</pre></div>`;
+    }
+  }
+
+  boot();
+  /* MONOLITH:SECTION 08-boot END */
+  </script>
+</body>
+</html>

@@ -6,9 +6,10 @@ const vm = require("node:vm");
 
 const ROOT = path.resolve(__dirname, "../..");
 const TOOL_PATH = path.join(ROOT, "bug_tool.html");
+const MULTILANGUAGE_TOOL_PATH = path.join(ROOT, "bug_tool_multilanguage.html");
 
-function readToolHtml() {
-  return fs.readFileSync(TOOL_PATH, "utf8");
+function readToolHtml(toolPath = TOOL_PATH) {
+  return fs.readFileSync(toolPath, "utf8");
 }
 
 function extractScripts(html) {
@@ -40,7 +41,8 @@ function jsonValue(value) {
 }
 
 function createRuntime(options = {}) {
-  const html = options.html || readToolHtml();
+  const toolPath = options.toolPath || TOOL_PATH;
+  const html = options.html || readToolHtml(toolPath);
   let main = extractMainScript(html);
   const bootPattern = /\nboot\(\);\s*(?=\/\* MONOLITH:SECTION 18-boot END \*\/)/;
   if (!bootPattern.test(main)) throw new Error("No se pudo aislar boot() para las pruebas");
@@ -60,7 +62,7 @@ function createRuntime(options = {}) {
     "applyOutputDetachment", "captureOutputTextareaEdit", "refreshOutputForCopy",
     "normalizeOutputPreviewMode", "outputPreviewLine", "jiraCodeFence",
     "exportSharedFieldValues", "importDataCsv", "importFieldsCsv", "ensureTiles"
-  ];
+  ].concat(options.exposedNames || []);
 
   main += `
 let __testDownload = null;
@@ -101,10 +103,24 @@ globalThis.__bugToolTestApi = {
   async captureToolHtml() { __testDownload = null; await exportToolHtml(); return __testDownload; }
 };`;
 
-  const storage = new Map();
+  const storage = options.storage || new Map();
   const noop = () => {};
+  const documentElement = {
+    outerHTML: html.replace(/^<!doctype html>\s*/i, ""),
+    dataset: {},
+    lang: "",
+    setAttribute(name, value) {
+      if (name === "data-theme") this.dataset.theme = String(value);
+      else this[name] = String(value);
+    },
+    getAttribute(name) {
+      if (name === "data-theme") return this.dataset.theme;
+      return this[name] ?? null;
+    }
+  };
   const document = {
-    documentElement: { outerHTML: html.replace(/^<!doctype html>\s*/i, "") },
+    documentElement,
+    title: "",
     getElementById: () => null,
     querySelectorAll: () => [],
     addEventListener: noop,
@@ -125,7 +141,17 @@ globalThis.__bugToolTestApi = {
     setTimeout, clearTimeout
   };
   vm.createContext(sandbox);
-  new vm.Script(main, { filename: TOOL_PATH }).runInContext(sandbox);
+  if (options.executePrelude) {
+    const mainScript = extractScripts(html).find(({ source }) =>
+      source.includes('"use strict";') && source.includes("MONOLITH:SECTION 18-boot"));
+    for (const [index, script] of extractScripts(html).entries()) {
+      if (!mainScript || script.index >= mainScript.index) break;
+      if (/\btype=["']application\/json["']/.test(script.attributes)) continue;
+      new vm.Script(script.source, { filename: `${toolPath}#prelude-${index + 1}` })
+        .runInContext(sandbox);
+    }
+  }
+  new vm.Script(main, { filename: toolPath }).runInContext(sandbox);
   const api = sandbox.__bugToolTestApi;
 
   const vanilla = extractVanillaConfig(html);
@@ -142,6 +168,6 @@ globalThis.__bugToolTestApi = {
 }
 
 module.exports = {
-  ROOT, TOOL_PATH, createRuntime, extractMainScript, extractScripts,
+  ROOT, TOOL_PATH, MULTILANGUAGE_TOOL_PATH, createRuntime, extractMainScript, extractScripts,
   extractVanillaConfig, jsonValue, readToolHtml
 };

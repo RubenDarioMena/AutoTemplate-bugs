@@ -1,8 +1,8 @@
 # Bugs Template Tool — Design Document
 
-Status: ACTIVE v0.6 — historical decisions below are retained; the current implementation notes take precedence where they differ.
+Status: ACTIVE — historical decisions below are retained; the current implementation notes take precedence where they differ.
 Author: Hermes Agent (in collaboration with Rubén)
-Last update: 2026-07-29
+Last update: 2026-08-10
 
 ---
 
@@ -24,7 +24,7 @@ The tool runs entirely in the browser, reads/writes files from the
 local share folder, and requires NO installation, NO server, NO
 network calls, NO third-party runtime libraries.
 
-### Current implementation snapshot (2026-08-08)
+### Current implementation snapshot (2026-08-10)
 
 `bug_tool.html` is the canonical self-contained application. Its form
 schema, data lists, validation rules and initial configuration are embedded
@@ -46,6 +46,21 @@ top-level blocks are delimited with `MONOLITH:SECTION <name> START/END`.
 map for those blocks, and must be updated in the same task as every
 structural change to the monolith.
 
+`bug_tool_multilanguage.html` is a parallel, self-contained v3 refactor. It
+keeps the same schema-driven workflows while adding selectors for Spanish or
+English and for the existing light/dark palettes, presented as Day/Night or
+Día/Noche. Its 24 top-level blocks are documented independently in
+`Directorio-Monolito-Multilanguage.MD`; this prevents a structural change in
+one variant from silently redefining the contracts of the other.
+
+Language is deliberately a presentation concern. The catalogs translate the
+application chrome and an overlay supplies English presentation for known
+labels, help and validation text distributed in the vanilla schema. Stable
+IDs, DATA values, rule expressions and tokens, placeholders, templates, CSV,
+user-entered text and generated output remain canonical. Custom configured
+text without a known overlay is displayed literally. Changing language or
+style therefore does not mark the editable configuration as modified.
+
 ---
 
 ## 2. Distribution & Security Model
@@ -55,16 +70,19 @@ structural change to the monolith.
 A single shared network folder contains:
 
   /Bugs-template/
-    bug_tool.html              # the monolith (self-contained)
-    bug_data.csv               # source of truth for lists & rules
-    Directorio-Monolito.MD      # map of sections and information flow
-    AGENTS.md                   # maintenance instructions for agents
-    PROGRESS.md                 # current state and change log
-    README.md                  # short usage instructions
+    bug_tool.html                         # canonical v2 monolith
+    bug_tool_multilanguage.html           # multilingual v3 variant
+    bug_data.csv                          # source of truth for lists & rules
+    Directorio-Monolito.MD                # v2 section/data-flow map
+    Directorio-Monolito-Multilanguage.MD  # v3 section/data-flow map
+    AGENTS.md                              # maintenance instructions
+    PROGRESS.md                            # current state and change log
+    README.md                              # short usage instructions
 
-Testers and DB editors open `bug_tool.html` by double-click.
-The HTML is ready to use without loading a CSV. `bug_data.csv` and
-`bug_fields.csv` are optional interchange files, loaded only when a user
+Testers and DB editors can open either HTML by double-click. The multilingual
+variant is the entry point when language or appearance selection is needed.
+Both files are ready to use without loading a CSV. `bug_data.csv` and
+`bug_fields.csv` remain optional interchange files, loaded only when a user
 explicitly chooses them through the file picker.
 
 ### Security posture (deliberately exaggerated)
@@ -561,14 +579,15 @@ exactly where they left off.
 ## 10. Tech Choices
 
   * HTML5 + CSS3 (Grid + Flexbox) + vanilla ES2020 JS.
-  * No build step, no bundler, no package.json.
+  * No application build step, bundler or runtime package dependency. The
+    repository's `package.json` only exposes maintenance tests based on
+    Node.js built-ins.
   * No framework. The UI is small enough (~6 components) that a
     framework would add weight without benefit.
   * A small `state` object is the single source of truth; views
     re-render on `state` changes.
-  * The full monolith should fit in a single .html file under
-    ~1500 lines (target), readable by any developer with no
-    special tooling.
+  * Each distributable remains one readable `.html` file with no special
+    runtime tooling.
 
 ---
 
@@ -581,8 +600,9 @@ exactly where they left off.
   * Custom templates per project / per team (the format is fixed
     for v1; future versions can support project-specific
     templates by adding a `template` category to the CSV).
-  * Localization (UI is Spanish/English mixed, matching the
-    team's current practice; full i18n is a future enhancement).
+  * Localization was out of scope for v1. It is now addressed by the parallel
+    `bug_tool_multilanguage.html` variant; arbitrary machine translation of
+    user data and report content remains out of scope.
   * Server-side validation, anti-tamper, or signed CSV files. The
     tool trusts whatever CSV it loads. If the DB team mis-edits
     it, the tool will show a parse error and refuse to load —
@@ -608,6 +628,10 @@ exactly where they left off.
   |   | (lowercase + underscore). Confirmed.                                      |
   | 6 | Keyword overlap check is **case-insensitive**, matching Jira's search     |
   |   | behavior.                                                                 |
+  | 7 | The multilingual selector changes presentation only. Stable IDs, DATA,    |
+  |   | DSL, templates, CSV, user text and canonical output are not translated.   |
+  | 8 | Multilingual exports keep the filename `bug_tool_multilanguage.html`; UI   |
+  |   | language/style preferences remain browser-local and outside config/CSV.   |
 
 ---
 
@@ -960,11 +984,42 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     desactiva el switch y vuelve al textarea; no hay conversión inversa desde
     HTML hacia las plantillas.
 
+## Iteración 9 (2026-08-10): variante multilenguaje y apariencia
+
+  * **Distribución paralela.** `bug_tool_multilanguage.html` reutiliza los
+    contratos funcionales del monolito v2, pero usa metadatos, almacenamiento
+    y exportación propios. La configuración y sesión viven en las claves
+    `bug_tool_multilanguage_v3_config` y
+    `bug_tool_multilanguage_v3_session`; al primer arranque puede leer las
+    claves v2 para migrar trabajo existente.
+  * **Preferencias tempranas.** `preferences-bootstrap` lee
+    `bug_tool_multilanguage_ui_v1` antes de renderizar y aplica `lang` y
+    `data-theme`. Si aún no hay preferencia de la variante, acepta el antiguo
+    `bugtool_theme_v1` como migración. Los valores válidos son `es`/`en` y
+    `light`/`dark`, con fallback español/Día.
+  * **Catálogos verificables.** `UI_MESSAGES` contiene la interfaz en español
+    e inglés; ambos catálogos deben tener las mismas claves y placeholders.
+    `data-i18n`, `t` y `tp` cubren DOM estático, contenido dinámico y plurales.
+    `configuredText` presenta traducciones conocidas del schema vanilla sin
+    mutarlo, y deja literal cualquier personalización desconocida.
+  * **Frontera de contenido.** El selector no traduce valores DATA, IDs,
+    fuentes, expresiones de RULES, referencias `@`, placeholders, plantillas,
+    CSV, texto del usuario ni output. El estilo sólo sustituye los tokens CSS
+    de Día/Noche; ningún selector modifica la configuración de negocio.
+  * **Exportación.** La copia prístina conserva catálogos y ambos temas, integra
+    únicamente `#vanillaConfig` y se guarda como
+    `bug_tool_multilanguage.html`. La preferencia local del navegador no se
+    incorpora al archivo exportado ni al archivo de sesión.
+  * **Mantenimiento y pruebas.** Los 24 marcadores y sus contratos viven en
+    `Directorio-Monolito-Multilanguage.MD`. A los 19 casos históricos se suman
+    cinco contratos, cuatro pruebas de comportamiento y un smoke de navegador
+    para la variante. Cubren catálogos, persistencia, aislamiento, exportación
+    y estabilidad del output; la matriz visual español/inglés por Día/Noche se
+    conserva como verificación manual.
+
 ## Pendiente (siguientes iteraciones)
 
   * Agrupación visual de tiles por categoría y color por grupo (el dato
-    `group` ya existe; se pospuso a favor del modelo de dos bandas). Ver
-    ROADMAP §1.
+    `group` ya existe; se pospuso a favor del modelo de dos bandas).
   * Validar la Key de media con regex y decidir si se requieren más
     propiedades virtuales de media además de `media:mediaN:type`.
-    Ver ROADMAP §2.

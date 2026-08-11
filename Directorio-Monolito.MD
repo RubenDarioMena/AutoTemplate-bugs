@@ -1,6 +1,9 @@
 # Directorio del monolito
 
-Este directorio describe la versión principal: `bug_tool.html`. El archivo `bug_tool_redesign.html` es una variante anterior y no comparte necesariamente la misma estructura o funcionalidades.
+Este directorio describe la versión principal: `bug_tool.html`. La variante
+`bug_tool_multilanguage.html` tiene bloques y contratos adicionales; su mapa
+oficial es `Directorio-Monolito-Multilanguage.MD` y no debe asumirse
+estructuralmente sincronizada con este archivo.
 
 ## Cómo localizar una sección
 

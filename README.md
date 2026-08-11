@@ -1,15 +1,18 @@
-# Bugs Template Tool (v2)
+# Bugs Template Tool
 
 Herramienta interna para generar reportes de bugs y notas de
-regresión. Es un único archivo HTML autocontenido: los campos del
-formulario, las listas de datos y las reglas de validación viajan
-DENTRO del archivo. No se instala nada, no usa red, no tiene
-dependencias.
+regresión. Cada versión se distribuye como un archivo HTML autocontenido: los
+campos del formulario, las listas de datos y las reglas de validación viajan
+DENTRO del archivo. No se instala nada, no usa red, no tiene dependencias de
+ejecución.
 
 ## Archivos en esta carpeta
 
   - **`bug_tool.html`** — la herramienta (doble click para abrir).
     Trae integrados los formularios, los datos y las reglas.
+  - **`bug_tool_multilanguage.html`** — variante refactorizada con selector de
+    idioma español/inglés y selector de estilo Día/Noche. Exporta una copia
+    autocontenida bajo ese mismo nombre.
   - **`bug_data.csv`** — los VALORES de las listas (mapas, POIs,
     regiones, plataformas, tiers, reglas). Para actualizaciones.
   - **`bug_fields.csv`** — los CAMPOS de los formularios y su
@@ -17,13 +20,32 @@ dependencias.
   - **`bug_data.README.md`** — guía del CSV de datos.
   - **`bug_fields.README.md`** — guía del CSV de campos.
   - **`DESIGN.md`** — documento de diseño (referencia técnica).
-  - **`ROADMAP.md`** — features pendientes, a grandes rasgos.
+  - **`Directorio-Monolito.MD`** y
+    **`Directorio-Monolito-Multilanguage.MD`** — mapas de mantenimiento de
+    cada monolito.
   - **`TESTING.md`** — pruebas de regresión para mantenimiento.
+
+## Idioma y estilo
+
+En `bug_tool_multilanguage.html`, los dos selectores de la barra superior se
+aplican inmediatamente:
+
+  - **Idioma:** Español o English. Traduce la interfaz y presenta en inglés
+    los labels, ayudas y mensajes distribuidos que la variante reconoce.
+  - **Estilo:** Día o Noche (internamente `light` y `dark`). Sólo cambia la
+    apariencia; no modifica datos ni reportes.
+
+Ambas preferencias se guardan localmente en el navegador y se restauran antes
+del primer render. El idioma es una capa de presentación: no traduce IDs,
+valores de DATA, expresiones de RULES, placeholders, plantillas, CSV, texto
+escrito por el tester ni el output canónico. Los textos personalizados que no
+tengan una traducción distribuida se muestran tal como fueron escritos.
 
 ## Flujo para testers
 
-  1. Doble click en `bug_tool.html`. Ya viene todo cargado; no hay
-     que abrir ningún CSV.
+  1. Doble click en `bug_tool_multilanguage.html` para usar los selectores, o
+     en `bug_tool.html` para abrir la versión canónica anterior. Ambas vienen
+     listas y no requieren cargar un CSV.
   2. Llenar los campos. Los tiles de arriba avisan en rojo qué falta
      o qué está mal escrito (click en el tile = saltar al campo).
   3. El output se puede corregir antes de copiar. Si cambias texto generado
@@ -49,9 +71,11 @@ dependencias.
      Los campos de chips pueden enlazarse opcionalmente a una lista para
      sugerencias, aceptar texto libre, editar chips con doble clic y salir
      en modo **Unida** o **Líneas**.
-  4. Al terminar: **"Exportar herramienta"** descarga un
-     `bug_tool.html` nuevo con todo integrado. Ese archivo se pone en
-     el sharefolder y es el que copia el resto del equipo.
+  4. Al terminar: **"Exportar herramienta"** descarga una copia nueva con
+     todo integrado. La variante conserva el nombre
+     `bug_tool_multilanguage.html`; la versión anterior conserva
+     `bug_tool.html`. Ese archivo se pone en el sharefolder y es el que copia
+     el resto del equipo.
 
 Aviso: cuando tu configuración local difiere de la del archivo, la
 barra superior muestra **"Config modificada"** para recordarte
@@ -101,9 +125,9 @@ media son la lista `mediaTypes` en Data.
 
   - No se instala nada; todo corre en el navegador.
   - Cero llamadas de red, cero dependencias externas.
-  - Todo el código y la configuración son visibles abriendo el
-    `.html` con un editor de texto (la config vive en un bloque JSON
-    legible al final del archivo).
+  - Todo el código y la configuración son visibles abriendo cualquiera de los
+    `.html` con un editor de texto (la config vive en un bloque JSON legible
+    dentro del archivo).
   - El progreso se guarda localmente (`localStorage`), nunca en un
     servidor. Las únicas escrituras a disco son las descargas que el
     usuario pide con un botón.

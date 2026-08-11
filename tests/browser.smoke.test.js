@@ -8,7 +8,7 @@ const { spawn } = require("node:child_process");
 const test = require("node:test");
 const { pathToFileURL } = require("node:url");
 
-const { TOOL_PATH } = require("./helpers/monolith");
+const { TOOL_PATH, MULTILANGUAGE_TOOL_PATH } = require("./helpers/monolith");
 
 const BROWSERS = [
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -336,6 +336,110 @@ test("Chrome arranca el monolito, actualiza output y restaura la sesión", { tim
   } finally {
     if (cdp && cdp.ws.readyState === WebSocket.OPEN) cdp.ws.close();
     if (!child.killed) child.kill("SIGTERM");
-    fs.rmSync(profile, { recursive: true, force: true });
+    fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+});
+
+test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura preferencias", { timeout: 30000 }, async t => {
+  const browser = availableBrowser();
+  if (!browser) return t.skip("Chrome/Edge no está disponible en este entorno");
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), "bug-tool-multilanguage-browser-test-"));
+  const child = spawn(browser, [
+    "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+    "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank"
+  ], { stdio: ["ignore", "ignore", "pipe"] });
+
+  let cdp;
+  try {
+    cdp = new Cdp(await waitForWsUrl(child));
+    await cdp.open();
+    const { targetId } = await cdp.send("Target.createTarget", { url: "about:blank" });
+    const { sessionId } = await cdp.send("Target.attachToTarget", { targetId, flatten: true });
+    await cdp.send("Page.enable", {}, sessionId);
+    await cdp.send("Runtime.enable", {}, sessionId);
+    const exceptions = [];
+    cdp.listeners.set(`${sessionId}:Runtime.exceptionThrown`, [params => exceptions.push(params.exceptionDetails)]);
+
+    const loaded = cdp.once("Page.loadEventFired", sessionId);
+    await cdp.send("Page.navigate", { url: pathToFileURL(MULTILANGUAGE_TOOL_PATH).href }, sessionId);
+    await loaded;
+    assert.deepEqual(exceptions, [], `excepciones durante boot: ${exceptions.map(item =>
+      item.exception?.description || item.text).join("\n")}`);
+
+    const initial = await evaluate(cdp, sessionId, `(() => ({
+      language: document.documentElement.lang,
+      theme: document.documentElement.dataset.theme,
+      languageSelect: document.getElementById("languageSelect")?.value,
+      themeSelect: document.getElementById("themeSelect")?.value,
+      forms: document.querySelectorAll("#formTabs [data-form]").length,
+      title: document.title
+    }))()`);
+    assert.deepEqual(initial, {
+      language: "es",
+      theme: "light",
+      languageSelect: "es",
+      themeSelect: "light",
+      forms: 2,
+      title: "Bug Report Tool — Multilenguaje"
+    });
+
+    const changed = await evaluate(cdp, sessionId, `(() => {
+      const team = document.querySelector('[data-bind="team"]');
+      team.value = "QA Idioma";
+      team.dispatchEvent(new Event("input", { bubbles: true }));
+      const outputBefore = document.getElementById("outputTextarea").value;
+      const configBefore = JSON.stringify(config);
+
+      const language = document.getElementById("languageSelect");
+      language.value = "en";
+      language.dispatchEvent(new Event("change", { bubbles: true }));
+      const theme = document.getElementById("themeSelect");
+      theme.value = "dark";
+      theme.dispatchEvent(new Event("change", { bubbles: true }));
+
+      return {
+        language: document.documentElement.lang,
+        theme: document.documentElement.dataset.theme,
+        savedText: document.getElementById("saveIndicatorText").textContent,
+        editText: document.getElementById("editToggle").textContent,
+        outputBefore,
+        outputAfter: document.getElementById("outputTextarea").value,
+        outputStable: document.getElementById("outputTextarea").value === outputBefore,
+        configStable: JSON.stringify(config) === configBefore,
+        prefs: JSON.parse(localStorage.getItem("bug_tool_multilanguage_ui_v1"))
+      };
+    })()`);
+    assert.equal(changed.language, "en");
+    assert.equal(changed.theme, "dark");
+    assert.equal(changed.savedText, "Saved");
+    assert.match(changed.editText, /Edit form/);
+    assert.equal(changed.outputStable, true,
+      `el idioma cambió el output canónico:\nANTES:\n${changed.outputBefore}\nDESPUÉS:\n${changed.outputAfter}`);
+    assert.equal(changed.configStable, true);
+    assert.deepEqual(changed.prefs, { language: "en", theme: "dark" });
+
+    const reloaded = cdp.once("Page.loadEventFired", sessionId);
+    await cdp.send("Page.reload", {}, sessionId);
+    await reloaded;
+    const persisted = await evaluate(cdp, sessionId, `(() => ({
+      language: document.documentElement.lang,
+      theme: document.documentElement.dataset.theme,
+      languageSelect: document.getElementById("languageSelect").value,
+      themeSelect: document.getElementById("themeSelect").value,
+      savedText: document.getElementById("saveIndicatorText").textContent
+    }))()`);
+    assert.deepEqual(persisted, {
+      language: "en",
+      theme: "dark",
+      languageSelect: "en",
+      themeSelect: "dark",
+      savedText: "Saved"
+    });
+    assert.deepEqual(exceptions, []);
+    await cdp.send("Browser.close");
+  } finally {
+    if (cdp && cdp.ws.readyState === WebSocket.OPEN) cdp.ws.close();
+    if (!child.killed) child.kill("SIGTERM");
+    fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

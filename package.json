@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "test": "node --test --test-reporter spec",
-    "test:contracts": "node --test --test-reporter spec tests/monolith.contract.test.js tests/monolith.behavior.test.js",
+    "test:contracts": "node --test --test-reporter spec tests/monolith.contract.test.js tests/monolith.behavior.test.js tests/multilanguage.contract.test.js tests/multilanguage.behavior.test.js",
+    "test:multilanguage": "node --test --test-reporter spec tests/multilanguage.contract.test.js tests/multilanguage.behavior.test.js",
     "test:browser": "node --test --test-reporter spec tests/browser.smoke.test.js"
   }
 }
