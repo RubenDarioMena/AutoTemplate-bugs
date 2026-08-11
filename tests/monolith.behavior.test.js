@@ -231,9 +231,11 @@ test("la vista previa reconoce los bloques básicos de Jira y Markdown sin tocar
   assert.equal(api.normalizeOutputPreviewMode("markdown"), "markdown");
   assert.equal(api.normalizeOutputPreviewMode("html"), "plain");
   assert.deepEqual(jsonValue(api.outputPreviewLine("* *Perfil:* QA", "jira")),
-    { type: "ul", text: "*Perfil:* QA" });
+    { type: "ul", markers: "*", text: "*Perfil:* QA" });
   assert.deepEqual(jsonValue(api.outputPreviewLine("# Paso uno", "jira")),
-    { type: "ol", text: "Paso uno" });
+    { type: "ol", markers: "#", text: "Paso uno" });
+  assert.deepEqual(jsonValue(api.outputPreviewLine("#** Detalle mixto", "jira")),
+    { type: "ul", markers: "#**", text: "Detalle mixto" });
   assert.deepEqual(jsonValue(api.outputPreviewLine("## Título", "markdown")),
     { type: "heading", level: 2, text: "Título" });
   assert.deepEqual(jsonValue(api.outputPreviewLine("1. Paso uno", "markdown")),

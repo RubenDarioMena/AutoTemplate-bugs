@@ -706,6 +706,12 @@
     .output-preview ul, .output-preview ol { margin: 0 0 7px 20px; padding: 0; }
     .output-preview li { margin: 2px 0; }
     .output-preview a { overflow-wrap: anywhere; }
+    .output-preview .jira-preview-link {
+      color: var(--tile-blue-fg);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      overflow-wrap: anywhere;
+    }
     .output-preview code {
       padding: 1px 3px;
       border-radius: 3px;
@@ -2096,8 +2102,8 @@
             "then": { "action": "error", "field": "bspCl", "value": "BSP CL debe ser distinto de CL" } }
         ],
         "tiles": [
-          { "text": "Mapa: {map}", "whenExpr": "map notEmpty", "color": "blue", "group": "Contexto", "severity": "info", "field": "map" },
-          { "text": "Modo: {mode}", "whenExpr": "mode notEmpty", "color": "indigo", "group": "Contexto", "severity": "info", "field": "mode" },
+          { "text": "Mapa: {map}", "whenExpr": "map notEmpty", "color": "blue", "group": "Contexto", "severity": "warn", "field": "map" },
+          { "text": "Modo: {mode}", "whenExpr": "mode notEmpty", "color": "indigo", "group": "Contexto", "severity": "warn", "field": "mode" },
           { "text": "Falta la posición de vista", "whenExpr": "coords notEmpty AND notesViewpos empty", "color": "amber", "group": "Revisión", "severity": "warn", "field": "notesViewpos" }
         ]
       },
@@ -2305,14 +2311,13 @@ function tileColorOptions(selected) {
 }
 
 // Severidad de un tile personalizado. Solo "error" bloquea el estado verde
-// "listo para copiar" (como un campo obligatorio). Aviso e info no bloquean.
+// "listo para copiar" (como un campo obligatorio). Aviso/Info no bloquea.
 const TILE_SEVERITIES = [
   ["error", "Error (bloquea listo)"],
-  ["warn",  "Aviso"],
-  ["info",  "Info"]
+  ["warn",  "Aviso/Info"]
 ];
 // Color por defecto sugerido según la severidad al crear un tile nuevo.
-const TILE_SEV_COLOR = { error: "red", warn: "amber", info: "blue" };
+const TILE_SEV_COLOR = { error: "red", warn: "amber" };
 
 /* MONOLITH:SECTION 01-constants END */
 /* MONOLITH:SECTION 02-utilities START */
@@ -4329,6 +4334,9 @@ function wireKeywords(chips, inst) {
     if (!arr.some(item => String(item).toLowerCase() === v.toLowerCase())) {
       arr.push(v);
       inst.values[fieldId] = arr;
+      // El texto confirmado ya vive en el chip; no debe reaparecer en el
+      // input reconstruido ni quedar expuesto al Backspace siguiente.
+      getInput().value = "";
       commit(true);
       return true;
     }
@@ -4348,15 +4356,40 @@ function wireKeywords(chips, inst) {
       const re = q ? new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig") : null;
       list.innerHTML = items.slice(0, 50).map(value => {
         const marked = re ? escapeHtml(value).replace(re, "<mark>$1</mark>") : escapeHtml(value);
-        return `<div class="autocomplete-item" data-kw-option="${escapeHtml(value)}">${marked}</div>`;
+        // Un solo hijo evita que el flex de .autocomplete-item distribuya
+        // a distancia los fragmentos que crea <mark> al buscar.
+        return `<div class="autocomplete-item" data-kw-option="${escapeHtml(value)}">
+          <span>${marked}</span>
+          <span class="ac-del" data-kw-del="${escapeHtml(value)}" title="Borrar esta opción de la lista">✕</span>
+        </div>`;
       }).join("");
     }
+    // Crear un chip libre sigue disponible con Enter. Esta acción explícita
+    // además incorpora el texto a DATA para reutilizarlo como sugerencia.
+    const typed = input.value.trim();
+    if (typed && !all.some(value => String(value).toLowerCase() === typed.toLowerCase())) {
+      list.innerHTML += `<div class="autocomplete-add" data-kw-add="${escapeHtml(typed)}">+ Agregar «${escapeHtml(typed)}» a la lista</div>`;
+    }
     list.querySelectorAll("[data-kw-option]").forEach(item => item.addEventListener("mousedown", e => {
+      if (e.target.closest("[data-kw-del]")) return;
       e.preventDefault();
       getInput().value = item.dataset.kwOption;
       commitInput(item.dataset.kwOption);
       chips.classList.remove("open");
     }));
+    list.querySelectorAll("[data-kw-del]").forEach(button => button.addEventListener("mousedown", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      confirmDeleteOption(fieldDef, inst, button.dataset.kwDel, () => renderList(showAll));
+    }));
+    const add = list.querySelector("[data-kw-add]");
+    if (add) add.addEventListener("mousedown", e => {
+      e.preventDefault();
+      if (!addOptionToSource(fieldDef, inst, add.dataset.kwAdd)) return;
+      getInput().value = add.dataset.kwAdd;
+      commitInput(add.dataset.kwAdd);
+      chips.classList.remove("open");
+    });
     activeIdx = -1;
     chips.classList.add("open");
     positionAutocomplete(chips, list);
@@ -6086,7 +6119,8 @@ function normalizeTiles(form) {
     t.text = str(t.text);
     t.message = str(t.message);
     t.whenExpr = str(t.whenExpr);
-    t.severity = ["error", "warn", "info"].includes(t.severity) ? t.severity : "info";
+    // "info" fue la antigua variante no bloqueante; se migra a "warn".
+    t.severity = t.severity === "error" ? "error" : "warn";
     if (!TILE_COLOR_MAP[t.color]) t.color = TILE_SEV_COLOR[t.severity];
     t.group = str(t.group);
     t.field = str(t.field);
@@ -6847,8 +6881,12 @@ function outputPreviewLine(line, mode) {
   const text = String(line == null ? "" : line);
   if (!text) return { type: "spacer", text: "" };
   if (mode === "jira") {
-    const list = text.match(/^(\*+|#+)\s+(.+)$/);
-    if (list) return { type: list[1][0] === "*" ? "ul" : "ol", text: list[2] };
+    const list = text.match(/^([*#]+)\s+(.+)$/);
+    if (list) return {
+      type: list[1][list[1].length - 1] === "*" ? "ul" : "ol",
+      markers: list[1],
+      text: list[2]
+    };
   }
   if (mode === "markdown") {
     const heading = text.match(/^(#{1,6})\s+(.+)$/);
@@ -6886,39 +6924,98 @@ function safePreviewUrl(value) {
   }
 }
 
+function jiraInlineBoundary(text, index) {
+  if (index < 0 || index >= text.length) return true;
+  return !/[\p{L}\p{N}_]/u.test(text[index]);
+}
+
+function jiraClosingDelimiter(text, delimiter, start) {
+  for (let index = start + 1; index < text.length; index++) {
+    if (text[index] !== delimiter) continue;
+    if (/\s/.test(text[index - 1] || "") || !jiraInlineBoundary(text, index + 1)) continue;
+    return index;
+  }
+  return -1;
+}
+
+function appendJiraPreviewInline(parent, source) {
+  const text = String(source == null ? "" : source);
+  let plain = "";
+  const flushPlain = () => {
+    if (!plain) return;
+    parent.append(document.createTextNode(plain));
+    plain = "";
+  };
+  for (let index = 0; index < text.length;) {
+    if (text.startsWith("{{", index)) {
+      const close = text.indexOf("}}", index + 2);
+      if (close >= 0) {
+        flushPlain();
+        const code = document.createElement("code");
+        code.textContent = text.slice(index + 2, close);
+        parent.append(code);
+        index = close + 2;
+        continue;
+      }
+    }
+    if (text[index] === "[") {
+      const rest = text.slice(index);
+      const link = rest.match(/^\[([^\]|\n]+)\|([^\]\n]+)\]/);
+      const attachment = rest.match(/^\[\^([^\]\n]+)\]/);
+      const mention = rest.match(/^\[~([^\]\n]+)\]/);
+      const token = link || attachment || mention;
+      if (token) {
+        flushPlain();
+        const element = document.createElement("span");
+        element.className = "jira-preview-link";
+        appendJiraPreviewInline(element, token[1]);
+        parent.append(element);
+        index += token[0].length;
+        continue;
+      }
+    }
+    const delimiter = text[index];
+    if (["*", "+", "_"].includes(delimiter)
+        && jiraInlineBoundary(text, index - 1)
+        && !/\s/.test(text[index + 1] || "")) {
+      const close = jiraClosingDelimiter(text, delimiter, index);
+      if (close >= 0) {
+        flushPlain();
+        const element = document.createElement(delimiter === "*" ? "strong" : delimiter === "+" ? "u" : "em");
+        appendJiraPreviewInline(element, text.slice(index + 1, close));
+        parent.append(element);
+        index = close + 1;
+        continue;
+      }
+    }
+    plain += text[index];
+    index++;
+  }
+  flushPlain();
+}
+
 function appendOutputPreviewInline(parent, source, mode) {
   const text = String(source == null ? "" : source);
-  const pattern = mode === "jira"
-    ? /(\{\{([^{}\n]+)\}\}|\[([^\]|\n]+)\|([^\]\n]+)\]|\*([^*\n]+)\*|\+([^+\n]+)\+|_([^_\n]+)_)/g
-    : /(\[([^\]\n]+)\]\(([^)\s]+)\)|\*\*([^*\n]+)\*\*|__([^_\n]+)__|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_)/g;
+  if (mode === "jira") {
+    appendJiraPreviewInline(parent, text);
+    return;
+  }
+  const pattern = /(\[([^\]\n]+)\]\(([^)\s]+)\)|\*\*([^*\n]+)\*\*|__([^_\n]+)__|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_)/g;
   let cursor = 0;
   let match;
   while ((match = pattern.exec(text))) {
     if (match.index > cursor) parent.append(document.createTextNode(text.slice(cursor, match.index)));
     let element;
-    if (mode === "jira") {
-      if (match[2]) element = document.createElement("code");
-      else if (match[3]) {
-        const href = safePreviewUrl(match[4]);
-        element = href ? document.createElement("a") : document.createElement("span");
-        if (href) { element.href = href; element.target = "_blank"; element.rel = "noopener noreferrer"; }
-        element.textContent = match[3];
-      } else if (match[5]) element = document.createElement("strong");
-      else if (match[6]) element = document.createElement("u");
-      else element = document.createElement("em");
-      if (element.textContent === "") element.textContent = match[2] || match[5] || match[6] || match[7] || "";
-    } else {
-      if (match[2]) {
-        const href = safePreviewUrl(match[3]);
-        element = href ? document.createElement("a") : document.createElement("span");
-        if (href) { element.href = href; element.target = "_blank"; element.rel = "noopener noreferrer"; }
-        element.textContent = match[2];
-      } else if (match[4] || match[5]) element = document.createElement("strong");
-      else if (match[6]) element = document.createElement("s");
-      else if (match[7]) element = document.createElement("code");
-      else element = document.createElement("em");
-      if (element.textContent === "") element.textContent = match[4] || match[5] || match[6] || match[7] || match[8] || match[9] || "";
-    }
+    if (match[2]) {
+      const href = safePreviewUrl(match[3]);
+      element = href ? document.createElement("a") : document.createElement("span");
+      if (href) { element.href = href; element.target = "_blank"; element.rel = "noopener noreferrer"; }
+      element.textContent = match[2];
+    } else if (match[4] || match[5]) element = document.createElement("strong");
+    else if (match[6]) element = document.createElement("s");
+    else if (match[7]) element = document.createElement("code");
+    else element = document.createElement("em");
+    if (element.textContent === "") element.textContent = match[4] || match[5] || match[6] || match[7] || match[8] || match[9] || "";
     parent.append(element);
     cursor = pattern.lastIndex;
   }
@@ -6945,14 +7042,12 @@ function renderOutputPreview(text) {
     return;
   }
   const fragment = document.createDocumentFragment();
-  let activeList = null;
-  let activeListType = "";
+  let activeLists = [];
   let codeBlock = null;
   source.split("\n").forEach(line => {
     const fence = mode === "jira" ? jiraCodeFence(line) : null;
     if (fence) {
-      activeList = null;
-      activeListType = "";
+      activeLists = [];
       if (codeBlock) {
         appendJiraCodeBlock(fragment, codeBlock);
         codeBlock = null;
@@ -6967,18 +7062,33 @@ function renderOutputPreview(text) {
     }
     const block = outputPreviewLine(line, mode);
     if (block.type === "ul" || block.type === "ol") {
-      if (!activeList || activeListType !== block.type) {
-        activeList = document.createElement(block.type);
-        activeListType = block.type;
-        fragment.append(activeList);
+      const markers = mode === "jira" ? block.markers : (block.type === "ul" ? "*" : "#");
+      const types = [...markers].map(marker => marker === "*" ? "ul" : "ol");
+      let common = 0;
+      while (common < activeLists.length && common < types.length
+          && activeLists[common].type === types[common]) common++;
+      activeLists.length = common;
+      for (let depth = common; depth < types.length; depth++) {
+        const list = document.createElement(types[depth]);
+        if (depth === 0) fragment.append(list);
+        else {
+          const parent = activeLists[depth - 1];
+          if (!parent.lastItem) {
+            parent.lastItem = document.createElement("li");
+            parent.list.append(parent.lastItem);
+          }
+          parent.lastItem.append(list);
+        }
+        activeLists.push({ type: types[depth], list, lastItem: null });
       }
       const item = document.createElement("li");
       appendOutputPreviewInline(item, block.text, mode);
-      activeList.append(item);
+      const current = activeLists[activeLists.length - 1];
+      current.list.append(item);
+      current.lastItem = item;
       return;
     }
-    activeList = null;
-    activeListType = "";
+    activeLists = [];
     if (block.type === "spacer") {
       const spacer = document.createElement("div");
       spacer.className = "preview-spacer";
@@ -8054,7 +8164,7 @@ function renderRulesTab() {
         muestra (mismo motor que las condiciones de arriba;
         <em>vacía = siempre visible</em>), un <strong>color</strong> y un
         <strong>tipo</strong>: <em>Error</em> bloquea el "listo para copiar" (como
-        un campo obligatorio), <em>Aviso</em> e <em>Info</em> solo informan.
+        un campo obligatorio); <em>Aviso/Info</em> solo informa.
         "Salta a" es el campo al que va el click; si lo dejas en auto, usa el
         primer campo que menciona la condición. Al pasar el mouse por un campo, se
         resaltan los tiles que lo mencionan. Ejemplos:
@@ -8244,8 +8354,8 @@ function renderRulesTab() {
       const form = getForm(btn.dataset.trAdd);
       if (!form) return;
       form.tiles = form.tiles || [];
-      form.tiles.push({ text: "Nuevo tile", message: "", whenExpr: "", color: TILE_SEV_COLOR.info,
-                        group: "", severity: "info", field: "" });
+      form.tiles.push({ text: "Nuevo tile", message: "", whenExpr: "", color: TILE_SEV_COLOR.warn,
+                        group: "", severity: "warn", field: "" });
       renderRulesTab();
       scheduleSave();
     });
@@ -8485,7 +8595,7 @@ async function exportFieldsCsv() {
       tr[0] = form.id; tr[4] = "tile";
       tr[3] = t.text || "";
       tr[5] = t.whenExpr || "";
-      tr[13] = t.severity || "info";
+      tr[13] = t.severity === "error" ? "error" : "warn";
       tr[14] = t.field || "";
       tr[15] = t.color || "";
       tr[16] = t.group || "";
@@ -8562,12 +8672,14 @@ function importFieldsCsv(text) {
       if (!form) { errors.push(`Línea ${lineNo}: tile sin formulario «${formId}» previo`); continue; }
       const exErr = exprError(source || "");
       if (exErr) { errors.push(`Línea ${lineNo}: expresión de tile inválida — ${exErr}`); continue; }
+      // Los CSV previos pueden traer "info"; equivale al nuevo "warn".
+      if (regex === "info") regex = "warn";
       if (regex && !TILE_SEVERITIES.some(([v]) => v === regex)) {
         errors.push(`Línea ${lineNo}: severidad de tile desconocida «${regex}»`); continue;
       }
       form.tiles = form.tiles || [];
       form.tiles.push({
-        text: label || "", whenExpr: source || "", severity: regex || "info",
+        text: label || "", whenExpr: source || "", severity: regex || "warn",
         field: regexmsg || "", color: def || "", group: emptyas || "",
         message: help || ""
       });

@@ -199,7 +199,7 @@ test("Chrome arranca el monolito, actualiza output y restaura la sesión", { tim
 
     const preview = await evaluate(cdp, sessionId, `(() => {
       const output = document.getElementById("outputTextarea");
-      output.value = "* *Perfil:* QA\\n# Paso uno\\n{code:java}\\nconst value = 1;\\n{code}";
+      output.value = "* *Perfil:* QA\\n# Paso uno\\n## Paso dos\\n#* Viñeta anidada\\n*+Combinado+* El_ejemplo_cursiva _correcta_ [Example|http://Example.com] [^Adjunto] [~Usuario]\\n{code:java}\\nconst value = 1;\\n{code}";
       output.dispatchEvent(new Event("input", { bubbles: true }));
       document.querySelector('input[aria-label="Vista previa Jira"]').click();
       const jira = document.querySelector('input[aria-label="Vista previa Jira"]');
@@ -209,8 +209,17 @@ test("Chrome arranca el monolito, actualiza output y restaura la sesión", { tim
         previewing: preview.closest(".output-textarea-wrap").classList.contains("previewing"),
         jira: jira.checked,
         markdown: markdown.checked,
-        list: preview.querySelectorAll("ul li").length,
-        ordered: preview.querySelectorAll("ol li").length,
+        list: preview.querySelectorAll("ul > li").length,
+        ordered: preview.querySelectorAll("ol > li").length,
+        nestedOrdered: preview.querySelectorAll("ol ol").length,
+        mixedNested: preview.querySelectorAll("ol ul").length,
+        combined: preview.querySelector("strong u")?.textContent,
+        italics: [...preview.querySelectorAll("em")].map(item => item.textContent),
+        jiraLinks: [...preview.querySelectorAll(".jira-preview-link")].map(item => ({
+          text: item.textContent,
+          tag: item.tagName,
+          href: item.getAttribute("href")
+        })),
         code: preview.querySelector("pre code")?.textContent,
         language: preview.querySelector("pre code")?.dataset.language,
         notebookClosed: output.closest(".output-textarea-wrap").classList.contains("notebook-closed"),
@@ -227,15 +236,91 @@ test("Chrome arranca el monolito, actualiza output y restaura la sesión", { tim
     assert.equal(preview.jiraState.previewing, true);
     assert.equal(preview.jiraState.jira, true);
     assert.equal(preview.jiraState.markdown, false);
-    assert.equal(preview.jiraState.list, 1);
-    assert.equal(preview.jiraState.ordered, 1);
+    assert.equal(preview.jiraState.list, 2);
+    assert.equal(preview.jiraState.ordered, 2);
+    assert.equal(preview.jiraState.nestedOrdered, 1);
+    assert.equal(preview.jiraState.mixedNested, 1);
+    assert.equal(preview.jiraState.combined, "Combinado");
+    assert.deepEqual(preview.jiraState.italics, ["correcta"]);
+    assert.deepEqual(preview.jiraState.jiraLinks, [
+      { text: "Example", tag: "SPAN", href: null },
+      { text: "Adjunto", tag: "SPAN", href: null },
+      { text: "Usuario", tag: "SPAN", href: null }
+    ]);
     assert.equal(preview.jiraState.code, "const value = 1;");
     assert.equal(preview.jiraState.language, "java");
     assert.equal(preview.jiraState.notebookClosed, true);
     assert.equal(preview.jiraState.bottomSpace, "30px");
-    assert.equal(preview.jiraState.source, "* *Perfil:* QA\n# Paso uno\n{code:java}\nconst value = 1;\n{code}");
+    assert.match(preview.jiraState.source, /El_ejemplo_cursiva/);
     assert.equal(preview.markdown, true);
     assert.equal(preview.jiraAfter, false);
+
+    const keywords = await evaluate(cdp, sessionId, `(() => {
+      const found = getField(getForm("bug"), "keywords");
+      found.field.source = "chipSuggestions";
+      config.data.lists.chipSuggestions = ["nuevo_valor_ejemplo_1", "muchos_nuevos_valores_ejemplo_2"];
+      renderForm();
+      const input = document.querySelector('[data-kw-input="keywords"]');
+      input.focus();
+      input.value = "nue";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      const suggestions = [...document.querySelectorAll('[data-kw-option]')];
+      const filtered = suggestions.map(item => ({
+        text: item.firstElementChild.textContent,
+        children: item.children.length,
+        marked: item.querySelector("mark")?.textContent,
+        canDelete: !!item.querySelector("[data-kw-del]")
+      }));
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      return {
+        filtered,
+        input: document.querySelector('[data-kw-input="keywords"]').value,
+        chips: [...document.querySelectorAll('[data-kw-chip-text]')].map(item => item.textContent)
+      };
+    })()`);
+    assert.deepEqual(keywords.filtered, [
+      { text: "nuevo_valor_ejemplo_1", children: 2, marked: "nue", canDelete: true },
+      { text: "muchos_nuevos_valores_ejemplo_2", children: 2, marked: "nue", canDelete: true }
+    ]);
+    assert.equal(keywords.input, "");
+    assert.deepEqual(keywords.chips, ["nue"]);
+
+    const keywordDataActions = await evaluate(cdp, sessionId, `(() => {
+      let input = document.querySelector('[data-kw-input="keywords"]');
+      input.value = "opcion_nueva";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      const addVisible = !!document.querySelector('[data-kw-add="opcion_nueva"]');
+      document.querySelector('[data-kw-add="opcion_nueva"]')
+        .dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      const addedToData = config.data.lists.chipSuggestions.includes("opcion_nueva");
+      const addedAsChip = [...document.querySelectorAll('[data-kw-chip-text]')]
+        .some(item => item.textContent === "opcion_nueva");
+      input = document.querySelector('[data-kw-input="keywords"]');
+      input.focus();
+      const del = document.querySelector('[data-kw-del="opcion_nueva"]');
+      del.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      const confirmVisible = document.getElementById("modal").classList.contains("open");
+      document.querySelector("#modalActions button.danger").click();
+      return {
+        addVisible,
+        addedToData,
+        addedAsChip,
+        input: document.querySelector('[data-kw-input="keywords"]').value,
+        confirmVisible,
+        deletedFromData: !config.data.lists.chipSuggestions.includes("opcion_nueva"),
+        chipPreserved: [...document.querySelectorAll('[data-kw-chip-text]')]
+          .some(item => item.textContent === "opcion_nueva")
+      };
+    })()`);
+    assert.deepEqual(keywordDataActions, {
+      addVisible: true,
+      addedToData: true,
+      addedAsChip: true,
+      input: "",
+      confirmVisible: true,
+      deletedFromData: true,
+      chipPreserved: true
+    });
 
     const switched = await evaluate(cdp, sessionId, `(() => {
       document.querySelector('[data-form="regression"]').click();

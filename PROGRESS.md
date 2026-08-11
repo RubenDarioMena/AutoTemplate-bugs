@@ -1,6 +1,6 @@
 # Progreso del proyecto
 
-Última actualización: 2026-08-09
+Última actualización: 2026-08-10
 Estado: activo — herramienta funcional, monolito documentado y con suite de regresión.
 
 ## Estado actual
@@ -12,6 +12,25 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
 - Verificación automatizada: 15 pruebas de contratos y comportamiento con Node.js, incluida una prueba smoke en navegador real.
 
 ## Trabajo completado recientemente
+
+### 2026-08-10 — gestión de DATA desde el autocompletado de chips
+
+- El dropdown de keywords incorpora la ✕ para borrar una sugerencia compartida de DATA con confirmación y la acción **+ Agregar** para guardar un valor nuevo y crearlo como chip.
+- Crear texto libre con Enter continúa afectando solo a la instancia; borrar una sugerencia de DATA tampoco elimina chips ya utilizados.
+- Se actualizaron `Directorio-Monolito.MD` y la prueba de navegador.
+
+### 2026-08-10 — severidad no bloqueante unificada en tiles
+
+- Las opciones no bloqueantes **Aviso** e **Info** se unificaron como **Aviso/Info** (`warn`). Solo permanecen `Error` y `Aviso/Info` como tipos seleccionables.
+- Las configuraciones locales, HTML exportados y CSV antiguos que contengan `info` se migran automáticamente a `warn`; las exportaciones nuevas escriben el valor unificado.
+- Se actualizaron `Directorio-Monolito.MD` y este registro.
+
+### 2026-08-10 — Jira enriquecido y entrada de chips corregida
+
+- La vista Jira interpreta niveles de listas `*`/`#`, incluso combinados, y permite anidar negrita, subrayado y cursiva. Los guiones bajos dentro de una palabra ya no activan cursiva.
+- `[texto|URL]`, `[^adjunto]` y `[~usuario]` se representan como referencias azules subrayadas y no navegables dentro de la vista previa.
+- Al confirmar un chip, su input queda vacío. El resaltado del autocompletado mantiene cada sugerencia unida en vez de separar visualmente sus fragmentos.
+- Se actualizaron las pruebas de navegador, `Directorio-Monolito.MD` y este registro.
 
 ### 2026-08-09 — vista previa Jira y Markdown
 
