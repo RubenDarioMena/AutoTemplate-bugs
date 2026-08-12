@@ -104,6 +104,23 @@ test("idioma y tema persisten juntos, se restauran y aceptan el tema legacy", ()
   assert.equal(migrated.api.appearance.theme, "dark");
 });
 
+test("los temas Autumn y Neon se aceptan, persisten y un tema inválido vuelve a light", () => {
+  const storage = new Map();
+  const first = createMultilanguageRuntime({ storage, executePrelude: true });
+  first.api.setTheme("autumn", true);
+  assert.equal(first.api.appearance.theme, "autumn");
+  assert.equal(first.sandbox.document.documentElement.dataset.theme, "autumn");
+
+  const autumnReload = createMultilanguageRuntime({ storage, executePrelude: true });
+  assert.equal(autumnReload.api.appearance.theme, "autumn");
+  autumnReload.api.setTheme("neon", true);
+  assert.equal(autumnReload.api.appearance.theme, "neon");
+
+  storage.set(autumnReload.api.UI_PREFS_KEY, JSON.stringify({ language: "es", theme: "tema-invalido" }));
+  const fallback = createMultilanguageRuntime({ storage, executePrelude: true });
+  assert.equal(fallback.api.appearance.theme, "light");
+});
+
 test("cambiar idioma o tema no muta config, valores ni output canónico", () => {
   const original = createRuntime();
   const multilingual = createMultilanguageRuntime();

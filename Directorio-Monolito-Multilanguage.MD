@@ -1,7 +1,8 @@
 # Directorio del monolito multilenguaje
 
 Este directorio describe exclusivamente `bug_tool_multilanguage.html`, la
-variante autocontenida con interfaz en español/inglés y estilos Día/Noche.
+variante autocontenida con interfaz en español/inglés y estilos Día/Noche,
+Otoño/Autumn y Neon.
 `bug_tool.html` conserva su mapa independiente en `Directorio-Monolito.MD`.
 
 ## Cómo localizar una sección
@@ -31,8 +32,10 @@ vanilla-config -> config -> schema/data -> instancias -> formulario
 instancias + config <-> localStorage v3 / archivo de sesión
 ```
 
-- Los valores internos de idioma son `es` y `en`; los de estilo son `light` y
-  `dark`, presentados como Día/Noche o Day/Night.
+- Los valores internos de idioma son `es` y `en`; los de estilo son `light`,
+  `dark`, `autumn` y `neon`, presentados en el idioma activo. El catálogo
+  compartido `window.__BUG_TOOL_APPEARANCE_OPTIONS__` es la única fuente de
+  verdad para los valores aceptados tanto por el bootstrap como por la app.
 - `UI_MESSAGES` debe conservar las mismas claves y placeholders en ambos
   idiomas. `configuredText` es un overlay de presentación para textos
   distribuidos conocidos y nunca modifica `config`.
@@ -52,13 +55,13 @@ instancias + config <-> localStorage v3 / archivo de sesión
 
 | Sección y marcador | Recibe información de | Envía información a |
 | --- | --- | --- |
-| `styles` | Clases, IDs, estados del DOM y atributo `data-theme`. | Tokens y layout completos para los estilos `light`/Día y `dark`/Noche, incluidos selectores de apariencia, editores, tiles, output y paneles responsivos. |
-| `preferences-bootstrap` | `bug_tool_multilanguage_ui_v1` y, sólo como migración, `bugtool_theme_v1`. | `lang`, `data-theme` y `window.__BUG_TOOL_BOOT_PREFS__` antes de pintar el cuerpo, con fallback `es`/`light`. |
-| `app-shell` | Claves de traducción estática y estructura fija de la aplicación. | DOM consumido por renderizadores y controles: selector `es`/`en`, selector Día/Noche, menús, formulario, output, Bloc, media, DATA, RULES, archivos y modal. |
+| `styles` | Clases, IDs, estados del DOM y atributo `data-theme`. | Tokens y layout completos para `light`/Día, `dark`/Noche, `autumn`/Otoño y `neon`/Neon; Neon añade animación y eleva el field activo para preservar el stacking de autocomplete. La preview oculta exclusivamente `#outputTextarea`, nunca el textarea del Bloc. |
+| `preferences-bootstrap` | `bug_tool_multilanguage_ui_v1` y, sólo como migración, `bugtool_theme_v1`. | Publica `window.__BUG_TOOL_APPEARANCE_OPTIONS__` y aplica `lang`, `data-theme` y `window.__BUG_TOOL_BOOT_PREFS__` antes de pintar el cuerpo, con fallback `es`/`light`. |
+| `app-shell` | Claves de traducción estática y estructura fija de la aplicación. | DOM consumido por renderizadores y controles: selector `es`/`en`, selector de cuatro temas, menús, formulario, output, Bloc, media, DATA, RULES, archivos y modal. |
 | `vanilla-config` | Configuración distribuida dentro del HTML. | Schema, DATA, reglas y plantillas canónicas para carga, migraciones, CSV y exportación; continúa siendo JSON válido sin comentarios. |
 | `script-catalog` | Ninguna; es un índice humano del JavaScript. | Navegación de mantenimiento por los bloques numerados. |
 | `01-constants` | Documento prístino, metadatos de la variante y claves de catálogo. | `PRISTINE_HTML`, `APP_META`, claves v3/legacy, tipos de campo, formatos, tamaños, colores y severidades usados por render, persistencia y exportación. |
-| `localization-appearance` | Preferencias precargadas, catálogos `es`/`en`, atributos `data-i18n*` y textos distribuidos del schema. | `t`, `tp`, validación de catálogos/placeholders, traducción del DOM, `setLanguage`, `setTheme` y overlay no destructivo `configuredText`; actualiza `lang`/`data-theme` y vuelve a renderizar sin mutar datos canónicos. |
+| `localization-appearance` | Preferencias precargadas, el catálogo compartido de apariencia, catálogos `es`/`en`, atributos `data-i18n*` y textos distribuidos del schema. | `t`, `tp`, validación de catálogos/placeholders, traducción del DOM, `setLanguage`, `setTheme` y overlay no destructivo `configuredText`; reutiliza el catálogo de apariencia y actualiza `lang`/`data-theme` sin mutar datos canónicos. |
 | `02-utilities` | Solicitudes de texto, almacenamiento, copia y guardado de todos los bloques. | Helpers de escape, clonación, IDs, referencias, `Storage`, portapapeles y guardado explícito; localiza mensajes y descripciones de tipo de archivo. |
 | `03-config` | `vanilla-config`, clave v3, clave legacy v2 y formatos históricos. | `vanilla` y `config` normalizadas, árbol de listas, expresiones y tiles; completa novedades distribuidas sin pisar cambios locales. |
 | `04-schema-helpers` | `config.schema`, `config.data`, formulario e instancia activos. | Lectura de formularios, secciones, campos, fuentes y opciones para widgets y editores, conservando IDs y valores canónicos. |
@@ -97,4 +100,5 @@ Además de las comprobaciones generales del repositorio, toda modificación de
 esta variante debe validar los 24 pares de marcadores, el JSON de
 `#vanillaConfig`, la sintaxis de los scripts, la igualdad de claves y
 placeholders entre catálogos, la autocontención y el nombre de exportación.
-Los cambios visuales requieren revisar la matriz español/inglés por Día/Noche.
+Los cambios visuales requieren revisar la matriz español/inglés para los cuatro
+temas y confirmar que Jira/Markdown no ocultan ni deshabilitan el Bloc.

@@ -88,7 +88,7 @@ test("la variante continúa autocontenida, sin red y sin IDs estáticos duplicad
 test("los catálogos es/en tienen paridad de claves, placeholders y referencias DOM", () => {
   const { api } = createMultilanguageRuntime();
   assert.deepEqual(Array.from(api.SUPPORTED_LANGUAGES), ["es", "en"]);
-  assert.deepEqual(Array.from(api.SUPPORTED_THEMES), ["light", "dark"]);
+  assert.deepEqual(Array.from(api.SUPPORTED_THEMES), ["light", "dark", "autumn", "neon"]);
   assert.doesNotThrow(() => api.validateMessageCatalogs());
 
   const esKeys = Object.keys(api.UI_MESSAGES.es).sort();

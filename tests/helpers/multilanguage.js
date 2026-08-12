@@ -17,6 +17,7 @@ function createMultilanguageRuntime(options = {}) {
   return createRuntime({
     ...options,
     toolPath: options.toolPath || MULTILANGUAGE_TOOL_PATH,
+    executePrelude: options.executePrelude ?? true,
     exposedNames: MULTILANGUAGE_EXPOSED_NAMES.concat(options.exposedNames || [])
   });
 }

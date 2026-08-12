@@ -1,6 +1,6 @@
 # Progreso del proyecto
 
-Última actualización: 2026-08-10
+Última actualización: 2026-08-12
 Estado: activo — herramienta funcional, monolito documentado y con suite de regresión.
 
 ## Estado actual
@@ -20,6 +20,20 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
   real para cada HTML.
 
 ## Trabajo completado recientemente
+
+### 2026-08-12 — themes escalables y Bloc independiente de previews
+
+- La variante multilenguaje ahora registra los temas `light`, `dark`, `autumn`
+  y `neon` en un catálogo compartido entre bootstrap y aplicación; las
+  preferencias siguen separadas de configuración, CSV, sesión y output.
+- Se añadieron tokens completos para Otoño y Neon, además de los overrides
+  Neon con Power Wave, soporte de movimiento reducido y el apilamiento del
+  field activo para que los autocompletes no queden detrás de campos vecinos.
+- Jira/Markdown ahora ocultan exclusivamente `#outputTextarea`. El Bloc y sus
+  notas permanecen visibles, editables y fuera del output canónico en ambos
+  modos de preview.
+- Se actualizaron `Directorio-Monolito-Multilanguage.MD`, este registro y la
+  suite de regresión de la variante.
 
 ### 2026-08-10 — variante multilenguaje y selectores de apariencia
 

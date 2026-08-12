@@ -383,6 +383,34 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
       title: "Bug Report Tool — Multilenguaje"
     });
 
+    const notebookPreview = await evaluate(cdp, sessionId, `(() => {
+      setNotebookMode("half");
+      const notes = document.getElementById("notesTextarea");
+      notes.value = "Nota independiente";
+      notes.dispatchEvent(new Event("input", { bubbles: true }));
+      document.querySelector('input[aria-label="Vista previa Jira"]').click();
+      const jira = {
+        display: getComputedStyle(notes).display,
+        disabled: notes.disabled,
+        value: notes.value,
+        outputHidden: getComputedStyle(document.getElementById("outputTextarea")).display === "none"
+      };
+      document.querySelector('input[aria-label="Vista previa Markdown"]').click();
+      return {
+        jira,
+        markdown: {
+          display: getComputedStyle(notes).display,
+          disabled: notes.disabled,
+          value: notes.value,
+          mode: state.prefs.outputPreviewMode
+        }
+      };
+    })()`);
+    assert.deepEqual(notebookPreview, {
+      jira: { display: "block", disabled: false, value: "Nota independiente", outputHidden: true },
+      markdown: { display: "block", disabled: false, value: "Nota independiente", mode: "markdown" }
+    });
+
     const changed = await evaluate(cdp, sessionId, `(() => {
       const team = document.querySelector('[data-bind="team"]');
       team.value = "QA Idioma";
@@ -434,6 +462,32 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
       languageSelect: "en",
       themeSelect: "dark",
       savedText: "Saved"
+    });
+    const newThemes = await evaluate(cdp, sessionId, `(() => {
+      const select = document.getElementById("themeSelect");
+      const options = [...select.options].map(option => option.value);
+      select.value = "autumn";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      const autumn = {
+        theme: document.documentElement.dataset.theme,
+        background: getComputedStyle(document.body).backgroundColor
+      };
+      select.value = "neon";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      return {
+        options,
+        autumn,
+        neon: {
+          theme: document.documentElement.dataset.theme,
+          background: getComputedStyle(document.body).backgroundColor,
+          fieldZIndex: getComputedStyle(document.querySelector("#formPanel .field")).zIndex
+        }
+      };
+    })()`);
+    assert.deepEqual(newThemes, {
+      options: ["light", "dark", "autumn", "neon"],
+      autumn: { theme: "autumn", background: "rgb(255, 251, 240)" },
+      neon: { theme: "neon", background: "rgb(7, 3, 15)", fieldZIndex: "0" }
     });
     assert.deepEqual(exceptions, []);
     await cdp.send("Browser.close");
