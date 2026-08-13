@@ -54,6 +54,12 @@
       --shadow-pop: 0 6px 16px rgba(58, 30, 8, 0.16);
       --backdrop: rgba(30, 15, 5, 0.45);
       --sec-glow: rgba(242, 101, 34, 0.35);
+      --nav-wave-start: rgba(42, 24, 55, .78);
+      --nav-wave-end: rgba(169, 78, 255, .88);
+      --nav-wave-core: rgba(225, 194, 255, .32);
+      --nav-shock-ring: rgba(46, 30, 58, .82);
+      --nav-shock-glow: rgba(73, 45, 92, .28);
+      --preview-field-glow: rgba(132, 73, 232, .54);
 
       --tile-ok-bg: #ecfdf5;  --tile-ok-fg: #065f46;  --tile-ok-br: #a7f3d0;
 
@@ -115,6 +121,12 @@
       --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.7);
       --backdrop: rgba(0, 0, 0, 0.72);
       --sec-glow: rgba(242, 101, 34, 0.45);
+      --nav-wave-start: rgba(220, 226, 235, .78);
+      --nav-wave-end: rgba(255, 205, 82, .92);
+      --nav-wave-core: rgba(255, 234, 167, .34);
+      --nav-shock-ring: rgba(255, 205, 82, .95);
+      --nav-shock-glow: rgba(255, 183, 38, .38);
+      --preview-field-glow: rgba(255, 205, 82, .62);
 
       /* Campos: superficie oscura elevada, texto blanco (alto contraste) */
       --field-bg: #161618;
@@ -177,6 +189,12 @@
       --shadow-pop: 0 10px 28px rgba(93, 64, 55, 0.15);
       --backdrop: rgba(238, 220, 196, 0.75);
       --sec-glow: rgba(230, 81, 0, 0.1);
+      --nav-wave-start: rgba(40, 24, 52, .78);
+      --nav-wave-end: rgba(164, 73, 250, .86);
+      --nav-wave-core: rgba(224, 194, 255, .34);
+      --nav-shock-ring: rgba(40, 24, 52, .86);
+      --nav-shock-glow: rgba(66, 39, 84, .30);
+      --preview-field-glow: rgba(128, 70, 194, .56);
       --field-bg: #fff6e6;
       --field-text: #3e2723;
       --field-border: #a1887f;
@@ -241,6 +259,12 @@
       --shadow-pop: 0 0 18px rgba(56, 245, 255, 0.16), 0 0 32px rgba(255, 43, 214, 0.14);
       --backdrop: rgba(4, 1, 10, 0.82);
       --sec-glow: rgba(56, 245, 255, 0.22);
+      --nav-wave-start: rgba(56, 245, 255, .92);
+      --nav-wave-end: rgba(255, 43, 214, .82);
+      --nav-wave-core: rgba(255, 255, 255, .15);
+      --nav-shock-ring: rgba(255, 43, 214, .88);
+      --nav-shock-glow: rgba(56, 245, 255, .38);
+      --preview-field-glow: rgba(56, 245, 255, .78);
       --tile-ok-bg:#0d2c26;      --tile-ok-fg:#72ffd8;      --tile-ok-br:#1fbf9f;
       --tile-red-bg:#2f0f17;     --tile-red-fg:#ff8ba0;     --tile-red-br:#c4375b;
       --tile-orange-bg:#331b08;  --tile-orange-fg:#ffb366;  --tile-orange-br:#ff8f1f;
@@ -848,6 +872,30 @@
     }
     .output-preview pre code { padding: 0; background: transparent; font-size: 11px; }
     .output-preview-empty { color: var(--text-3); font-style: italic; }
+    .output-preview [data-output-field],
+    .output-preview [data-output-block-field],
+    .output-preview [data-output-section] { cursor: pointer; }
+    .output-preview .output-field-affected {
+      --preview-field-ring: var(--primary);
+      --preview-field-soft: var(--accent-soft);
+      border-radius: 5px;
+      box-shadow: 0 0 0 1px var(--preview-field-ring),
+        0 0 7px var(--preview-field-glow),
+        0 0 16px var(--preview-field-glow);
+      background: var(--preview-field-soft);
+      opacity: 1;
+      transition: opacity .28s ease;
+    }
+    .output-preview .output-field-affected.is-leaving { opacity: 0; }
+    .output-preview .output-field-affected[data-output-field-type="text"] { --preview-field-ring: var(--tile-blue-br); --preview-field-soft: var(--tile-blue-bg); }
+    .output-preview .output-field-affected[data-output-field-type="textarea"],
+    .output-preview .output-field-affected[data-output-field-type="clock"] { --preview-field-ring: var(--tile-cyan-br); --preview-field-soft: var(--tile-cyan-bg); }
+    .output-preview .output-field-affected[data-output-field-type="autocomplete"],
+    .output-preview .output-field-affected[data-output-field-type="date"] { --preview-field-ring: var(--tile-violet-br); --preview-field-soft: var(--tile-violet-bg); }
+    .output-preview .output-field-affected[data-output-field-type="keywords"] { --preview-field-ring: var(--tile-pink-br); --preview-field-soft: var(--tile-pink-bg); }
+    .output-preview .output-field-affected[data-output-field-type="checkbox"] { --preview-field-ring: var(--tile-amber-br); --preview-field-soft: var(--tile-amber-bg); }
+    .output-preview .output-field-affected[data-output-field-type="checklist"] { --preview-field-ring: var(--tile-green-br); --preview-field-soft: var(--tile-green-bg); }
+    .output-preview .output-field-affected[data-output-field-type="mirror"] { --preview-field-ring: var(--tile-slate-br); --preview-field-soft: var(--tile-slate-bg); }
     .output-label { display: flex; align-items: center; gap: 7px; }
     .output-preview-hint {
       color: var(--text-3);
@@ -1118,6 +1166,7 @@
     /* Código de colores: la sección "cierra" en naranja por abajo y por la
        derecha, con una sombra naranja ligera en esa misma dirección. */
     .form-section {
+      position: relative;
       margin-bottom: 18px;
       padding: 0 10px 8px 0;
       border-right: 2px solid var(--accent-soft-border);
@@ -1166,31 +1215,86 @@
     .form-section.collapsed .form-section-body { grid-template-rows: 0fr; }
     .form-section.collapsed h4 { margin-bottom: 0; }
 
-    /* Identidad visual de los campos: esquina inferior-izquierda con un color
-       por tipo (borde lateral más grueso que el inferior + gradiente sutil
-       desde esa esquina). Sin sombra: el brillo rojo de error debe dominar. */
+    /* Identidad visual de los campos: color por tipo en el 60 % inferior-izquierdo,
+       dejando transparente la esquina superior-derecha. Sin sombra: el brillo rojo
+       de error debe dominar. */
     #formPanel .field {
       border-left: 3px solid transparent;
       border-bottom: 1px solid transparent;
       border-radius: 0 0 0 8px;
       padding: 0 0 4px 7px;
+      isolation: isolate;
+      transition: transform .18s ease, box-shadow .18s ease,
+        border-color .18s ease, background-color .18s ease;
     }
-    #formPanel .field.ft-text         { border-color: var(--tile-blue-br);   background: linear-gradient(45deg, var(--tile-blue-bg) 0%,   transparent 30%); }
-    #formPanel .field.ft-textarea     { border-color: var(--tile-cyan-br);   background: linear-gradient(45deg, var(--tile-cyan-bg) 0%,   transparent 30%); }
-    #formPanel .field.ft-autocomplete { border-color: var(--tile-violet-br); background: linear-gradient(45deg, var(--tile-violet-bg) 0%, transparent 30%); }
-    #formPanel .field.ft-keywords     { border-color: var(--tile-pink-br);   background: linear-gradient(45deg, var(--tile-pink-bg) 0%,   transparent 30%); }
-    #formPanel .field.ft-checkbox     { border-color: var(--tile-amber-br);  background: linear-gradient(45deg, var(--tile-amber-bg) 0%,  transparent 30%); }
-    #formPanel .field.ft-checklist    { border-color: var(--tile-green-br);  background: linear-gradient(45deg, var(--tile-green-bg) 0%,  transparent 30%); }
-    #formPanel .field.ft-mirror       { border-color: var(--tile-slate-br);  background: linear-gradient(45deg, var(--tile-slate-bg) 0%,  transparent 30%); }
-    #formPanel .field.ft-clock        { border-color: var(--tile-cyan-br);   background: linear-gradient(45deg, var(--tile-cyan-bg) 0%,   transparent 30%); }
-    #formPanel .field.ft-date         { border-color: var(--tile-violet-br); background: linear-gradient(45deg, var(--tile-violet-bg) 0%, transparent 30%); }
+    #formPanel .field:focus-within {
+      z-index: 100;
+      transform: translateY(-2px) scale(1.004);
+      box-shadow: 0 5px 12px rgba(0, 0, 0, .10);
+    }
+    #formPanel .field::before,
+    #formPanel .form-section::before,
+    #formPanel .field::after,
+    #formPanel .form-section::after {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      z-index: -1;
+      pointer-events: none;
+      border-radius: 9px;
+      opacity: 0;
+    }
+    #formPanel .field::before,
+    #formPanel .form-section::before {
+      z-index: -1;
+      transform: scale(.93);
+      border: 1px solid transparent;
+      background: radial-gradient(circle at 50% 55%, var(--nav-wave-core) 0%, var(--nav-wave-start) 18%, var(--nav-wave-end) 42%, transparent 70%);
+      box-shadow: 0 0 0 transparent, 0 0 0 transparent;
+    }
+    #formPanel .field::after,
+    #formPanel .form-section::after {
+      z-index: -2;
+      border: 1px solid var(--nav-shock-ring);
+    }
+    #formPanel .form-section { isolation: isolate; }
+    #formPanel .form-section::before,
+    #formPanel .form-section::after { inset: -5px; border-radius: 7px; }
+    #formPanel .field.navigation-shockwave::before,
+    #formPanel .form-section.navigation-shockwave::before {
+      animation: fieldNavigationPowerWave .34s cubic-bezier(.17,.84,.32,1);
+    }
+    #formPanel .field.navigation-shockwave::after,
+    #formPanel .form-section.navigation-shockwave::after {
+      animation: fieldNavigationShockwave .68s cubic-bezier(.16,.84,.44,1);
+    }
+    @keyframes fieldNavigationPowerWave {
+      0% { opacity: 0; transform: scale(.92); border-color: transparent; box-shadow: 0 0 0 transparent, 0 0 0 transparent; }
+      18% { opacity: 1; transform: scale(.985); border-color: var(--nav-wave-start); box-shadow: 0 0 7px var(--nav-wave-start), 0 0 15px var(--nav-wave-end); }
+      48% { opacity: .88; transform: scale(1.025); border-color: var(--nav-wave-end); box-shadow: 0 0 14px var(--nav-wave-start), 0 0 26px var(--nav-wave-end), 0 0 40px var(--nav-wave-core); }
+      100% { opacity: 0; transform: scale(1.065); border-color: transparent; box-shadow: 0 0 22px transparent, 0 0 42px transparent; }
+    }
+    @keyframes fieldNavigationShockwave {
+      0% { opacity: .95; transform: scale(.97); box-shadow: 0 0 0 0 var(--nav-shock-ring); }
+      65% { opacity: .55; transform: scale(1.015); box-shadow: 0 0 0 5px var(--nav-shock-ring), 0 0 18px 3px var(--nav-shock-glow); }
+      100% { opacity: 0; transform: scale(1.035); box-shadow: 0 0 0 9px transparent, 0 0 24px 7px transparent; }
+    }
+    #formPanel .field.ft-text         { border-color: var(--tile-blue-br);   background: linear-gradient(45deg, var(--tile-blue-bg) 0%,   var(--tile-blue-bg) 60%, transparent 100%); }
+    #formPanel .field.ft-textarea     { border-color: var(--tile-cyan-br);   background: linear-gradient(45deg, var(--tile-cyan-bg) 0%,   var(--tile-cyan-bg) 60%, transparent 100%); }
+    #formPanel .field.ft-autocomplete { border-color: var(--tile-violet-br); background: linear-gradient(45deg, var(--tile-violet-bg) 0%, var(--tile-violet-bg) 60%, transparent 100%); }
+    #formPanel .field.ft-keywords     { border-color: var(--tile-pink-br);   background: linear-gradient(45deg, var(--tile-pink-bg) 0%,   var(--tile-pink-bg) 60%, transparent 100%); }
+    #formPanel .field.ft-checkbox     { border-color: var(--tile-amber-br);  background: linear-gradient(45deg, var(--tile-amber-bg) 0%,  var(--tile-amber-bg) 60%, transparent 100%); }
+    #formPanel .field.ft-checklist    { border-color: var(--tile-green-br);  background: linear-gradient(45deg, var(--tile-green-bg) 0%,  var(--tile-green-bg) 60%, transparent 100%); }
+    #formPanel .field.ft-mirror       { border-color: var(--tile-slate-br);  background: linear-gradient(45deg, var(--tile-slate-bg) 0%,  var(--tile-slate-bg) 60%, transparent 100%); }
+    #formPanel .field.ft-clock        { border-color: var(--tile-cyan-br);   background: linear-gradient(45deg, var(--tile-cyan-bg) 0%,   var(--tile-cyan-bg) 60%, transparent 100%); }
+    #formPanel .field.ft-date         { border-color: var(--tile-violet-br); background: linear-gradient(45deg, var(--tile-violet-bg) 0%, var(--tile-violet-bg) 60%, transparent 100%); }
     #formPanel input.system-value { cursor: default; opacity: .82; }
     /* El rojo de alerta se impone al color del tipo. */
     #formPanel .field.invalid,
     #formPanel .field.rule-flag {
       border-left-color: var(--danger);
       border-bottom-color: var(--danger);
-      background: linear-gradient(45deg, var(--danger-soft) 0%, transparent 30%);
+      background: linear-gradient(45deg, var(--danger-soft) 0%, var(--danger-soft) 60%, transparent 100%);
     }
     /* Campo señalado por un tile de tipo Error activo: también en rojo. */
     .field.rule-flag input, .field.rule-flag textarea, .field.rule-flag select,
@@ -1947,7 +2051,10 @@
       background: radial-gradient(circle at 50% 55%, rgba(255, 255, 255, .15) 0%, rgba(56, 245, 255, .13) 18%, rgba(255, 43, 214, .10) 38%, transparent 68%);
       box-shadow: 0 0 0 rgba(56, 245, 255, 0), 0 0 0 rgba(255, 43, 214, 0);
     }
-    html[data-theme="neon"] #formPanel .field:focus-within::before { animation: neonFieldPowerWave .58s cubic-bezier(.17,.84,.32,1); }
+    html[data-theme="neon"] #formPanel .field:focus-within::before { animation: neonFieldPowerWave .34s cubic-bezier(.17,.84,.32,1); }
+    html[data-theme="neon"] #formPanel .field.navigation-shockwave::before {
+      animation: neonFieldPowerWave .34s cubic-bezier(.17,.84,.32,1);
+    }
     html[data-theme="neon"] #formPanel .field:focus-within {
       z-index: 100;
       transform: translateY(-1px) scale(1.006);
@@ -1964,7 +2071,13 @@
       border: 1px solid rgba(255, 43, 214, .8);
       box-shadow: 0 0 5px rgba(255, 43, 214, .5), 0 0 12px rgba(56, 245, 255, .25);
     }
-    html[data-theme="neon"] #formPanel .field:focus-within::after { animation: neonFieldShockRing .48s cubic-bezier(.16,.84,.44,1); }
+    html[data-theme="neon"] #formPanel .field:focus-within::after { animation: neonFieldShockRing .68s cubic-bezier(.16,.84,.44,1); }
+    html[data-theme="neon"] #formPanel .field.navigation-shockwave::after,
+    html[data-theme="neon"] #formPanel .form-section.navigation-shockwave::after {
+      animation: neonFieldShockRing .68s cubic-bezier(.16,.84,.44,1);
+      border: 1px solid var(--nav-shock-ring);
+      box-shadow: 0 0 5px rgba(255, 43, 214, .5), 0 0 12px var(--nav-shock-glow);
+    }
     @keyframes neonFieldPowerWave {
       0% { opacity: 0; transform: scale(.92); border-color: rgba(56, 245, 255, 0); box-shadow: 0 0 0 rgba(56, 245, 255, 0), 0 0 0 rgba(255, 43, 214, 0); }
       18% { opacity: 1; transform: scale(.985); border-color: rgba(56, 245, 255, .95); box-shadow: 0 0 6px rgba(56, 245, 255, .75), 0 0 14px rgba(255, 43, 214, .42); }
@@ -2026,6 +2139,21 @@
     html[data-theme="neon"] #formPanel .field.invalid,
     html[data-theme="neon"] #formPanel .field.rule-flag { box-shadow: 0 0 8px rgba(255, 77, 109, .16); }
     @media (prefers-reduced-motion: reduce) {
+      #formPanel .field,
+      #formPanel .field::before,
+      #formPanel .field::after,
+      #formPanel .form-section::before,
+      #formPanel .form-section::after,
+      .output-preview .output-field-affected { transition-duration: .01ms !important; }
+      #formPanel .field:focus-within { transform: none; }
+      #formPanel .field.navigation-shockwave::before,
+      #formPanel .form-section.navigation-shockwave::before,
+      #formPanel .field.navigation-shockwave::after,
+      #formPanel .form-section.navigation-shockwave::after {
+        animation: none !important;
+        opacity: .75;
+        box-shadow: 0 0 0 2px var(--nav-shock-ring);
+      }
       html[data-theme="neon"] #formPanel .field,
       html[data-theme="neon"] #formPanel .field::before,
       html[data-theme="neon"] #formPanel .field::after,
@@ -3890,6 +4018,7 @@ function setLanguage(language, persist, rerender) {
       outputDetached: deepClone(instance.outputDetached || {}),
       outputSegments: deepClone(instance.outputSegments || []),
       outputRanges: deepClone(instance.outputRanges || {}),
+      outputSectionRanges: deepClone(instance.outputSectionRanges || {}),
       visibleText: textarea ? textarea.value : instance.output
     } : null;
     refreshAll();
@@ -3900,6 +4029,7 @@ function setLanguage(language, persist, rerender) {
       instance.outputDetached = outputSnapshot.outputDetached;
       instance.outputSegments = outputSnapshot.outputSegments;
       instance.outputRanges = outputSnapshot.outputRanges;
+      instance.outputSectionRanges = outputSnapshot.outputSectionRanges;
       if (textarea) {
         textarea.value = outputSnapshot.visibleText;
         renderOutputPreview(outputSnapshot.visibleText);
@@ -4501,6 +4631,7 @@ function makeInstance(formId) {
     outputDetached: {},
     outputSegments: [],
     outputRanges: {},
+    outputSectionRanges: {},
     checklistExtras: {},
     errors: {},
     dirty: false
@@ -4538,6 +4669,9 @@ function ensureInstanceFields(inst) {
   if (!Array.isArray(inst.outputSegments)) inst.outputSegments = [];
   if (!inst.outputRanges || typeof inst.outputRanges !== "object" || Array.isArray(inst.outputRanges)) {
     inst.outputRanges = {};
+  }
+  if (!inst.outputSectionRanges || typeof inst.outputSectionRanges !== "object" || Array.isArray(inst.outputSectionRanges)) {
+    inst.outputSectionRanges = {};
   }
   if (inst.outputLayoutEdited !== true) inst.outputLayoutEdited = false;
   if (!inst.errors) inst.errors = {};
@@ -8361,28 +8495,47 @@ function interpolateFieldTemplate(text, field, inst, value) {
   const form = getForm(inst.formId);
   const missingMedia = [];
   const unresolved = [];
-  const expanded = protectedTemplateText(unescapeNl(text)).replace(/\{([A-Za-z0-9_.:-]+)\}/g, (match, id) => {
-    if (id === "value") return String(value == null ? "" : value);
-    if (id.startsWith("media:")) {
+  const refs = [];
+  const source = protectedTemplateText(unescapeNl(text));
+  let expanded = "";
+  let cursor = 0;
+  const pattern = /\{([A-Za-z0-9_.:-]+)\}/g;
+  let match;
+  while ((match = pattern.exec(source))) {
+    expanded += source.slice(cursor, match.index);
+    const id = match[1];
+    let replacement = match[0];
+    let refFieldId = "";
+    if (id === "value") {
+      replacement = String(value == null ? "" : value);
+      if (field.type === "mirror" && field.source) refFieldId = field.source;
+    }
+    else if (id.startsWith("media:")) {
       const name = mediaNameById(inst, id.slice("media:".length));
       if (name == null) {
         missingMedia.push(id);
-        return "";
+        replacement = "";
+      } else replacement = name;
+    } else {
+      const found = form && getField(form, id);
+      // Un mirror no tiene valor propio; se evita enlazar outputs entre sí.
+      if (!found || found.field.type === "mirror") unresolved.push(id);
+      else {
+        replacement = templateValueForField(found.field, inst.values[id]);
+        refFieldId = id;
       }
-      return name;
     }
-    const found = form && getField(form, id);
-    // Un mirror no tiene valor propio; se evita enlazar outputs entre sí.
-    if (!found || found.field.type === "mirror") {
-      unresolved.push(id);
-      return match;
-    }
-    return templateValueForField(found.field, inst.values[id]);
-  });
+    const start = expanded.length;
+    expanded += replacement;
+    if (refFieldId && replacement.length) refs.push({ fieldId: refFieldId, start, end: expanded.length });
+    cursor = pattern.lastIndex;
+  }
+  expanded += source.slice(cursor);
   return {
     text: expanded.replace(/\uE000/g, "{").replace(/\uE001/g, "}"),
     missingMedia,
-    unresolved
+    unresolved,
+    refs
   };
 }
 
@@ -8402,8 +8555,8 @@ function fieldOutputPart(field, inst) {
       if (field.kwPerChip !== false) {
         const filled = arr.map(value => interpolateFieldTemplate(kwTpl, field, inst, value));
         if (filled.some(part => part.missingMedia.length)) return null;
-        const out = filled.map(part => part.text);
-        if (field.kwHeader) out.unshift(unescapeNl(field.kwHeader));
+        const out = filled.map(part => ({ text: part.text, refs: part.refs }));
+        if (field.kwHeader) out.unshift({ text: unescapeNl(field.kwHeader), refs: [] });
         return out;
       }
       raw = arr.join("\n");
@@ -8426,12 +8579,17 @@ function fieldOutputPart(field, inst) {
       ? arr.map(ckFill)
       : [ckFill(arr.join(unescapeNl(field.checkSep != null ? field.checkSep : ", ")) )];
     if (filled.some(part => part.missingMedia.length)) return null;
-    const out = filled.map(part => part.text);
+    const out = filled.map(part => ({ text: part.text, refs: part.refs }));
     if (field.checkLayout === "newline") {
-      if (field.checkTitle) out.unshift(unescapeNl(field.checkTitle));
+      if (field.checkTitle) out.unshift({ text: unescapeNl(field.checkTitle), refs: [] });
       return out;
     }
-    return field.checkTitle ? unescapeNl(field.checkTitle) + " " + out[0] : out[0];
+    if (!field.checkTitle) return out[0];
+    const prefix = unescapeNl(field.checkTitle) + " ";
+    return {
+      text: prefix + out[0].text,
+      refs: out[0].refs.map(ref => ({ ...ref, start: ref.start + prefix.length, end: ref.end + prefix.length }))
+    };
   }
   let value = String(raw == null ? "" : raw);
   const hasExternalRefs = templateFieldRefs(field.template).length || templateMediaRefs(field.template).length;
@@ -8452,92 +8610,74 @@ function fieldOutputPart(field, inst) {
     if (!lines.length) return null;
     const out = lines.map(fill);
     if (out.some(part => part.missingMedia.length)) return null;
-    const result = out.map(part => part.text);
+    const result = out.map(part => ({ text: part.text, refs: part.refs }));
     // Encabezado opcional: una línea fija antes de las líneas plantillada,
     // p. ej. "* *Material:*" seguido de "** mp/asset01", "** mp/asset02"...
     if (field.perLineHeader) {
       const header = interpolateFieldTemplate(field.perLineHeader, field, inst, value);
       if (header.missingMedia.length) return null;
-      result.unshift(header.text);
+      result.unshift({ text: header.text, refs: header.refs });
     }
     return result;
   }
   const result = fill(value);
-  return result.missingMedia.length ? null : result.text;
+  return result.missingMedia.length ? null : { text: result.text, refs: result.refs };
 }
 
 function buildOutput(inst) {
   const form = getForm(inst.formId);
-  if (!form) return { full: "", summary: "", description: "", segments: [], ranges: {} };
+  if (!form) return { full: "", summary: "", description: "", segments: [], ranges: {}, sectionRanges: {} };
   const blocks = [];
   let summaryLine = "";
   const partIndexByField = Object.create(null);
   // Campos ocultos por condición: fuera del output
   const fx = evalFieldRules(form, inst);
 
-  // Cada entrada conserva qué fracción sale de la plantilla del campo. Los
-  // encabezados y separadores quedan sin segmento: se pueden editar, pero no
-  // desconectan ningún campo del formulario.
+  // Cada entrada conserva su provenance. Headers internos, separadores y
+  // prefixes pertenecen al field que los introduce: nunca queda texto de
+  // field generado automáticamente sin propietario semántico.
   const outputEntries = (field, part) => {
     const arr = Array.isArray(part) ? part : [part];
-    let untrackedHeaders = 0;
-    if (Array.isArray(part)) {
-      if (field.type === "checklist" && field.checkLayout === "newline" && field.checkTitle) untrackedHeaders = 1;
-      else if (field.type === "keywords" && field.kwMode === "newline" && field.kwPerChip !== false && field.kwHeader) untrackedHeaders = 1;
-      else if (field.perLine && field.perLineHeader) untrackedHeaders = 1;
-    }
-    const inlinePrefix = !Array.isArray(part) && field.type === "checklist" &&
-      field.checkLayout !== "newline" && field.checkTitle
-      ? unescapeNl(field.checkTitle).length + 1 : 0;
-    return arr.map((text, index) => ({
-      text: String(text),
-      trackStart: index < untrackedHeaders ? null : (index === 0 ? inlinePrefix : 0)
-    }));
+    return arr.map(entry => typeof entry === "object" && entry !== null
+      ? { text: String(entry.text), refs: Array.isArray(entry.refs) ? entry.refs : [] }
+      : { text: String(entry), refs: [] });
   };
-  const newLine = () => ({ text: "", segments: [] });
-  const appendEntry = (line, entry, prefix, fieldId) => {
+  const newLine = sectionId => ({ text: "", segments: [], sectionId });
+  const appendEntry = (line, entry, prefix, field, sectionId) => {
     const leading = prefix || "";
-    const base = line.text.length + leading.length;
+    const start = line.text.length;
+    const contentStart = start + leading.length;
     line.text += leading + entry.text;
-    if (entry.trackStart != null && entry.trackStart < entry.text.length) {
-      const index = partIndexByField[fieldId] || 0;
-      line.segments.push({
-        fieldId,
-        index,
-        start: base + entry.trackStart,
-        end: base + entry.text.length
-      });
-      partIndexByField[fieldId] = index + 1;
-    }
+    const index = partIndexByField[field.id] || 0;
+    line.segments.push({
+      fieldId: field.id,
+      sectionId,
+      fieldType: field.type || "text",
+      index,
+      start,
+      end: line.text.length,
+      contentStart,
+      contentEnd: line.text.length,
+      refs: entry.refs.map(ref => ({ ...ref,
+        start: contentStart + ref.start,
+        end: contentStart + ref.end }))
+    });
+    partIndexByField[field.id] = index + 1;
   };
 
   form.sections.forEach(sec => {
     const lines = [];
     if (sec.mode === "joined") {
       // Todo en una sola línea, con separadores por campo
-      const line = newLine();
+      const line = newLine(sec.id);
       sec.fields.forEach(field => {
         if (fx[field.id] && fx[field.id].hidden) return;
         const part = fieldOutputPart(field, inst);
         if (part == null) return;
         const entries = outputEntries(field, part);
-        const fieldText = entries.map(entry => entry.text).join(" ");
         const prefix = line.text ? unescapeNl(field.sep != null ? field.sep : (sec.sep != null ? sec.sep : " - ")) : "";
-        // Conserva los rangos de cada entrada aunque varias compongan la misma
-        // línea de una sección unida.
-        const base = line.text.length + prefix.length;
-        line.text += prefix + fieldText;
-        let entryOffset = 0;
-        entries.forEach((entry, index) => {
-          if (entry.trackStart != null && entry.trackStart < entry.text.length) {
-            const partIndex = partIndexByField[field.id] || 0;
-            line.segments.push({ fieldId: field.id, index: partIndex,
-              start: base + entryOffset + entry.trackStart,
-              end: base + entryOffset + entry.text.length });
-            partIndexByField[field.id] = partIndex + 1;
-          }
-          entryOffset += entry.text.length + (index < entries.length - 1 ? 1 : 0);
-        });
+        entries.forEach((entry, index) => appendEntry(line, entry,
+          index === 0 ? prefix : " ", field, sec.id));
       });
       if (line.text) {
         lines.push(line);
@@ -8555,40 +8695,52 @@ function buildOutput(inst) {
           // (p. ej. timestamp vacío) no se imprime suelto.
           if (!lines.length) return;
           const sep = unescapeNl(field.sep != null ? field.sep : " ");
-          appendEntry(lines[lines.length - 1], entries[0], sep, field.id);
+          appendEntry(lines[lines.length - 1], entries[0], sep, field, sec.id);
           entries.slice(1).forEach(entry => {
-            const line = newLine();
-            appendEntry(line, entry, "", field.id);
+            const line = newLine(sec.id);
+            appendEntry(line, entry, "", field, sec.id);
             lines.push(line);
           });
         } else {
           entries.forEach(entry => {
-            const line = newLine();
-            appendEntry(line, entry, "", field.id);
+            const line = newLine(sec.id);
+            appendEntry(line, entry, "", field, sec.id);
             lines.push(line);
           });
         }
       });
       if (lines.length && sec.heading) {
-        const heading = newLine();
+        const heading = newLine(sec.id);
         heading.text = unescapeNl(sec.heading);
         lines.unshift(heading);
       }
     }
-    if (lines.length) blocks.push({ lines, noGap: !!sec.noGap });
+    if (lines.length) blocks.push({ sectionId: sec.id, lines, noGap: !!sec.noGap });
   });
 
   const out = [];
   blocks.forEach((b, i) => {
     out.push(...b.lines);
-    if (i < blocks.length - 1 && !b.noGap) out.push(newLine());
+    if (i < blocks.length - 1 && !b.noGap) out.push(newLine(b.sectionId));
   });
   const segments = [];
+  const sectionRanges = {};
   let cursor = 0;
   out.forEach((line, index) => {
+    const lineEnd = cursor + line.text.length + (index < out.length - 1 ? 1 : 0);
+    if (line.sectionId) {
+      const range = sectionRanges[line.sectionId] || { sectionId: line.sectionId, start: cursor, end: cursor };
+      range.end = lineEnd;
+      sectionRanges[line.sectionId] = range;
+    }
     (line.segments || []).forEach(segment => segments.push({ ...segment,
-      start: segment.start + cursor, end: segment.end + cursor }));
-    cursor += line.text.length + (index < out.length - 1 ? 1 : 0);
+      start: segment.start + cursor,
+      end: segment.end + cursor,
+      contentStart: segment.contentStart + cursor,
+      contentEnd: segment.contentEnd + cursor,
+      refs: segment.refs.map(ref => ({ ...ref, start: ref.start + cursor, end: ref.end + cursor }))
+    }));
+    cursor = lineEnd;
   });
 
   // Chunks para los botones de copia:
@@ -8601,7 +8753,7 @@ function buildOutput(inst) {
   blocks.forEach((b, i) => {
     if (isSummaryFirst && i === 0) return;
     rest.push(...b.lines);
-    if (i < blocks.length - 1 && !b.noGap) rest.push(newLine());
+    if (i < blocks.length - 1 && !b.noGap) rest.push(newLine(b.sectionId));
   });
   while (rest.length && rest[rest.length - 1].text === "") rest.pop();
   const full = out.map(line => line.text).join("\n");
@@ -8612,7 +8764,7 @@ function buildOutput(inst) {
     summary: { start: 0, end: summary.length },
     description: { start: description ? full.length - description.length : full.length, end: full.length }
   };
-  return { full, summary, description, segments, ranges };
+  return { full, summary, description, segments, ranges, sectionRanges };
 }
 
 function activeNotebookTab() {
@@ -8693,6 +8845,161 @@ function outputIsLegacyManual(inst) {
   return !Array.isArray(inst.outputSegments) || !inst.outputSegments.length;
 }
 
+function outputSegmentAtOffset(offset, chunks) {
+  return (chunks && chunks.segments || []).find(segment =>
+    segment.start <= offset && offset < segment.end) || null;
+}
+
+function outputSectionAtOffset(offset, chunks) {
+  return Object.values(chunks && chunks.sectionRanges || {}).find(range =>
+    range.start <= offset && offset < range.end) || null;
+}
+
+function outputReferenceAtOffset(offset, segment) {
+  return (segment && segment.refs || []).find(ref => ref.start <= offset && offset < ref.end) || null;
+}
+
+function outputTargetAtOffset(offset, chunks) {
+  const segment = outputSegmentAtOffset(offset, chunks);
+  const ref = outputReferenceAtOffset(offset, segment);
+  if (ref) return { kind: "field", fieldId: ref.fieldId,
+    sectionId: segment.sectionId, viaReference: true };
+  if (segment) return { kind: "field", fieldId: segment.fieldId,
+    sectionId: segment.sectionId, viaReference: false };
+  const section = outputSectionAtOffset(offset, chunks);
+  return section ? { kind: "section", sectionId: section.sectionId } : null;
+}
+
+function activeOutputProvenance(text) {
+  const inst = getActiveInstance();
+  if (!inst || outputIsLegacyManual(inst) || String(text) !== String(inst.output)) {
+    return { segments: [], sectionRanges: {} };
+  }
+  return { segments: inst.outputSegments || [], sectionRanges: inst.outputSectionRanges || {} };
+}
+
+function formFieldElement(fieldId) {
+  return [...document.querySelectorAll("#formPanel .field[data-field]")]
+    .find(element => element.dataset.field === fieldId) || null;
+}
+
+function formSectionElement(sectionId) {
+  return [...document.querySelectorAll("#formPanel .form-section[data-section]")]
+    .find(element => element.dataset.section === sectionId) || null;
+}
+
+function primaryFieldControl(fieldId) {
+  const form = getForm(state.topTab);
+  const found = form && getField(form, fieldId);
+  if (found && found.field.type === "mirror" && found.field.source) {
+    return primaryFieldControl(found.field.source);
+  }
+  const field = formFieldElement(fieldId);
+  if (!field) return null;
+  return field.querySelector("[data-bind], [data-kw-input], [data-ck], [data-ck-all]") || null;
+}
+
+const navigationShockwaveTimers = new WeakMap();
+function triggerFormNavigationPulse(element) {
+  if (!element || element.offsetParent === null) return;
+  clearTimeout(navigationShockwaveTimers.get(element));
+  element.classList.remove("navigation-shockwave");
+  void element.offsetWidth;
+  element.classList.add("navigation-shockwave");
+  navigationShockwaveTimers.set(element, setTimeout(() => {
+    element.classList.remove("navigation-shockwave");
+    navigationShockwaveTimers.delete(element);
+  }, 700));
+}
+
+function revealFormSection(sectionElement) {
+  if (!sectionElement || !sectionElement.classList.contains("collapsed")) return;
+  const form = getForm(state.topTab);
+  if (form) uiCollapse.sections[sectionCollapseKey(form, sectionElement.dataset.section)] = false;
+  sectionElement.classList.remove("collapsed");
+  const button = sectionElement.querySelector("[data-sec-collapse]");
+  if (button) button.setAttribute("aria-expanded", "true");
+}
+
+function navigateToFormSection(sectionId) {
+  const section = formSectionElement(sectionId);
+  if (!section || section.offsetParent === null) return false;
+  revealFormSection(section);
+  requestAnimationFrame(() => {
+    section.scrollIntoView({ behavior: "smooth", block: "center" });
+    triggerFormNavigationPulse(section);
+  });
+  return true;
+}
+
+function navigateToFormField(fieldId, options) {
+  const opts = options || {};
+  const form = getForm(state.topTab);
+  const found = form && getField(form, fieldId);
+  let field = formFieldElement(fieldId);
+  // Mirrors ocultos fuera de edición se resuelven a su source editable.
+  if ((!field || field.offsetParent === null) && found && found.field.type === "mirror" && found.field.source) {
+    fieldId = found.field.source;
+    field = formFieldElement(fieldId);
+  }
+  if (!field || field.offsetParent === null) return opts.sectionId ? navigateToFormSection(opts.sectionId) : false;
+  const section = field.closest(".form-section");
+  revealFormSection(section);
+  requestAnimationFrame(() => {
+    field.scrollIntoView({ behavior: "smooth", block: "center" });
+    triggerFormNavigationPulse(field);
+    if (opts.focus) {
+      const control = primaryFieldControl(fieldId);
+      if (control && !control.disabled && !control.readOnly) control.focus({ preventScroll: true });
+    }
+  });
+  return true;
+}
+
+function navigateToOutputTarget(target, options) {
+  if (!target) return false;
+  return target.kind === "field"
+    ? navigateToFormField(target.fieldId, { ...(options || {}), sectionId: target.sectionId })
+    : navigateToFormSection(target.sectionId);
+}
+
+let affectedPreviewFieldId = "";
+let affectedPreviewTimer = null;
+function clearPreviewHighlight() {
+  affectedPreviewFieldId = "";
+  clearTimeout(affectedPreviewTimer);
+  const nodes = [...document.querySelectorAll("#outputPreview .output-field-affected")];
+  nodes.forEach(node => node.classList.add("is-leaving"));
+  affectedPreviewTimer = setTimeout(() => nodes.forEach(node => {
+    node.classList.remove("output-field-affected", "is-leaving");
+  }), 280);
+}
+
+function highlightPreviewField(fieldId) {
+  clearTimeout(affectedPreviewTimer);
+  document.querySelectorAll("#outputPreview .output-field-affected").forEach(node =>
+    node.classList.remove("output-field-affected", "is-leaving"));
+  affectedPreviewFieldId = fieldId;
+  if (normalizeOutputPreviewMode(state.prefs.outputPreviewMode) === "plain") return;
+  document.querySelectorAll("#outputPreview [data-output-field]").forEach(node => {
+    if (node.dataset.outputField === fieldId) node.classList.add("output-field-affected");
+  });
+}
+
+function outputTargetFromPreviewNode(node) {
+  const ref = node && node.closest && node.closest("[data-output-ref-field]");
+  if (ref) return { kind: "field", fieldId: ref.dataset.outputRefField,
+    sectionId: ref.dataset.outputSection || "", viaReference: true };
+  const field = node && node.closest && node.closest("[data-output-field]");
+  if (field) return { kind: "field", fieldId: field.dataset.outputField,
+    sectionId: field.dataset.outputSection || "", viaReference: false };
+  const blockField = node && node.closest && node.closest("[data-output-block-field]");
+  if (blockField) return { kind: "field", fieldId: blockField.dataset.outputBlockField,
+    sectionId: blockField.dataset.outputSection || "", viaReference: false };
+  const section = node && node.closest && node.closest("[data-output-section]");
+  return section ? { kind: "section", sectionId: section.dataset.outputSection } : null;
+}
+
 // La salida canónica sigue siendo texto plano. Estas vistas sólo interpretan
 // la copia visible para que el tester pueda comprobar el aspecto final sin
 // alterar templates, rangos de output ni el texto que se copia.
@@ -8729,11 +9036,72 @@ function jiraCodeFence(line) {
   return match ? { language: match[1] || "" } : null;
 }
 
-function appendJiraCodeBlock(parent, block) {
+function previewMetadataAtOffset(offset, provenance) {
+  const segment = outputSegmentAtOffset(offset, provenance);
+  const section = segment ? { sectionId: segment.sectionId } : outputSectionAtOffset(offset, provenance);
+  const ref = outputReferenceAtOffset(offset, segment);
+  return { segment, section, ref };
+}
+
+function appendPreviewSourceText(parent, text, sourceStart, provenance) {
+  const sourceEnd = sourceStart + text.length;
+  const boundaries = new Set([sourceStart, sourceEnd]);
+  (provenance.segments || []).forEach(segment => {
+    if (sourceStart < segment.end && segment.start < sourceEnd) {
+      boundaries.add(Math.max(sourceStart, segment.start));
+      boundaries.add(Math.min(sourceEnd, segment.end));
+      (segment.refs || []).forEach(ref => {
+        if (sourceStart < ref.end && ref.start < sourceEnd) {
+          boundaries.add(Math.max(sourceStart, ref.start));
+          boundaries.add(Math.min(sourceEnd, ref.end));
+        }
+      });
+    }
+  });
+  Object.values(provenance.sectionRanges || {}).forEach(range => {
+    if (sourceStart < range.end && range.start < sourceEnd) {
+      boundaries.add(Math.max(sourceStart, range.start));
+      boundaries.add(Math.min(sourceEnd, range.end));
+    }
+  });
+  const points = [...boundaries].sort((a, b) => a - b);
+  for (let index = 0; index < points.length - 1; index++) {
+    const start = points[index], end = points[index + 1];
+    if (end <= start) continue;
+    const value = text.slice(start - sourceStart, end - sourceStart);
+    const meta = previewMetadataAtOffset(start, provenance);
+    if (!meta.segment && !meta.section) {
+      parent.append(document.createTextNode(value));
+      continue;
+    }
+    const span = document.createElement("span");
+    if (meta.section) span.dataset.outputSection = meta.section.sectionId;
+    if (meta.segment) {
+      span.dataset.outputField = meta.segment.fieldId;
+      span.dataset.outputFieldType = meta.segment.fieldType || "text";
+    }
+    if (meta.ref) span.dataset.outputRefField = meta.ref.fieldId;
+    span.textContent = value;
+    parent.append(span);
+  }
+}
+
+function setPreviewBlockSection(element, offset, provenance) {
+  const segment = outputSegmentAtOffset(offset, provenance);
+  const section = outputSectionAtOffset(offset, provenance);
+  if (segment) element.dataset.outputBlockField = segment.fieldId;
+  if (section) element.dataset.outputSection = section.sectionId;
+}
+
+function appendJiraCodeBlock(parent, block, provenance) {
   const pre = document.createElement("pre");
   const code = document.createElement("code");
   if (block.language) code.dataset.language = block.language;
-  code.textContent = block.lines.join("\n");
+  block.lines.forEach((line, index) => {
+    if (index) code.append(document.createTextNode("\n"));
+    appendPreviewSourceText(code, line.text, line.start, provenance);
+  });
+  if (block.lines.length) setPreviewBlockSection(pre, block.lines[0].start, provenance);
   pre.append(code);
   parent.append(pre);
 }
@@ -8761,12 +9129,13 @@ function jiraClosingDelimiter(text, delimiter, start) {
   return -1;
 }
 
-function appendJiraPreviewInline(parent, source) {
+function appendJiraPreviewInline(parent, source, sourceStart, provenance) {
   const text = String(source == null ? "" : source);
   let plain = "";
+  let plainStart = 0;
   const flushPlain = () => {
     if (!plain) return;
-    parent.append(document.createTextNode(plain));
+    appendPreviewSourceText(parent, plain, sourceStart + plainStart, provenance);
     plain = "";
   };
   for (let index = 0; index < text.length;) {
@@ -8775,7 +9144,7 @@ function appendJiraPreviewInline(parent, source) {
       if (close >= 0) {
         flushPlain();
         const code = document.createElement("code");
-        code.textContent = text.slice(index + 2, close);
+        appendPreviewSourceText(code, text.slice(index + 2, close), sourceStart + index + 2, provenance);
         parent.append(code);
         index = close + 2;
         continue;
@@ -8791,7 +9160,8 @@ function appendJiraPreviewInline(parent, source) {
         flushPlain();
         const element = document.createElement("span");
         element.className = "jira-preview-link";
-        appendJiraPreviewInline(element, token[1]);
+        const labelOffset = index + (attachment || mention ? 2 : 1);
+        appendJiraPreviewInline(element, token[1], sourceStart + labelOffset, provenance);
         parent.append(element);
         index += token[0].length;
         continue;
@@ -8805,44 +9175,49 @@ function appendJiraPreviewInline(parent, source) {
       if (close >= 0) {
         flushPlain();
         const element = document.createElement(delimiter === "*" ? "strong" : delimiter === "+" ? "u" : "em");
-        appendJiraPreviewInline(element, text.slice(index + 1, close));
+        appendJiraPreviewInline(element, text.slice(index + 1, close), sourceStart + index + 1, provenance);
         parent.append(element);
         index = close + 1;
         continue;
       }
     }
+    if (!plain) plainStart = index;
     plain += text[index];
     index++;
   }
   flushPlain();
 }
 
-function appendOutputPreviewInline(parent, source, mode) {
+function appendOutputPreviewInline(parent, source, mode, sourceStart, provenance) {
   const text = String(source == null ? "" : source);
   if (mode === "jira") {
-    appendJiraPreviewInline(parent, text);
+    appendJiraPreviewInline(parent, text, sourceStart, provenance);
     return;
   }
   const pattern = /(\[([^\]\n]+)\]\(([^)\s]+)\)|\*\*([^*\n]+)\*\*|__([^_\n]+)__|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_)/g;
   let cursor = 0;
   let match;
   while ((match = pattern.exec(text))) {
-    if (match.index > cursor) parent.append(document.createTextNode(text.slice(cursor, match.index)));
+    if (match.index > cursor) appendPreviewSourceText(parent, text.slice(cursor, match.index), sourceStart + cursor, provenance);
     let element;
     if (match[2]) {
       const href = safePreviewUrl(match[3]);
       element = href ? document.createElement("a") : document.createElement("span");
       if (href) { element.href = href; element.target = "_blank"; element.rel = "noopener noreferrer"; }
-      element.textContent = match[2];
+      appendPreviewSourceText(element, match[2], sourceStart + match.index + 1, provenance);
     } else if (match[4] || match[5]) element = document.createElement("strong");
     else if (match[6]) element = document.createElement("s");
     else if (match[7]) element = document.createElement("code");
     else element = document.createElement("em");
-    if (element.textContent === "") element.textContent = match[4] || match[5] || match[6] || match[7] || match[8] || match[9] || "";
+    if (element.textContent === "") {
+      const content = match[4] || match[5] || match[6] || match[7] || match[8] || match[9] || "";
+      const relative = match[0].indexOf(content);
+      appendPreviewSourceText(element, content, sourceStart + match.index + relative, provenance);
+    }
     parent.append(element);
     cursor = pattern.lastIndex;
   }
-  if (cursor < text.length) parent.append(document.createTextNode(text.slice(cursor)));
+  if (cursor < text.length) appendPreviewSourceText(parent, text.slice(cursor), sourceStart + cursor, provenance);
 }
 
 function renderOutputPreview(text) {
@@ -8859,6 +9234,7 @@ function renderOutputPreview(text) {
   preview.replaceChildren();
   if (mode === "plain") return;
   const source = String(text == null ? "" : text);
+  const provenance = activeOutputProvenance(source);
   if (!source) {
     const empty = document.createElement("p");
     empty.className = "output-preview-empty";
@@ -8869,23 +9245,27 @@ function renderOutputPreview(text) {
   const fragment = document.createDocumentFragment();
   let activeLists = [];
   let codeBlock = null;
+  let lineStart = 0;
   source.split("\n").forEach(line => {
     const fence = mode === "jira" ? jiraCodeFence(line) : null;
     if (fence) {
       activeLists = [];
       if (codeBlock) {
-        appendJiraCodeBlock(fragment, codeBlock);
+        appendJiraCodeBlock(fragment, codeBlock, provenance);
         codeBlock = null;
       } else {
         codeBlock = { language: fence.language, lines: [] };
       }
+      lineStart += line.length + 1;
       return;
     }
     if (codeBlock) {
-      codeBlock.lines.push(line);
+      codeBlock.lines.push({ text: line, start: lineStart });
+      lineStart += line.length + 1;
       return;
     }
     const block = outputPreviewLine(line, mode);
+    const blockStart = lineStart + Math.max(0, line.length - block.text.length);
     if (block.type === "ul" || block.type === "ol") {
       const markers = mode === "jira" ? block.markers : (block.type === "ul" ? "*" : "#");
       const types = [...markers].map(marker => marker === "*" ? "ul" : "ol");
@@ -8907,26 +9287,33 @@ function renderOutputPreview(text) {
         activeLists.push({ type: types[depth], list, lastItem: null });
       }
       const item = document.createElement("li");
-      appendOutputPreviewInline(item, block.text, mode);
+      setPreviewBlockSection(item, lineStart, provenance);
+      appendOutputPreviewInline(item, block.text, mode, blockStart, provenance);
       const current = activeLists[activeLists.length - 1];
       current.list.append(item);
       current.lastItem = item;
+      lineStart += line.length + 1;
       return;
     }
     activeLists = [];
     if (block.type === "spacer") {
       const spacer = document.createElement("div");
       spacer.className = "preview-spacer";
+      setPreviewBlockSection(spacer, lineStart, provenance);
       fragment.append(spacer);
+      lineStart += line.length + 1;
       return;
     }
     const element = document.createElement(block.type === "heading" ? `h${block.level}`
       : block.type === "quote" ? "blockquote" : "p");
-    appendOutputPreviewInline(element, block.text, mode);
+    setPreviewBlockSection(element, lineStart, provenance);
+    appendOutputPreviewInline(element, block.text, mode, blockStart, provenance);
     fragment.append(element);
+    lineStart += line.length + 1;
   });
-  if (codeBlock) appendJiraCodeBlock(fragment, codeBlock);
+  if (codeBlock) appendJiraCodeBlock(fragment, codeBlock, provenance);
   preview.append(fragment);
+  if (affectedPreviewFieldId) highlightPreviewField(affectedPreviewFieldId);
 }
 
 function renderOutputPreviewControls() {
@@ -8982,10 +9369,19 @@ function applyOutputDetachment(chunks, detached) {
     full += chunks.full.slice(cursor, segment.start);
     const record = detached && detached[segment.fieldId];
     const manual = record && record.parts && record.parts[segment.index];
-    const text = typeof manual === "string" ? manual : chunks.full.slice(segment.start, segment.end);
+    const isManual = typeof manual === "string";
+    const text = isManual ? manual : chunks.full.slice(segment.start, segment.end);
     const start = full.length;
     full += text;
-    appliedSegments.push({ ...segment, start, end: full.length });
+    const shift = start - segment.start;
+    appliedSegments.push({ ...segment,
+      start,
+      end: full.length,
+      contentStart: isManual ? start : segment.contentStart + shift,
+      contentEnd: isManual ? full.length : segment.contentEnd + shift,
+      refs: isManual ? [] : (segment.refs || []).map(ref => ({ ...ref,
+        start: ref.start + shift, end: ref.end + shift }))
+    });
     cursor = segment.end;
   });
   full += chunks.full.slice(cursor);
@@ -9002,6 +9398,14 @@ function applyOutputDetachment(chunks, detached) {
   Object.entries(chunks.ranges || {}).forEach(([name, range]) => {
     ranges[name] = { start: mapOffset(range.start), end: mapOffset(range.end) };
   });
+  const sectionRanges = {};
+  Object.entries(chunks.sectionRanges || {}).forEach(([sectionId, range]) => {
+    sectionRanges[sectionId] = { ...range,
+      sectionId,
+      start: mapOffset(range.start),
+      end: mapOffset(range.end)
+    };
+  });
   const chunkText = name => {
     const range = ranges[name];
     return range ? full.slice(range.start, range.end) : String(chunks[name] || "");
@@ -9011,7 +9415,8 @@ function applyOutputDetachment(chunks, detached) {
     summary: chunkText("summary"),
     description: chunkText("description"),
     segments: appliedSegments,
-    ranges
+    ranges,
+    sectionRanges
   };
 }
 
@@ -9033,6 +9438,24 @@ function outputSegmentAfterChange(segment, change, textLength) {
   start = segment.start < change.start ? segment.start : change.start;
   end = segment.end > change.oldEnd ? segment.end + change.delta : change.newEnd;
   return { ...segment, start: Math.max(0, start), end: Math.max(0, Math.min(textLength, end)) };
+}
+
+function outputProvenanceSegmentAfterChange(segment, change, textLength) {
+  const next = outputSegmentAfterChange(segment, change, textLength);
+  if (outputSegmentTouchesChange(segment, change)) {
+    next.contentStart = next.start;
+    next.contentEnd = next.end;
+    next.refs = [];
+    return next;
+  }
+  const content = outputSegmentAfterChange({ start: segment.contentStart, end: segment.contentEnd }, change, textLength);
+  next.contentStart = content.start;
+  next.contentEnd = content.end;
+  next.refs = (segment.refs || []).map(ref => {
+    const shifted = outputSegmentAfterChange(ref, change, textLength);
+    return { ...ref, start: shifted.start, end: shifted.end };
+  });
+  return next;
 }
 
 function outputRangesAfterChange(ranges, change, textLength) {
@@ -9057,14 +9480,16 @@ function captureOutputTextareaEdit(inst, text) {
   if (!segments.length) {
     const change = outputChangeRange(before, text);
     inst.outputRanges = outputRangesAfterChange(inst.outputRanges, change, text.length);
+    inst.outputSectionRanges = outputRangesAfterChange(inst.outputSectionRanges, change, text.length);
     inst.outputLayoutEdited = true;
     inst.outputEdited = false;
     renderOutputDisconnectBadge(inst, []);
     return;
   }
   const change = outputChangeRange(before, text);
-  const nextSegments = segments.map(segment => outputSegmentAfterChange(segment, change, text.length));
+  const nextSegments = segments.map(segment => outputProvenanceSegmentAfterChange(segment, change, text.length));
   inst.outputRanges = outputRangesAfterChange(inst.outputRanges, change, text.length);
+  inst.outputSectionRanges = outputRangesAfterChange(inst.outputSectionRanges, change, text.length);
   const changedFields = new Set(segments.filter(segment => outputSegmentTouchesChange(segment, change))
     .map(segment => segment.fieldId));
   if (changedFields.size) {
@@ -9098,6 +9523,7 @@ function renderOutput() {
     inst.output = rendered.full;
     inst.outputSegments = rendered.segments;
     inst.outputRanges = rendered.ranges;
+    inst.outputSectionRanges = rendered.sectionRanges;
     inst.outputEdited = outputDetachedFieldIds(inst, rendered.segments).length > 0;
     inst.outputLayoutEdited = false;
   }
@@ -9121,6 +9547,7 @@ function renderOutput() {
     inst.outputDetached = {};
     inst.outputSegments = [];
     inst.outputRanges = {};
+    inst.outputSectionRanges = {};
     inst.output = "";
     renderOutput();
     scheduleSave();
@@ -9141,6 +9568,7 @@ function renderOutput() {
         inst.outputDetached = {};
         inst.outputSegments = [];
         inst.outputRanges = {};
+        inst.outputSectionRanges = {};
         inst.checklistExtras = blank.checklistExtras;
         markInstanceDirty(inst);
         scheduleSave();
@@ -9164,6 +9592,7 @@ function refreshOutputForCopy(inst, chunk) {
     inst.output = rendered.full;
     inst.outputSegments = rendered.segments;
     inst.outputRanges = rendered.ranges;
+    inst.outputSectionRanges = rendered.sectionRanges;
     inst.outputEdited = outputDetachedFieldIds(inst, rendered.segments).length > 0;
     const ta = $("outputTextarea");
     if (ta) ta.value = inst.output;
@@ -10893,6 +11322,59 @@ function flashBanner(text, isError) {
 /* ================================================================
    [18] BOOT Y CONEXIÓN DE CONTROLES FIJOS
    ================================================================ */
+function wireBidirectionalOutputNavigation() {
+  const textarea = $("outputTextarea");
+  const preview = $("outputPreview");
+  const panel = $("formPanel");
+  if (!textarea || !preview || !panel) return;
+
+  textarea.addEventListener("click", () => {
+    const inst = getActiveInstance();
+    if (!inst || outputIsLegacyManual(inst)) return;
+    const target = outputTargetAtOffset(textarea.selectionStart, {
+      segments: inst.outputSegments || [],
+      sectionRanges: inst.outputSectionRanges || {}
+    });
+    navigateToOutputTarget(target, { focus: false });
+  });
+
+  preview.addEventListener("click", event => {
+    navigateToOutputTarget(outputTargetFromPreviewNode(event.target), { focus: false });
+  });
+  preview.addEventListener("dblclick", event => {
+    navigateToOutputTarget(outputTargetFromPreviewNode(event.target), { focus: true });
+  });
+
+  const affectedControl = target => target && target.matches &&
+    target.matches("[data-bind], [data-kw-input], [data-ck], [data-ck-all]");
+  panel.addEventListener("focusin", event => {
+    if (!affectedControl(event.target)) return;
+    const field = event.target.closest(".field[data-field]");
+    if (field) highlightPreviewField(field.dataset.field);
+  });
+  panel.addEventListener("focusout", event => {
+    if (!affectedControl(event.target)) return;
+    const field = event.target.closest(".field[data-field]");
+    const fieldId = field && field.dataset.field;
+    setTimeout(() => {
+      if ((!field || !field.contains(document.activeElement)) && affectedPreviewFieldId === fieldId) {
+        clearPreviewHighlight();
+      }
+    });
+  });
+
+  panel.addEventListener("pointerover", event => {
+    const mirror = event.target.closest(".field.ft-mirror[data-field]");
+    if (!mirror || mirror.contains(event.relatedTarget) || mirror.offsetParent === null) return;
+    highlightPreviewField(mirror.dataset.field);
+  });
+  panel.addEventListener("pointerout", event => {
+    const mirror = event.target.closest(".field.ft-mirror[data-field]");
+    if (!mirror || mirror.contains(event.relatedTarget)) return;
+    clearPreviewHighlight();
+  });
+}
+
 function wireStaticControls() {
   // Preferencias visuales independientes de config/session: no ensucian el
   // indicador de configuración y se pueden alternar sin perder formularios.
@@ -11183,6 +11665,7 @@ function boot() {
   ensureSessionConsistency();
 
   wireStaticControls();
+  wireBidirectionalOutputNavigation();
   wireMediaPanel();
   wireTileInteractions();
   wireFormOutputResizer();

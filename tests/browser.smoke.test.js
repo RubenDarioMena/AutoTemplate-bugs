@@ -411,6 +411,70 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
       markdown: { display: "block", disabled: false, value: "Nota independiente", mode: "markdown" }
     });
 
+    const bidirectionalNavigation = await evaluate(cdp, sessionId, `(async () => {
+      const nextFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      setNotebookMode("closed");
+      let team = document.querySelector('[data-bind="team"]');
+      team.value = "QA Navigation";
+      team.dispatchEvent(new Event("input", { bubbles: true }));
+      team.dispatchEvent(new Event("blur", { bubbles: true }));
+
+      state.prefs.outputPreviewMode = "plain";
+      renderOutputPreview(document.getElementById("outputTextarea").value);
+      renderOutputPreviewControls();
+      const output = document.getElementById("outputTextarea");
+      const segment = getActiveInstance().outputSegments.find(item => item.fieldId === "team");
+      const offset = segment.contentStart;
+      output.focus();
+      output.setSelectionRange(offset, offset);
+      output.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await nextFrame();
+      const textareaResult = {
+        formFocused: !!document.activeElement.closest?.("#formPanel .field"),
+        expectedOffset: offset,
+        selectionStart: output.selectionStart,
+        selectionEnd: output.selectionEnd,
+        shockwave: document.querySelector('.field[data-field="team"]').classList.contains("navigation-shockwave")
+      };
+
+      state.prefs.outputPreviewMode = "jira";
+      renderOutputPreview(output.value);
+      renderOutputPreviewControls();
+      let previewField = document.querySelector('#outputPreview [data-output-field="team"]');
+      const metadata = {
+        fields: document.querySelectorAll("#outputPreview [data-output-field]").length,
+        sections: document.querySelectorAll("#outputPreview [data-output-section]").length
+      };
+      previewField.click();
+      await nextFrame();
+      team = document.querySelector('[data-bind="team"]');
+      const single = {
+        focused: document.activeElement === team,
+        shockwave: team.closest(".field").classList.contains("navigation-shockwave")
+      };
+
+      previewField = document.querySelector('#outputPreview [data-output-field="team"]');
+      previewField.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+      await nextFrame();
+      team = document.querySelector('[data-bind="team"]');
+      const double = {
+        focused: document.activeElement === team,
+        affected: document.querySelectorAll('#outputPreview [data-output-field="team"].output-field-affected').length
+      };
+      return { textareaResult, metadata, single, double };
+    })()`);
+    assert.equal(bidirectionalNavigation.textareaResult.formFocused, false);
+    assert.equal(bidirectionalNavigation.textareaResult.selectionStart,
+      bidirectionalNavigation.textareaResult.expectedOffset);
+    assert.equal(bidirectionalNavigation.textareaResult.selectionEnd,
+      bidirectionalNavigation.textareaResult.expectedOffset);
+    assert.equal(bidirectionalNavigation.textareaResult.shockwave, true);
+    assert.deepEqual(bidirectionalNavigation.single, { focused: false, shockwave: true });
+    assert.equal(bidirectionalNavigation.double.focused, true);
+    assert.ok(bidirectionalNavigation.metadata.fields > 0);
+    assert.ok(bidirectionalNavigation.metadata.sections > 0);
+    assert.ok(bidirectionalNavigation.double.affected > 0);
+
     const changed = await evaluate(cdp, sessionId, `(() => {
       const team = document.querySelector('[data-bind="team"]');
       team.value = "QA Idioma";

@@ -143,6 +143,67 @@ test("cambiar idioma o tema no muta config, valores ni output canónico", () => 
   assert.equal(multilingual.api.configuredText("Descripción"), "Description");
 });
 
+test("SEGMENTS conserva ownership de separadores, referencias y rangos de sección", () => {
+  const { api } = createMultilanguageRuntime({
+    exposedNames: ["outputTargetAtOffset"]
+  });
+  api.setConfig({
+    version: 2,
+    data: { lists: { mediaTypes: ["Vid"] }, childLists: {}, listMeta: {}, rules: { media_fmt: "{type}" } },
+    schema: { forms: [{ id: "bug", label: "Bug", sections: [
+      { id: "summary", label: "Summary", mode: "joined", sep: " - ", fields: [
+        { id: "mode", label: "Mode", type: "text" },
+        { id: "notes", label: "Notes", type: "text", template: "Used {mode}: {value}" },
+        { id: "mirror", label: "Mirror", type: "mirror", source: "mode", template: "Mirror {value}" }
+      ] },
+      { id: "details", label: "Details", mode: "lines", heading: "DETAILS", fields: [
+        { id: "detail", label: "Detail", type: "text" },
+        { id: "suffix", label: "Suffix", type: "text", joinPrev: true, sep: " :: " }
+      ] }
+    ] }] }
+  });
+  const inst = api.makeInstance("bug");
+  inst.values.mode = "MP";
+  inst.values.notes = "ok";
+  inst.values.detail = "body";
+  inst.values.suffix = "tail";
+  const chunks = api.buildOutput(inst);
+  const notes = chunks.segments.find(segment => segment.fieldId === "notes");
+  const mirror = chunks.segments.find(segment => segment.fieldId === "mirror");
+  const suffix = chunks.segments.find(segment => segment.fieldId === "suffix");
+
+  assert.equal(chunks.full.slice(notes.start, notes.end), " - Used MP: ok");
+  assert.equal(chunks.full.slice(notes.contentStart, notes.contentEnd), "Used MP: ok");
+  assert.equal(chunks.full.slice(notes.refs[0].start, notes.refs[0].end), "MP");
+  assert.equal(chunks.full.slice(mirror.refs[0].start, mirror.refs[0].end), "MP");
+  assert.equal(chunks.full.slice(suffix.start, suffix.end), " :: tail");
+  assert.equal(chunks.full.slice(suffix.contentStart, suffix.contentEnd), "tail");
+  assert.equal(api.outputTargetAtOffset(notes.start + 1, chunks).fieldId, "notes");
+  assert.deepEqual(jsonValue(api.outputTargetAtOffset(notes.refs[0].start, chunks)), {
+    kind: "field", fieldId: "mode", sectionId: "summary", viaReference: true
+  });
+  assert.deepEqual(jsonValue(api.outputTargetAtOffset(chunks.full.indexOf("DETAILS"), chunks)), {
+    kind: "section", sectionId: "details"
+  });
+  assert.equal(chunks.full.slice(chunks.sectionRanges.summary.start, chunks.sectionRanges.summary.end),
+    "MP - Used MP: ok - Mirror MP\n\n");
+  assert.equal(chunks.full.slice(chunks.sectionRanges.details.start, chunks.sectionRanges.details.end),
+    "DETAILS\nbody :: tail");
+
+  const rendered = api.applyOutputDetachment(chunks, {
+    notes: { parts: { 0: " - Manual" } }
+  });
+  const detachedNotes = rendered.segments.find(segment => segment.fieldId === "notes");
+  assert.equal(rendered.full, "MP - Manual - Mirror MP\n\nDETAILS\nbody :: tail");
+  assert.deepEqual(jsonValue(detachedNotes.refs), []);
+  assert.equal(rendered.sectionRanges.details.start, rendered.full.indexOf("DETAILS"));
+
+  inst.values.mode = "";
+  const withoutMirrors = api.buildOutput(inst);
+  assert.equal(withoutMirrors.full, "Used : ok\n\nDETAILS\nbody :: tail");
+  assert.doesNotMatch(withoutMirrors.full, / -\s*(?:-|\n|$)/);
+});
+
 test("exportar la variante usa su nombre canónico e integra JSON resistente a cierre de script", async () => {
   const { api } = createMultilanguageRuntime();
   const dangerous = "</SCRIPT><script>fallo()</script>";

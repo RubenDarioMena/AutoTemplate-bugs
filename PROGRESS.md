@@ -15,11 +15,41 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
 - Navegación interna: 23 bloques de primer nivel en la versión canónica y 24
   en la multilenguaje, descritos en `Directorio-Monolito.MD` y
   `Directorio-Monolito-Multilanguage.MD` respectivamente.
-- Verificación automatizada: 29 pruebas con Node.js; incluye los 19 casos
-  históricos y diez específicos de la variante, con un smoke de navegador
+- Verificación automatizada: 31 pruebas con Node.js; incluye los 19 casos
+  históricos y doce específicos de la variante, con un smoke de navegador
   real para cada HTML.
 
 ## Trabajo completado recientemente
+
+### 2026-08-12 — feedback de navegación más legible
+
+- El pulso de navegación del formulario incorpora una Power Wave de 0,34 s y
+  un Shock Ring de 0,68 s. Neon reutiliza sus animaciones completas cyan →
+  magenta; Día/Otoño pasan de morado oscuro a morado brillante y Noche de
+  plata a dorado, conservando sus anillos de alto contraste.
+- El Affected Box de Jira/Markdown mantiene su fondo semántico pero gana un
+  borde con glow reforzado por tema. Los gradientes identificadores de todos
+  los tipos de field (incluido el estado de error) conservan color hasta el
+  60 % y se desvanecen hacia la esquina superior-derecha.
+
+### 2026-08-12 — navegación bidireccional Form ↔ Output
+
+- La variante multilenguaje amplía `SEGMENTS` como fuente de verdad de
+  provenance: cada field conserva sección, rango estructural con su separador,
+  rango visual y refs exactas para placeholders `{campo}`. `sectionRanges`
+  cubre headings y gaps, y detachment traslada todos los offsets e invalida
+  refs manuales no confiables.
+- Click en Plain, Jira o Markdown localiza el field/sección con Navigation
+  Shockwave sin robar focus; doble click en preview enfoca el control editable.
+  Las referencias y mirrors navegan al source útil. Plain continúa siendo un
+  textarea normal sin overlays ni highlights.
+- El focus real aplica Field Focus Lift y mantiene Preview Affected Box sólo
+  sobre output generado directamente por el field; mirrors visibles admiten
+  esta box por hover. Los cuatro temas y `prefers-reduced-motion` tienen
+  feedback propio.
+- Se corrigió el ownership de separadores/headers para evitar fragmentos
+  huérfanos como ` - - -`, se actualizó el directorio multilenguaje y se añadió
+  cobertura unitaria y de navegador para rangos, refs, detachment y navegación.
 
 ### 2026-08-12 — themes escalables y Bloc independiente de previews
 
