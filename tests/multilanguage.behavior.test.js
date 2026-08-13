@@ -204,6 +204,39 @@ test("SEGMENTS conserva ownership de separadores, referencias y rangos de secci�
   assert.doesNotMatch(withoutMirrors.full, / -\s*(?:-|\n|$)/);
 });
 
+test("la variante reconecta un campo sin restaurar los demás fragmentos manuales", () => {
+  const { api } = createMultilanguageRuntime({
+    exposedNames: ["outputDetachedFieldIds", "reconnectOutputField"]
+  });
+  api.setConfig({
+    version: 2,
+    data: { lists: { mediaTypes: ["Vid"] }, childLists: {}, listMeta: {}, rules: { media_fmt: "{type}" } },
+    schema: { forms: [{ id: "bug", label: "Bug", sections: [{ id: "s", label: "S", mode: "lines", fields: [
+      { id: "first", label: "First", type: "text", template: "A {value}" },
+      { id: "second", label: "Second", type: "text", template: "B {value}" }
+    ] }] }] }
+  });
+  const inst = api.makeInstance("bug");
+  inst.values.first = "uno";
+  inst.values.second = "dos";
+  let chunks = api.buildOutput(inst);
+  inst.output = chunks.full;
+  inst.outputSegments = chunks.segments;
+  inst.outputRanges = chunks.ranges;
+  api.captureOutputTextareaEdit(inst, "A manual\nB dos");
+  api.captureOutputTextareaEdit(inst, "A manual\nB manual");
+  assert.deepEqual(jsonValue(api.outputDetachedFieldIds(inst, inst.outputSegments)), ["first", "second"]);
+
+  assert.equal(api.reconnectOutputField(inst, "first"), true);
+  assert.equal(api.reconnectOutputField(inst, "first"), false);
+  inst.values.first = "actualizado";
+  inst.values.second = "ignorado";
+  chunks = api.buildOutput(inst);
+  const rendered = api.applyOutputDetachment(chunks, inst.outputDetached);
+  assert.equal(rendered.full, "A actualizado\nB manual");
+  assert.deepEqual(jsonValue(api.outputDetachedFieldIds(inst, rendered.segments)), ["second"]);
+});
+
 test("exportar la variante usa su nombre canónico e integra JSON resistente a cierre de script", async () => {
   const { api } = createMultilanguageRuntime();
   const dangerous = "</SCRIPT><script>fallo()</script>";

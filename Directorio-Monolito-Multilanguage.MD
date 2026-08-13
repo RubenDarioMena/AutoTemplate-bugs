@@ -34,6 +34,8 @@ instancias + config <-> localStorage v3 / archivo de sesión
 field template -> SEGMENTS (field + section + refs) -> output editable
                          |                         \-> Jira/Markdown metadata
                          \-> sectionRanges             <-> formulario por ID
+                                                   \-> outputDetached[fieldId]
+formulario / Reconectar (fieldId) ------------------> restaura sólo ese segmento
 ```
 
 - Los valores internos de idioma son `es` y `en`; los de estilo son `light`,
@@ -65,7 +67,7 @@ field template -> SEGMENTS (field + section + refs) -> output editable
 
 | Sección y marcador | Recibe información de | Envía información a |
 | --- | --- | --- |
-| `styles` | Clases, IDs, estados del DOM y atributo `data-theme`. | Tokens y layout completos para `light`/Día, `dark`/Noche, `autumn`/Otoño y `neon`/Neon; Field Focus Lift, Navigation Shockwave y Preview Affected Box conservan prioridad de errores, stacking de autocomplete y movimiento reducido. La preview oculta exclusivamente `#outputTextarea`, nunca el textarea del Bloc. |
+| `styles` | Clases, IDs, estados del DOM y atributo `data-theme`. | Tokens y layout completos para `light`/Día, `dark`/Noche, `autumn`/Otoño y `neon`/Neon; Field Focus Lift, Navigation Shockwave con halo periférico y Preview Affected Box conservan prioridad de errores, stacking de autocomplete y movimiento reducido. La preview oculta exclusivamente `#outputTextarea`, nunca el textarea del Bloc. |
 | `preferences-bootstrap` | `bug_tool_multilanguage_ui_v1` y, sólo como migración, `bugtool_theme_v1`. | Publica `window.__BUG_TOOL_APPEARANCE_OPTIONS__` y aplica `lang`, `data-theme` y `window.__BUG_TOOL_BOOT_PREFS__` antes de pintar el cuerpo, con fallback `es`/`light`. |
 | `app-shell` | Claves de traducción estática y estructura fija de la aplicación. | DOM consumido por renderizadores y controles: selector `es`/`en`, selector de cuatro temas, menús, formulario, output, Bloc, media, DATA, RULES, archivos y modal. |
 | `vanilla-config` | Configuración distribuida dentro del HTML. | Schema, DATA, reglas y plantillas canónicas para carga, migraciones, CSV y exportación; continúa siendo JSON válido sin comentarios. |
@@ -77,11 +79,11 @@ field template -> SEGMENTS (field + section + refs) -> output editable
 | `04-schema-helpers` | `config.schema`, `config.data`, formulario e instancia activos. | Lectura de formularios, secciones, campos, fuentes y opciones para widgets y editores, conservando IDs y valores canónicos. |
 | `05-instances-persistence` | Schema, configuración y sesiones v3 o legacy; preferencias funcionales de sesión. | `state`, instancias saneadas, media estable, Bloc global, output desconectado, `outputSegments`/`outputRanges`/`outputSectionRanges` derivados y guardado diferido. Los errores localizados son derivados y se recalculan, no se persisten. |
 | `06-tabs-navigation` | `state`, formularios, instancias y `configuredText`. | Pestañas localizadas, navegación y transferencia no destructiva de valores compatibles entre Bug/Regression; llama a `refreshAll`. |
-| `07-form-rendering` | Schema, instancia, reglas evaluadas, preferencias de orden y textos de presentación. | Formulario localizado con destinos estables `data-field`/`data-section`, controles de edición/drag-and-drop y mutaciones de valores que disparan validación, output y persistencia. |
+| `07-form-rendering` | Schema, instancia, reglas evaluadas, fragmentos de output desconectados, preferencias de orden y textos de presentación. | Formulario localizado con destinos estables `data-field`/`data-section`, controles de edición/drag-and-drop y un botón localizado **Reconectar** por field, oculto hasta que su fragmento de output se desconecta; las mutaciones de valores disparan validación, output y persistencia. |
 | `08-field-widgets` | Definición de campo, instancia, DATA y catálogo UI. | Autocomplete, checklist y chips; administra opciones compartidas o locales sin traducir sus valores almacenados. |
 | `09-schema-editor` | Schema, fuentes, posiciones, dependencias y catálogos de controles. | Schema canónico editado, reordenamiento, validación de referencias, consistencia de instancias y modales localizados. |
 | `10-validation-rules-tiles` | Campos, media, reglas, instancia, catálogos y divisor formulario/output. | Errores recalculados en el idioma activo, tiles localizados, expresiones canónicas y comportamiento responsivo/plegable del layout. |
-| `11-output-generator` | Schema, plantillas, valores, condiciones, fragmentos desconectados, Bloc y preferencia de preview. | Output canónico, `segments` con ownership de prefixes y refs, `sectionRanges`, rangos de copia, detachment trasladado y preview Jira/Markdown con metadata semántica. También resuelve navegación ref > field > section, focus/hover de mirror y feedback entre preview/output y formulario; Plain permanece sin decoración. Cambiar idioma no traduce ni reescribe el reporte. |
+| `11-output-generator` | Schema, plantillas, valores, condiciones, fragmentos desconectados, Bloc y preferencia de preview. | Output canónico, `segments` con ownership de prefixes y refs, `sectionRanges`, rangos de copia, detachment trasladado y preview Jira/Markdown con metadata semántica. Expone la reconexión idempotente de un field y sincroniza su control del formulario mientras se escribe; también resuelve navegación ref > field > section, focus/hover de mirror y feedback entre preview/output y formulario. Plain permanece sin decoración. Cambiar idioma no traduce ni reescribe el reporte. |
 | `12-media-panel` | Configuración de media, instancia, reglas, valores de campo y catálogo UI. | Nombres canónicos de media, filas `{ id, type }`, controles y mensajes de presentación localizados. |
 | `13-data-tab` | `config.data`, metadata de listas, jerarquías y `configuredText`. | DATA editable con chrome localizado; conserva literalmente claves y valores que consumen schema, reglas y CSV. |
 | `14-rules-tab` | Schema, reglas globales, condiciones, tiles y catálogos. | Editor visual localizado que escribe expresiones, referencias, tipos y valores canónicos en `config`. |

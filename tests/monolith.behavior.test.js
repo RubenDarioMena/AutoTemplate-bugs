@@ -169,6 +169,37 @@ test("el output conserva solo el fragmento de plantilla editado manualmente", ()
   assert.equal(rendered.full, "A manual\nB tres");
 });
 
+test("reconectar un campo restaura solo su fragmento y conserva los demás desconectados", () => {
+  const { api } = createRuntime({ exposedNames: ["outputDetachedFieldIds", "reconnectOutputField"] });
+  api.setConfig({
+    version: 2,
+    data: { lists: { mediaTypes: ["Vid"] }, childLists: {}, listMeta: {}, rules: { media_fmt: "{type}" } },
+    schema: { forms: [{ id: "bug", label: "Bug", sections: [{ id: "s", label: "S", mode: "lines", fields: [
+      { id: "first", label: "First", type: "text", template: "A {value}" },
+      { id: "second", label: "Second", type: "text", template: "B {value}" }
+    ] }] }] }
+  });
+  const inst = api.makeInstance("bug");
+  inst.values.first = "uno";
+  inst.values.second = "dos";
+  let chunks = api.buildOutput(inst);
+  inst.output = chunks.full;
+  inst.outputSegments = chunks.segments;
+  inst.outputRanges = chunks.ranges;
+  api.captureOutputTextareaEdit(inst, "A manual\nB dos");
+  api.captureOutputTextareaEdit(inst, "A manual\nB manual");
+  assert.deepEqual(jsonValue(api.outputDetachedFieldIds(inst, inst.outputSegments)), ["first", "second"]);
+
+  assert.equal(api.reconnectOutputField(inst, "first"), true);
+  assert.equal(api.reconnectOutputField(inst, "first"), false);
+  inst.values.first = "actualizado";
+  inst.values.second = "ignorado";
+  chunks = api.buildOutput(inst);
+  const rendered = api.applyOutputDetachment(chunks, inst.outputDetached);
+  assert.equal(rendered.full, "A actualizado\nB manual");
+  assert.deepEqual(jsonValue(api.outputDetachedFieldIds(inst, rendered.segments)), ["second"]);
+});
+
 test("la copia parcial respeta campos desconectados y el formato no desconecta campos", () => {
   const { api } = createRuntime();
   api.setConfig({

@@ -475,6 +475,31 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
     assert.ok(bidirectionalNavigation.metadata.sections > 0);
     assert.ok(bidirectionalNavigation.double.affected > 0);
 
+    const individualReconnect = await evaluate(cdp, sessionId, `(() => {
+      const output = document.getElementById("outputTextarea");
+      output.value = output.value.replace("QA Navigation", "QA Manual");
+      output.dispatchEvent(new Event("input", { bubbles: true }));
+      const reconnect = document.querySelector('[data-reconnect-field="team"]');
+      const detached = {
+        visible: !reconnect.hidden,
+        text: reconnect.textContent,
+        includesManualValue: output.value.includes("QA Manual")
+      };
+      reconnect.click();
+      return {
+        detached,
+        reconnected: {
+          hidden: document.querySelector('[data-reconnect-field="team"]').hidden,
+          includesTemplateValue: document.getElementById("outputTextarea").value.includes("QA Navigation"),
+          retainsManualValue: document.getElementById("outputTextarea").value.includes("QA Manual")
+        }
+      };
+    })()`);
+    assert.deepEqual(individualReconnect, {
+      detached: { visible: true, text: "Reconectar", includesManualValue: true },
+      reconnected: { hidden: true, includesTemplateValue: true, retainsManualValue: false }
+    });
+
     const changed = await evaluate(cdp, sessionId, `(() => {
       const team = document.querySelector('[data-bind="team"]');
       team.value = "QA Idioma";

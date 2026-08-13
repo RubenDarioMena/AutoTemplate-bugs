@@ -51,7 +51,9 @@ tengan una traducción distribuida se muestran tal como fueron escritos.
   3. El output se puede corregir antes de copiar. Si cambias texto generado
      por una plantilla, un aviso rojo indica cuántos campos quedaron
      desconectados; los demás se siguen actualizando y los botones de copia
-     respetan tu corrección. **Regenerar** vuelve a conectarlos todos. En la
+     respetan tu corrección. En cada campo desconectado aparece **Reconectar**:
+     restaura sólo su fragmento desde la plantilla y conserva las demás
+     correcciones manuales. **Regenerar** vuelve a conectarlos todos. En la
      variante multilenguaje, un click en el output o en su preview localiza el
      campo de origen; un doble click en Jira/Markdown también entra a editarlo.
      Al enfocar un campo, Jira/Markdown enmarca el fragmento que ese campo

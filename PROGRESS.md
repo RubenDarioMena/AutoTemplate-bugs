@@ -15,8 +15,8 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
 - Navegación interna: 23 bloques de primer nivel en la versión canónica y 24
   en la multilenguaje, descritos en `Directorio-Monolito.MD` y
   `Directorio-Monolito-Multilanguage.MD` respectivamente.
-- Verificación automatizada: 31 pruebas con Node.js; incluye los 19 casos
-  históricos y doce específicos de la variante, con un smoke de navegador
+- Verificación automatizada: 33 pruebas con Node.js; incluye los casos
+  históricos y específicos de la variante, con un smoke de navegador
   real para cada HTML.
 
 ## Trabajo completado recientemente
@@ -25,12 +25,22 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
 
 - El pulso de navegación del formulario incorpora una Power Wave de 0,34 s y
   un Shock Ring de 0,68 s. Neon reutiliza sus animaciones completas cyan →
-  magenta; Día/Otoño pasan de morado oscuro a morado brillante y Noche de
-  plata a dorado, conservando sus anillos de alto contraste.
+  magenta al 60 % de opacidad; Día/Otoño emplean un halo periférico sutil que
+  abre en morado brillante y cierra en morado oscuro, mientras Noche pasa de
+  plata a dorado. Todos conservan anillos de alto contraste.
 - El Affected Box de Jira/Markdown mantiene su fondo semántico pero gana un
   borde con glow reforzado por tema. Los gradientes identificadores de todos
   los tipos de field (incluido el estado de error) conservan color hasta el
   60 % y se desvanecen hacia la esquina superior-derecha.
+
+### 2026-08-12 — reconexión individual en la variante multilenguaje
+
+- Cada field cuyo fragmento de output se haya editado manualmente revela un
+  botón localizado **Reconectar** con color `--primary`. Restaura sólo ese
+  fragmento desde la plantilla y conserva los demás desconectados; vuelve a
+  ocultarse inmediatamente al completar la acción.
+- Se actualizó el directorio de la variante, la guía de testers y la cobertura
+  de lógica y navegador para este flujo.
 
 ### 2026-08-12 — navegación bidireccional Form ↔ Output
 
@@ -128,6 +138,11 @@ Estado: activo — herramienta funcional, monolito documentado y con suite de re
 - Las condiciones aceptan `media:mediaN:type`, permitiendo mostrar mirrors como `[^{media:media1}.mp4]` según el tipo sin cambiar el nombre canónico copiable de media.
 - Las notas reutilizan el menor nombre `Nota N` libre y muestran un botón de lápiz para renombrarse.
 - Se actualizaron `Directorio-Monolito.MD`, `bug_fields.README.md`, la compatibilidad de `bug_fields.csv` y la suite de regresión.
+
+### 2026-08-12 — reconexión individual de output
+
+- Cada campo desconectado por una edición directa de su fragmento de output muestra el botón naranja **Reconectar**. El control permanece oculto para todos los campos conectados y al usarlo restaura únicamente ese fragmento desde el template, conservando las desconexiones de los demás campos; **Regenerar** sigue reconectándolos todos.
+- Se actualizó `Directorio-Monolito.MD`.
 
 ### 2026-08-08 — utilidades de formulario y notas por pestaña
 
