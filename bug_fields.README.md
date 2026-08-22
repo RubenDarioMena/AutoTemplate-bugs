@@ -16,7 +16,7 @@ compartir esos cambios o para editarlos en Excel si se prefiere.
 
 ## Cómo se aplica
 
-En `bug_tool.html`: **Datos CSV → Cargar bug_fields.csv…**
+En `bug_tool_multilanguage.html`: **Datos CSV → Cargar bug_fields.csv…**
 Esto reemplaza TODOS los formularios (pide confirmación). Lo escrito
 en las pestañas abiertas se conserva donde los ids coincidan.
 
@@ -70,6 +70,7 @@ Cinco tipos de fila, identificados por la columna `type`:
 | kwperchip | chips en modo Líneas: `no` aplica la plantilla una vez al conjunto; vacío = una vez por chip | (vacío) |
 | kwheader | chips en modo Líneas con plantilla por chip: encabezado opcional | (vacío) |
 | kwspace | chips: `yes` crea el chip al pulsar Espacio; vacío conserva Enter o coma | (vacío) |
+| placeholder | texto de ejemplo mostrado mientras el input/chips está vacío; no se imprime ni se guarda como valor | (vacío) |
 
 En `template`, `sep` y el encabezado de sección se puede escribir
 `\n` o `<br>` para forzar un salto de línea en el output.
@@ -239,10 +240,12 @@ Ejemplos:
     campo padre es checklist, se unen sin duplicados los hijos de todas
     sus opciones seleccionadas.
 
-Los CSV anteriores de 28 y de 23 columnas siguen importándose. En ellos, un
-checklist conserva el formato histórico de opciones separadas por `|`
-en `source`; al volver a exportar se convierte automáticamente al formato
-nuevo.
+El encabezado que exporta la aplicación canónica tiene 35 columnas; el archivo
+de ejemplo del repositorio conserva el encabezado legado de 23 para que también
+lo pueda cargar la versión histórica. La aplicación canónica sigue importando
+los encabezados anteriores de 34, 28 y 23 columnas. En los de 23 columnas, un
+checklist conserva el formato histórico de opciones separadas por `|` en
+`source`; al volver a exportar se convierte automáticamente al formato nuevo.
 
 ## Consejos al editar en Excel
 

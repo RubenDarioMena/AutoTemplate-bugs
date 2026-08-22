@@ -1,25 +1,87 @@
 # Progreso del proyecto
 
-Última actualización: 2026-08-12
+Última actualización: 2026-08-22
 Estado: activo — herramienta funcional, monolito documentado y con suite de regresión.
 
 ## Estado actual
 
-- Aplicación canónica: `bug_tool.html`; variante activa:
-  `bug_tool_multilanguage.html`.
+### 2026-08-22 — shortcuts de navegación y compactación
+
+- La variante multilenguaje incorpora `Ctrl` + `Alt` + `Page Up`/`Page Down`
+  para recorrer top tabs y `Ctrl` + `Alt` + flechas laterales para recorrer
+  las instancias (sub-tabs) del formulario activo.
+- `Alt` + `Q` alterna todas las secciones del formulario, sin cerrar el panel
+  izquierdo. Las dobles flechas, fuera de inputs, textareas y controles
+  editables, alternan formulario (izquierda), media (abajo), cabecera con top
+  tabs/tiles (arriba) y la secuencia acciones de copia → output completo →
+  ambos abiertos (derecha). Media queda sin efecto mientras el lado derecho
+  completo esté cerrado.
+- No se añadió aún el menú de engrane ni preferencias individuales para los
+  shortcuts; salvo la preferencia existente de cabecera, los estados de
+  compactación no se persisten ni se exportan.
+
+### 2026-08-22 — cabecera de espacio de trabajo plegable
+
+- El antiguo colapso parcial de tiles se sustituyó por una preferencia de UI
+  que oculta completamente top tabs y tiles desde un control accesible en la
+  fila de instancias, conservando siempre las subpestañas del formulario.
+- La misma evaluación semántica de errores que pinta las tiles activa una línea
+  roja fina sobre las subpestañas sólo mientras la cabecera está cerrada.
+- La preferencia se guarda junto con idioma y tema, sin entrar en sesión,
+  config, CSV ni exportación.
+
+- Aplicación canónica: `bug_tool_multilanguage.html`; `bug_tool.html` queda
+  como versión histórica de compatibilidad.
 - Distribución: dos HTML autocontenidos con configuración inicial en
   `#vanillaConfig`. La variante multilenguaje exporta bajo su propio nombre.
 - Persistencia local: configuración e instancias en `localStorage`;
   importación/exportación explícita de CSV, sesión JSON y HTML integrado. La
   variante separa las preferencias de idioma/estilo de los datos de trabajo.
-- Navegación interna: 23 bloques de primer nivel en la versión canónica y 24
-  en la multilenguaje, descritos en `Directorio-Monolito.MD` y
-  `Directorio-Monolito-Multilanguage.MD` respectivamente.
-- Verificación automatizada: 33 pruebas con Node.js; incluye los casos
+- Navegación interna: 24 bloques de primer nivel en la aplicación canónica y
+  23 en la versión histórica, descritos en
+  `Directorio-Monolito-Multilanguage.MD` y `Directorio-Monolito.MD`
+  respectivamente.
+- Verificación automatizada: 37 pruebas con Node.js; incluye los casos
   históricos y específicos de la variante, con un smoke de navegador
   real para cada HTML.
 
 ## Trabajo completado recientemente
+
+### 2026-08-22 — baseline de legibilidad y accesibilidad
+
+- La variante multilenguaje adopta una escala tipográfica más legible y conserva
+  la densidad de escritorio: labels en lenguaje natural, ayudas más visibles,
+  campos ligeramente separados y controles pequeños con targets más cómodos.
+- La redacción humana usa la fuente sans-serif de la interfaz; output, IDs,
+  expresiones y código conservan monoespaciada. Output y sus previews ganan
+  lectura de 13.5 px sin reducir el ancho disponible de los modales.
+- Se añadieron foco de teclado visible, contraste secundario mejorado en Light,
+  soporte común de `prefers-reduced-motion` y etiquetas compactas localizadas
+  para las acciones **Summary** y **Description**.
+
+### 2026-08-22 — canonicidad multilenguaje y correcciones de interacción
+
+- `bug_tool_multilanguage.html` pasa a ser la distribución canónica. La
+  documentación de mantenimiento y de uso conserva `bug_tool.html` sólo como
+  versión histórica.
+- Los autocomplete/chips abiertos elevan su field y sección con `:has()` para
+  no quedar detrás de la siguiente sección. Cambiar un tipo de media ahora
+  actualiza el output y las condiciones de media en tiempo real.
+- El editor de campos añade `placeholder`, persistente en schema, CSV y HTML.
+  Los chips vuelven a evaluar reglas show/hide al agregar o quitar valores.
+- Cargar una sesión válida reemplaza la configuración local completa y ahora
+  conserva la última subpestaña por formulario; borrar local usa el modal
+  estándar Cancelar / Borrar.
+- Las inserciones manuales justo tras un `{value}` se mantienen al salir del
+  field desconectado. Se actualizaron el directorio, guías de CSV y pruebas.
+
+### 2026-08-22 — acción Copy summary siempre localizable
+
+- La variante multilenguaje mantiene visible **Copiar summary** aun cuando la
+  primera sección todavía no genera un encabezado; en ese estado queda
+  deshabilitado y se activa automáticamente al haber texto copiable.
+- Se actualizó `Directorio-Monolito-Multilanguage.MD` para documentar el
+  contrato de la acción de output.
 
 ### 2026-08-12 — feedback de navegación más legible
 

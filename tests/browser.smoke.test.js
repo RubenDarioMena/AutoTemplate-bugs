@@ -372,7 +372,9 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
       languageSelect: document.getElementById("languageSelect")?.value,
       themeSelect: document.getElementById("themeSelect")?.value,
       forms: document.querySelectorAll("#formTabs [data-form]").length,
-      title: document.title
+      title: document.title,
+      copySummary: [...document.querySelectorAll("#outputActions button")]
+        .find(item => item.textContent === "Copiar summary")?.disabled
     }))()`);
     assert.deepEqual(initial, {
       language: "es",
@@ -380,7 +382,74 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
       languageSelect: "es",
       themeSelect: "light",
       forms: 2,
-      title: "Bug Report Tool — Multilenguaje"
+      title: "Bug Report Tool — Multilenguaje",
+      copySummary: true
+    });
+
+    const shortcuts = await evaluate(cdp, sessionId, `(() => {
+      const press = (key, options = {}) => document.dispatchEvent(new KeyboardEvent("keydown", {
+        key, bubbles: true, cancelable: true, ...options
+      }));
+      const twice = key => { press(key); press(key); };
+      if (document.getElementById("outputPanel").classList.contains("output-collapsed")) {
+        document.getElementById("outputPanelCollapseBtn").click();
+      }
+      addInstance();
+      const firstSubTab = document.querySelector("#subTabs .sub-tab.active .label").textContent;
+      press("ArrowRight", { ctrlKey: true, altKey: true });
+      const secondSubTab = document.querySelector("#subTabs .sub-tab.active .label").textContent;
+      press("PageDown", { ctrlKey: true, altKey: true });
+      const topAfterNext = document.querySelector("#formTabs [data-form].active").dataset.form;
+      press("PageUp", { ctrlKey: true, altKey: true });
+      const topAfterPrevious = document.querySelector("#formTabs [data-form].active").dataset.form;
+      press("q", { altKey: true });
+      const allSectionsCollapsed = [...document.querySelectorAll("#formPanel .form-section")]
+        .every(section => section.classList.contains("collapsed"));
+      const formStillOpen = !document.getElementById("formCol").classList.contains("form-collapsed");
+      twice("ArrowLeft");
+      const formCollapsed = document.getElementById("formCol").classList.contains("form-collapsed");
+      twice("ArrowLeft");
+      const formReopened = !document.getElementById("formCol").classList.contains("form-collapsed");
+      twice("ArrowDown");
+      const mediaCollapsed = document.getElementById("mediaPanel").classList.contains("collapsed");
+      twice("ArrowDown");
+      twice("ArrowRight");
+      const actionsCollapsed = document.getElementById("outputSide").classList.contains("actions-collapsed");
+      twice("ArrowRight");
+      const outputCollapsed = document.getElementById("outputPanel").classList.contains("output-collapsed");
+      twice("ArrowDown");
+      const mediaUntouchedWhileOutputCollapsed = !document.getElementById("mediaPanel").classList.contains("collapsed");
+      twice("ArrowRight");
+      const outputAndActionsReopened = !document.getElementById("outputPanel").classList.contains("output-collapsed")
+        && !document.getElementById("outputSide").classList.contains("actions-collapsed");
+      twice("ArrowUp");
+      const headerCollapsed = document.body.classList.contains("header-collapsed");
+      twice("ArrowUp");
+      return {
+        firstSubTab, secondSubTab, topAfterNext, topAfterPrevious,
+        allSectionsCollapsed, formStillOpen, formCollapsed, formReopened, mediaCollapsed, outputCollapsed,
+        actionsCollapsed, mediaUntouchedWhileOutputCollapsed,
+        outputAndActionsReopened, headerCollapsed,
+        headerReopened: !document.body.classList.contains("header-collapsed")
+      };
+    })()`);
+    assert.equal(shortcuts.firstSubTab === shortcuts.secondSubTab, false);
+    assert.deepEqual(shortcuts, {
+      firstSubTab: shortcuts.firstSubTab,
+      secondSubTab: shortcuts.secondSubTab,
+      topAfterNext: "regression",
+      topAfterPrevious: "bug",
+      allSectionsCollapsed: true,
+      formStillOpen: true,
+      formCollapsed: true,
+      formReopened: true,
+      mediaCollapsed: true,
+      outputCollapsed: true,
+      actionsCollapsed: true,
+      mediaUntouchedWhileOutputCollapsed: true,
+      outputAndActionsReopened: true,
+      headerCollapsed: true,
+      headerReopened: true
     });
 
     const notebookPreview = await evaluate(cdp, sessionId, `(() => {
@@ -436,6 +505,8 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
         selectionEnd: output.selectionEnd,
         shockwave: document.querySelector('.field[data-field="team"]').classList.contains("navigation-shockwave")
       };
+      const copySummaryEnabled = ![...document.querySelectorAll("#outputActions button")]
+        .find(item => item.textContent === "Copiar summary").disabled;
 
       state.prefs.outputPreviewMode = "jira";
       renderOutputPreview(output.value);
@@ -461,7 +532,7 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
         focused: document.activeElement === team,
         affected: document.querySelectorAll('#outputPreview [data-output-field="team"].output-field-affected').length
       };
-      return { textareaResult, metadata, single, double };
+      return { textareaResult, copySummaryEnabled, metadata, single, double };
     })()`);
     assert.equal(bidirectionalNavigation.textareaResult.formFocused, false);
     assert.equal(bidirectionalNavigation.textareaResult.selectionStart,
@@ -469,6 +540,7 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
     assert.equal(bidirectionalNavigation.textareaResult.selectionEnd,
       bidirectionalNavigation.textareaResult.expectedOffset);
     assert.equal(bidirectionalNavigation.textareaResult.shockwave, true);
+    assert.equal(bidirectionalNavigation.copySummaryEnabled, true);
     assert.deepEqual(bidirectionalNavigation.single, { focused: false, shockwave: true });
     assert.equal(bidirectionalNavigation.double.focused, true);
     assert.ok(bidirectionalNavigation.metadata.fields > 0);
@@ -533,7 +605,7 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
     assert.equal(changed.outputStable, true,
       `el idioma cambió el output canónico:\nANTES:\n${changed.outputBefore}\nDESPUÉS:\n${changed.outputAfter}`);
     assert.equal(changed.configStable, true);
-    assert.deepEqual(changed.prefs, { language: "en", theme: "dark" });
+    assert.deepEqual(changed.prefs, { language: "en", theme: "dark", headerCollapsed: false });
 
     const reloaded = cdp.once("Page.loadEventFired", sessionId);
     await cdp.send("Page.reload", {}, sessionId);
@@ -577,6 +649,57 @@ test("Chrome cambia idioma y tema de la variante sin mutar el output y restaura 
       options: ["light", "dark", "autumn", "neon"],
       autumn: { theme: "autumn", background: "rgb(255, 251, 240)" },
       neon: { theme: "neon", background: "rgb(7, 3, 15)", fieldZIndex: "0" }
+    });
+    const headerCollapsed = await evaluate(cdp, sessionId, `(() => {
+      const button = document.getElementById("workspaceHeaderToggle");
+      const before = {
+        expanded: button.getAttribute("aria-expanded"),
+        label: button.getAttribute("aria-label")
+      };
+      button.click();
+      const instance = getActiveInstance();
+      instance.errors = {};
+      renderTiles(instance);
+      const withoutErrors = document.getElementById("subTabs").classList.contains("has-hidden-errors");
+      instance.errors = { team: "Required" };
+      renderTiles(instance);
+      return {
+        before,
+        collapsed: document.body.classList.contains("header-collapsed"),
+        topTabs: getComputedStyle(document.getElementById("topTabs")).display,
+        tiles: getComputedStyle(document.getElementById("tilesBar")).display,
+        subTabs: getComputedStyle(document.getElementById("subTabs")).display,
+        expanded: button.getAttribute("aria-expanded"),
+        label: button.getAttribute("aria-label"),
+        persisted: JSON.parse(localStorage.getItem("bug_tool_multilanguage_ui_v1")).headerCollapsed,
+        withoutErrors,
+        withErrors: document.getElementById("subTabs").classList.contains("has-hidden-errors")
+      };
+    })()`);
+    assert.deepEqual(headerCollapsed, {
+      before: { expanded: "true", label: "Hide header" },
+      collapsed: true,
+      topTabs: "none",
+      tiles: "none",
+      subTabs: "flex",
+      expanded: "false",
+      label: "Show header",
+      persisted: true,
+      withoutErrors: false,
+      withErrors: true
+    });
+
+    const headerReloaded = cdp.once("Page.loadEventFired", sessionId);
+    await cdp.send("Page.reload", {}, sessionId);
+    await headerReloaded;
+    const restoredHeader = await evaluate(cdp, sessionId, `(() => ({
+      collapsed: document.body.classList.contains("header-collapsed"),
+      expanded: document.getElementById("workspaceHeaderToggle").getAttribute("aria-expanded"),
+      topTabs: getComputedStyle(document.getElementById("topTabs")).display,
+      tiles: getComputedStyle(document.getElementById("tilesBar")).display
+    }))()`);
+    assert.deepEqual(restoredHeader, {
+      collapsed: true, expanded: "false", topTabs: "none", tiles: "none"
     });
     assert.deepEqual(exceptions, []);
     await cdp.send("Browser.close");

@@ -26,10 +26,10 @@ network calls, NO third-party runtime libraries.
 
 ### Current implementation snapshot (2026-08-10)
 
-`bug_tool.html` is the canonical self-contained application. Its form
-schema, data lists, validation rules and initial configuration are embedded
-in `#vanillaConfig`; browser-local edits are stored in `localStorage` until
-the user exports the tool or a CSV. The schema supports text, textarea,
+`bug_tool_multilanguage.html` is the canonical self-contained application.
+Its form schema, data lists, validation rules and initial configuration are
+embedded in `#vanillaConfig`; browser-local edits are stored in `localStorage`
+until the user exports the tool or a CSV. The schema supports text, textarea,
 autocomplete, keywords, checklist, checkbox, mirror, clock and date fields;
 the last two read the local system time and format it for `{value}`.
 Dependent lists form an arbitrary tree (for example Region → Map → POI).
@@ -42,16 +42,13 @@ clock/date values and manually edited output are preserved at the destination.
 
 The monolith is intentionally kept as one distributable HTML file. Its
 top-level blocks are delimited with `MONOLITH:SECTION <name> START/END`.
-`Directorio-Monolito.MD` is the authoritative navigation and dependency
+`Directorio-Monolito-Multilanguage.MD` is the authoritative navigation and dependency
 map for those blocks, and must be updated in the same task as every
 structural change to the monolith.
 
-`bug_tool_multilanguage.html` is a parallel, self-contained v3 refactor. It
-keeps the same schema-driven workflows while adding selectors for Spanish or
-English and for the existing light/dark palettes, presented as Day/Night or
-Día/Noche. Its 24 top-level blocks are documented independently in
-`Directorio-Monolito-Multilanguage.MD`; this prevents a structural change in
-one variant from silently redefining the contracts of the other.
+`bug_tool.html` is a historical self-contained compatibility build. Its
+separate marker directory remains available for reference, but functional
+work targets the multilingual monolith unless explicitly requested otherwise.
 
 Language is deliberately a presentation concern. The catalogs translate the
 application chrome and an overlay supplies English presentation for known
@@ -70,8 +67,8 @@ style therefore does not mark the editable configuration as modified.
 A single shared network folder contains:
 
   /Bugs-template/
-    bug_tool.html                         # canonical v2 monolith
-    bug_tool_multilanguage.html           # multilingual v3 variant
+    bug_tool_multilanguage.html           # canonical monolith
+    bug_tool.html                         # historical compatibility build
     bug_data.csv                          # source of truth for lists & rules
     Directorio-Monolito.MD                # v2 section/data-flow map
     Directorio-Monolito-Multilanguage.MD  # v3 section/data-flow map
@@ -79,9 +76,8 @@ A single shared network folder contains:
     PROGRESS.md                            # current state and change log
     README.md                              # short usage instructions
 
-Testers and DB editors can open either HTML by double-click. The multilingual
-variant is the entry point when language or appearance selection is needed.
-Both files are ready to use without loading a CSV. `bug_data.csv` and
+Testers and DB editors open `bug_tool_multilanguage.html` by double-click.
+It is ready to use without loading a CSV. `bug_data.csv` and
 `bug_fields.csv` remain optional interchange files, loaded only when a user
 explicitly chooses them through the file picker.
 
@@ -874,21 +870,23 @@ La v2 los convierte en DATOS: el monolito se edita a sí mismo.
     - **Banda 2 — personalizados**: los tiles activos **en el orden de
       la lista en Rules** (`form.tiles`), separada por una línea sutil.
     Cada banda envuelve hasta **3 renglones** (`max-height`) y luego hace
-    scroll. La "llave" (`#tilesToggle`, estado en
-    `state.prefs.tilesCollapsed`) colapsa cada banda a un renglón
-    (nowrap + scroll horizontal).
+    scroll. El control `#workspaceHeaderToggle` vive antes de las instancias
+    en `#subTabs` y guarda `appearance.headerCollapsed`: oculta por completo
+    top tabs y la barra de tiles para recuperar altura, sin alterar la lista
+    de instancias. Mientras está cerrado, `renderTiles` deriva de sus mismos
+    errores de campo y tiles activos `severity=error` una línea roja discreta
+    sobre las subpestañas.
   * **Resaltado cruzado campo→tile** (`wireTileInteractions`, delegado
     una vez sobre `#formPanel` y `#tilesBar`, sobrevive a los re-render):
     al pasar el mouse o enfocar un campo, todos los tiles que lo "tocan"
     (`data-fields`, derivado de `exprFieldRefs` + `field`) se marcan
     (`.tile-hot`, anillo con el color propio) y el resto se atenúa
     (`.tiles-focus`). Complementa el click-tile→campo ya existente.
-  * **La "llave" como patrón reutilizable.** El mismo mecanismo se aplicó
-    a las **secciones del formulario** y a los paneles (output, media):
-    `uiCollapse` guarda el estado, `wireCollapse` (una vez, delegado en
-    `#formPanel` y contenedores persistentes) alterna la clase
-    `.collapsed`; el chevron `.sec-collapse` rota igual que la llave de
-    los tiles. Hace el formulario largo más navegable.
+  * **Controles de compactación.** La cabecera se conserva como preferencia
+    independiente de apariencia; las **secciones del formulario** y los
+    paneles (output, media) usan `uiCollapse` sólo en memoria. `wireCollapse`
+    alterna sus clases de panel sin interferir con la visibilidad global de
+    la cabecera.
   * **Edición** en la pestaña Rules:
     - "Validaciones por campo": nueva columna **Color** (`data-rr-color`)
       = color del tile de error de ese campo (default rojo → no se guarda

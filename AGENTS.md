@@ -2,10 +2,10 @@
 
 ## Alcance y fuente de verdad
 
-- La aplicación canónica es `bug_tool.html`: un monolito HTML autocontenido. `bug_tool_multilanguage.html` es su variante activa multilenguaje y mantiene contratos de mantenimiento propios.
+- La aplicación canónica es `bug_tool_multilanguage.html`: un monolito HTML autocontenido con interfaz multilenguaje. `bug_tool.html` se conserva como versión histórica/compatibilidad y no recibe mejoras funcionales salvo autorización explícita.
 - `#vanillaConfig` dentro de cada archivo es la configuración distribuida. `config` es la copia editable local y `state` contiene las instancias de trabajo.
 - `bug_data.csv` y `bug_fields.csv` son formatos de intercambio; no sustituyen automáticamente la configuración embebida hasta que el usuario los importe y exporte la herramienta.
-- `Directorio-Monolito.MD` es el mapa oficial de `bug_tool.html`; `Directorio-Monolito-Multilanguage.MD` cumple esa función para la variante.
+- `Directorio-Monolito-Multilanguage.MD` es el mapa oficial de la aplicación canónica; `Directorio-Monolito.MD` conserva la navegación de la versión histórica.
 
 ## Regla obligatoria de documentación
 

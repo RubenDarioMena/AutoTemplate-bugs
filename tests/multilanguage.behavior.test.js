@@ -79,29 +79,39 @@ test("t/tp cambia presentación y conserva placeholders y pluralización", () =>
   assert.equal(api.t("common.save"), "Guardar");
 });
 
-test("idioma y tema persisten juntos, se restauran y aceptan el tema legacy", () => {
+test("idioma, tema y cabecera persisten juntos, se restauran y aceptan el tema legacy", () => {
   const storage = new Map();
   const first = createMultilanguageRuntime({ storage, executePrelude: true });
   first.api.setLanguage("en", true, false);
   first.api.setTheme("dark", true);
+  first.api.setHeaderCollapsed(true, true);
 
   assert.deepEqual(JSON.parse(storage.get(first.api.UI_PREFS_KEY)), {
     language: "en",
-    theme: "dark"
+    theme: "dark",
+    headerCollapsed: true
   });
   assert.equal(first.sandbox.document.documentElement.lang, "en");
   assert.equal(first.sandbox.document.documentElement.dataset.theme, "dark");
+  assert.equal(first.sandbox.document.documentElement.classList.contains("header-collapsed"), true);
 
   const reloaded = createMultilanguageRuntime({ storage, executePrelude: true });
   assert.equal(reloaded.api.appearance.language, "en");
   assert.equal(reloaded.api.appearance.theme, "dark");
+  assert.equal(reloaded.api.isHeaderCollapsed(), true);
   assert.equal(reloaded.sandbox.document.documentElement.lang, "en");
   assert.equal(reloaded.sandbox.document.documentElement.dataset.theme, "dark");
+  assert.equal(reloaded.sandbox.document.documentElement.classList.contains("header-collapsed"), true);
+  reloaded.api.setHeaderCollapsed(false, true);
+  assert.equal(reloaded.api.isHeaderCollapsed(), false);
+  assert.equal(reloaded.sandbox.document.documentElement.classList.contains("header-collapsed"), false);
+  assert.equal(JSON.parse(storage.get(reloaded.api.UI_PREFS_KEY)).headerCollapsed, false);
 
   const legacyStorage = new Map([["bugtool_theme_v1", "dark"]]);
   const migrated = createMultilanguageRuntime({ storage: legacyStorage, executePrelude: true });
   assert.equal(migrated.api.appearance.language, "es");
   assert.equal(migrated.api.appearance.theme, "dark");
+  assert.equal(migrated.api.isHeaderCollapsed(), false);
 });
 
 test("los temas Autumn y Neon se aceptan, persisten y un tema inválido vuelve a light", () => {
@@ -237,6 +247,66 @@ test("la variante reconecta un campo sin restaurar los demás fragmentos manuale
   assert.deepEqual(jsonValue(api.outputDetachedFieldIds(inst, rendered.segments)), ["second"]);
 });
 
+test("la variante conserva una inserción manual al final del segmento de un field", () => {
+  const { api } = createMultilanguageRuntime({ exposedNames: ["outputDetachedFieldIds"] });
+  api.setConfig({
+    version: 2,
+    data: { lists: { mediaTypes: ["Vid"] }, childLists: {}, listMeta: {}, rules: { media_fmt: "{type}" } },
+    schema: { forms: [{ id: "bug", label: "Bug", sections: [{ id: "s", label: "S", mode: "lines", fields: [
+      { id: "first", label: "First", type: "text", template: "A {value}" },
+      { id: "second", label: "Second", type: "text", template: "B {value}" }
+    ] }] }] }
+  });
+  const inst = api.makeInstance("bug");
+  inst.values.first = "uno";
+  inst.values.second = "dos";
+  let chunks = api.buildOutput(inst);
+  inst.output = chunks.full;
+  inst.outputSegments = chunks.segments;
+  inst.outputRanges = chunks.ranges;
+
+  api.captureOutputTextareaEdit(inst, "A uno manual\nB dos");
+  assert.deepEqual(jsonValue(api.outputDetachedFieldIds(inst, inst.outputSegments)), ["first"]);
+
+  inst.values.second = "tres";
+  chunks = api.buildOutput(inst);
+  assert.equal(api.applyOutputDetachment(chunks, inst.outputDetached).full, "A uno manual\nB tres");
+});
+
+test("placeholder viaja en el CSV de campos sin alterar el schema canónico", async () => {
+  const source = createMultilanguageRuntime();
+  const field = source.api.getConfig().schema.forms[0].sections[0].fields[0];
+  field.placeholder = "Escribe el equipo";
+  const exported = await source.api.captureFieldsCsv();
+  assert.match(exported.content.split(/\r?\n/, 1)[0], /placeholder$/);
+
+  const imported = createMultilanguageRuntime();
+  imported.api.importFieldsCsv(exported.content);
+  assert.equal(imported.api.getConfig().schema.forms[0].sections[0].fields[0].placeholder,
+    "Escribe el equipo");
+});
+
+test("la variante recuerda la última subpestaña de cada formulario", () => {
+  const { api } = createMultilanguageRuntime({ exposedNames: ["setActiveInstance", "switchToForm"] });
+  const bugFirst = api.makeInstance("bug");
+  const bugLast = api.makeInstance("bug");
+  const regressionFirst = api.makeInstance("regression");
+  const regressionLast = api.makeInstance("regression");
+  api.state.instances = [bugFirst, bugLast, regressionFirst, regressionLast];
+  api.state.topTab = "bug";
+  api.setActiveInstance(bugLast.id);
+
+  api.switchToForm("regression");
+  api.setActiveInstance(regressionLast.id);
+  api.switchToForm("bug");
+
+  assert.equal(api.state.activeInstanceId, bugLast.id);
+  assert.deepEqual(jsonValue(api.state.activeInstanceByForm), {
+    bug: bugLast.id,
+    regression: regressionLast.id
+  });
+});
+
 test("exportar la variante usa su nombre canónico e integra JSON resistente a cierre de script", async () => {
   const { api } = createMultilanguageRuntime();
   const dangerous = "</SCRIPT><script>fallo()</script>";
@@ -246,4 +316,93 @@ test("exportar la variante usa su nombre canónico e integra JSON resistente a c
   assert.equal(exported.name, api.APP_META.exportName);
   const embedded = extractVanillaConfig(exported.content);
   assert.equal(embedded.data.rules.danger, dangerous);
+});
+
+test("shortcuts navegan y compactan sin interceptar flechas dentro de controles editables", () => {
+  const { api, sandbox } = createMultilanguageRuntime({ exposedNames: [
+    "setActiveInstance", "wireKeyboardShortcuts", "uiCollapse"
+  ] });
+  const classList = () => {
+    const values = new Set();
+    return {
+      add: (...names) => names.forEach(name => values.add(name)),
+      remove: (...names) => names.forEach(name => values.delete(name)),
+      toggle: (name, force) => {
+        const value = force === undefined ? !values.has(name) : !!force;
+        if (value) values.add(name); else values.delete(name);
+        return value;
+      },
+      contains: name => values.has(name)
+    };
+  };
+  const element = () => ({
+    classList: classList(), style: { removeProperty() {} }, setAttribute() {},
+    querySelector: () => null, innerHTML: "", title: ""
+  });
+  const elements = Object.fromEntries([
+    "formCollapseBtn", "formCol", "mediaCollapseBtn", "mediaPanel",
+    "actionsCollapseBtn", "outputSide", "outputPanelCollapseBtn",
+    "outputPanel", "main", "formOutputResizer", "modal"
+  ].map(id => [id, element()]));
+  let listener;
+  sandbox.window.innerWidth = 1200;
+  sandbox.document.getElementById = id => elements[id] || null;
+  sandbox.document.addEventListener = (type, callback) => { if (type === "keydown") listener = callback; };
+
+  const bugFirst = api.makeInstance("bug");
+  const bugLast = api.makeInstance("bug");
+  const regression = api.makeInstance("regression");
+  api.state.instances = [bugFirst, bugLast, regression];
+  api.state.topTab = "bug";
+  api.setActiveInstance(bugFirst.id);
+  sandbox.document.querySelectorAll = selector => selector.includes("#topTabs") ? [
+    { dataset: { form: "bug" } }, { dataset: { form: "regression" } },
+    { dataset: { tab: "data" } }, { dataset: { tab: "rules" } }
+  ] : [];
+  api.wireKeyboardShortcuts();
+
+  const press = (key, options = {}) => {
+    let prevented = false;
+    listener({
+      key, target: { closest: () => null, isContentEditable: false },
+      preventDefault() { prevented = true; }, ...options
+    });
+    return prevented;
+  };
+  const twice = key => { press(key); press(key); };
+
+  assert.equal(press("PageDown", { ctrlKey: true, altKey: true }), true);
+  assert.equal(api.state.topTab, "regression");
+  press("PageUp", { ctrlKey: true, altKey: true });
+  assert.equal(api.state.topTab, "bug");
+  press("ArrowRight", { ctrlKey: true, altKey: true });
+  assert.equal(api.state.activeInstanceId, bugLast.id);
+  press("q", { altKey: true });
+  assert.equal(elements.formCol.classList.contains("form-collapsed"), false);
+  assert.ok(Object.values(api.uiCollapse.sections).every(Boolean));
+  twice("ArrowLeft");
+  assert.equal(elements.formCol.classList.contains("form-collapsed"), true);
+  twice("ArrowLeft");
+  assert.equal(elements.formCol.classList.contains("form-collapsed"), false);
+  twice("ArrowDown");
+  assert.equal(elements.mediaPanel.classList.contains("collapsed"), true);
+  twice("ArrowDown");
+  twice("ArrowRight");
+  assert.equal(elements.outputSide.classList.contains("actions-collapsed"), true);
+  twice("ArrowRight");
+  assert.equal(elements.outputPanel.classList.contains("output-collapsed"), true);
+  twice("ArrowDown");
+  assert.equal(elements.mediaPanel.classList.contains("collapsed"), false);
+  twice("ArrowRight");
+  assert.equal(elements.outputPanel.classList.contains("output-collapsed"), false);
+  assert.equal(elements.outputSide.classList.contains("actions-collapsed"), false);
+  twice("ArrowUp");
+  assert.equal(sandbox.document.body.classList.contains("header-collapsed"), true);
+
+  let prevented = false;
+  listener({
+    key: "ArrowLeft", target: { closest: () => ({}), isContentEditable: false },
+    preventDefault() { prevented = true; }
+  });
+  assert.equal(prevented, false);
 });

@@ -85,6 +85,15 @@ test("la variante continúa autocontenida, sin red y sin IDs estáticos duplicad
   assert.match(staticHtml, /id=["']themeSelect["']/);
 });
 
+test("la cabecera plegable sustituye el colapso parcial de tiles", () => {
+  const html = readMultilanguageHtml();
+  assert.match(html, /workspaceHeaderToggle/);
+  assert.match(html, /header-collapsed/);
+  assert.match(html, /has-hidden-errors/);
+  assert.match(html, /tile\.severity === "error"/);
+  assert.doesNotMatch(html, /tilesToggle|tiles-toggle|tilesCollapsed|tiles-bar\.collapsed/);
+});
+
 test("los catálogos es/en tienen paridad de claves, placeholders y referencias DOM", () => {
   const { api } = createMultilanguageRuntime();
   assert.deepEqual(Array.from(api.SUPPORTED_LANGUAGES), ["es", "en"]);

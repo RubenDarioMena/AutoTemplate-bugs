@@ -94,6 +94,7 @@ globalThis.__bugToolTestApi = {
     state.editMode = false;
     state.instances = [];
     state.activeInstanceId = null;
+    state.activeInstanceByForm = {};
     state.dataTab = { selectedCategory: "" };
     state.prefs = { dontAskOnClose: false, dragFields: false, formSplitRatio: null, outputPreviewMode: "plain" };
   },
@@ -105,10 +106,24 @@ globalThis.__bugToolTestApi = {
 
   const storage = options.storage || new Map();
   const noop = () => {};
+  function classList() {
+    const values = new Set();
+    return {
+      add: (...names) => names.forEach(name => values.add(String(name))),
+      remove: (...names) => names.forEach(name => values.delete(String(name))),
+      toggle(name, force) {
+        const shouldHave = force === undefined ? !values.has(name) : Boolean(force);
+        if (shouldHave) values.add(name); else values.delete(name);
+        return shouldHave;
+      },
+      contains: name => values.has(String(name))
+    };
+  }
   const documentElement = {
     outerHTML: html.replace(/^<!doctype html>\s*/i, ""),
     dataset: {},
     lang: "",
+    classList: classList(),
     setAttribute(name, value) {
       if (name === "data-theme") this.dataset.theme = String(value);
       else this[name] = String(value);
@@ -125,7 +140,7 @@ globalThis.__bugToolTestApi = {
     querySelectorAll: () => [],
     addEventListener: noop,
     createElement: () => ({}),
-    body: {}
+    body: { classList: classList() }
   };
   const window = { addEventListener: noop };
   window.window = window;
